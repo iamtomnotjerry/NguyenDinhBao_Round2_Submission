@@ -288,6 +288,12 @@ export interface Database {
         };
         Returns: unknown;
       };
+      mark_order_as_paid: {
+        Args: {
+          p_order_id: string;
+        };
+        Returns: unknown;
+      };
     };
     Enums: {
       [_ in never]: never;
@@ -302,11 +308,12 @@ export interface Database {
 export type SafeDatabase = {
   public: {
     Tables: {
-      [K in keyof Database['public']['Tables']]: Database['public']['Tables'][K] & { Relationships: [] }
-    }
-    Views: Database['public']['Views']
-    Functions: Database['public']['Functions']
-    Enums: Database['public']['Enums']
-  }
-}
-
+      [K in keyof Database['public']['Tables']]: Database['public']['Tables'][K] & {
+        Relationships: [];
+      };
+    };
+    Views: Database['public']['Views'];
+    Functions: Database['public']['Functions'];
+    Enums: Database['public']['Enums'];
+  };
+};

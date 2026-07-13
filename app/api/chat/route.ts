@@ -129,7 +129,6 @@ export async function POST(request: Request) {
       const encoder = new TextEncoder();
       const stream = new ReadableStream({
         async start(controller) {
-          controller.enqueue(encoder.encode(`session_id:${currentSessionId}\n\n`)); // Pass metadata first
           const words = responseText.split(' ');
           for (const word of words) {
             controller.enqueue(encoder.encode(word + ' '));
@@ -143,6 +142,7 @@ export async function POST(request: Request) {
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
           'Transfer-Encoding': 'chunked',
+          'X-Session-Id': currentSessionId,
         },
       });
     }
@@ -164,7 +164,7 @@ QUY TẮC ĐẶC BIỆT: Nếu khách hàng yêu cầu gặp người thật h�
 
     // Call Gemini API using Vercel AI SDK
     const result = streamText({
-      model: google('gemini-2.5-flash'),
+      model: google('gemini-1.5-flash'),
       system: systemInstruction,
       prompt: message,
       onFinish: async ({ text }) => {
@@ -185,11 +185,10 @@ QUY TẮC ĐẶC BIỆT: Nếu khách hàng yêu cầu gặp người thật h�
       },
     });
 
-    // We prepend the session_id as custom headers/metadata or custom text chunk
+    // We send only the AI text in the stream
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
-        controller.enqueue(encoder.encode(`session_id:${currentSessionId}\n\n`));
         const reader = result.textStream.getReader();
         while (true) {
           const { done, value } = await reader.read();
@@ -204,6 +203,7 @@ QUY TẮC ĐẶC BIỆT: Nếu khách hàng yêu cầu gặp người thật h�
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'Transfer-Encoding': 'chunked',
+        'X-Session-Id': currentSessionId,
       },
     });
   } catch (error) {

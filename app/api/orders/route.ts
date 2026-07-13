@@ -8,7 +8,10 @@ export async function POST(request: Request) {
     const supabase: SupabaseClient<SafeDatabase> = await createClient();
 
     // 1. Auth check
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'Chưa đăng nhập (Unauthorized)' }, { status: 401 });
     }
@@ -26,7 +29,15 @@ export async function POST(request: Request) {
     } = body;
 
     // Validation
-    if (!items || !Array.isArray(items) || items.length === 0 || !total_amount || !delivery_type || !idempotency_key || !card_token) {
+    if (
+      !items ||
+      !Array.isArray(items) ||
+      items.length === 0 ||
+      !total_amount ||
+      !delivery_type ||
+      !idempotency_key ||
+      !card_token
+    ) {
       return NextResponse.json({ error: 'Thiếu thông tin đặt hàng' }, { status: 400 });
     }
 
@@ -38,11 +49,44 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (existingOrder) {
-      return NextResponse.json({
-        success: true,
-        message: 'Đơn hàng đã tồn tại (Idempotency return)',
-        order: existingOrder,
-      });
+      if (existingOrder.status === 'failed') {
+        return NextResponse.json(
+          {
+            error:
+              'Yêu cầu thanh toán trước đó đã thất bại. Vui lòng sử dụng khoá giao dịch (idempotency key) mới.',
+          },
+          { status: 400 },
+        );
+      }
+      if (existingOrder.status === 'pending') {
+        // [FIX v2.1]: Auto-expire stale pending orders older than 15 minutes.
+        // Prevents permanent blocking when server crashes or payment gateway times out.
+        const createdAt = new Date(existingOrder.created_at);
+        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+        if (createdAt < fifteenMinutesAgo) {
+          // Auto-rollback stale pending order (also NULLs idempotency_key in DB)
+          await supabase.rpc('rollback_failed_order', { p_order_id: existingOrder.id });
+          // Fall through to create a new order below
+        } else {
+          return NextResponse.json(
+            {
+              error:
+                'Giao dịch trước đó của đơn hàng này vẫn đang xử lý. Vui lòng không thực hiện lại thao tác.',
+              status: 'pending',
+              order_id: existingOrder.id,
+            },
+            { status: 202 }, // HTTP 202 Accepted
+          );
+        }
+      } else {
+        // status = 'paid' or 'completed' → genuine idempotent return
+        return NextResponse.json({
+          success: true,
+          message: 'Đơn hàng đã tồn tại (Idempotency return)',
+          order: existingOrder,
+        });
+      }
     }
 
     // 2. Perform Stock Check & Order Insertion in Database via Stored Procedure
@@ -59,7 +103,10 @@ export async function POST(request: Request) {
     });
 
     if (rpcError || !orderId) {
-      return NextResponse.json({ error: rpcError?.message || 'Không thể tạo đơn hàng' }, { status: 400 });
+      return NextResponse.json(
+        { error: rpcError?.message || 'Không thể tạo đơn hàng' },
+        { status: 400 },
+      );
     }
 
     // 3. Request Mock Payment Charge Gateway
@@ -84,23 +131,34 @@ export async function POST(request: Request) {
         p_order_id: orderId,
       });
 
-      return NextResponse.json({
-        success: false,
-        error: chargeResult.error || 'Thanh toán không thành công',
-        order_id: orderId,
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: chargeResult.error || 'Thanh toán không thành công',
+          order_id: orderId,
+        },
+        { status: 400 },
+      );
     }
 
-    // 4. PAYMENT SUCCEEDED: Update order status to paid (or completed)
-    const { data: updatedOrder, error: updateError } = await supabase
-      .from('orders')
-      .update({ status: 'paid' })
-      .eq('id', orderId)
-      .select()
-      .single();
+    // 4. PAYMENT SUCCEEDED: Update order status to paid via Postgres RPC (bypasses RLS safely)
+    const { error: updateError } = await supabase.rpc('mark_order_as_paid', {
+      p_order_id: orderId,
+    });
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 400 });
+    }
+
+    // Fetch updated order to return in response
+    const { data: updatedOrder, error: fetchError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (fetchError) {
+      return NextResponse.json({ error: fetchError.message }, { status: 400 });
     }
 
     return NextResponse.json({
@@ -111,8 +169,11 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     return NextResponse.json(
-      { error: 'Internal Server Error', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: 'Internal Server Error',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }

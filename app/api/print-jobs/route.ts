@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createDirectClient } from '@supabase/supabase-js';
 import { SafeDatabase } from '@/types/database.types';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
+import { calculatePrintCost } from '@/lib/utils';
 
 // Get print jobs for the authenticated user
 export async function GET() {
@@ -83,13 +84,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Thiếu thông tin cấu hình in ấn' }, { status: 400 });
     }
 
-    // Cost calculation
-    // bw: $0.10/page, color: $0.50/page
-    // spiral: +$2.00, stapled: +$0.50, none: +$0
-    const pagePrice = config_color === 'color' ? 0.5 : 0.1;
-    const bindingPrice =
-      config_binding === 'spiral' ? 2.0 : config_binding === 'stapled' ? 0.5 : 0.0;
-    const cost = total_pages * (config_copies || 1) * pagePrice + bindingPrice;
+    // Cost calculation (unified helper)
+    const cost = calculatePrintCost(total_pages, config_copies || 1, config_color, config_binding);
 
     // Create record in Supabase print_jobs table (which triggers RLS)
     const { data, error } = await supabase
@@ -160,8 +156,11 @@ export async function POST(request: Request) {
       }
     };
 
-    // Trigger without blocking the response
-    runSimulator();
+    // Trigger after response completes to guarantee serverless container stays alive
+    // [OPTIMIZATION v2.0]: await the async runSimulator promise so Vercel does not terminate container early
+    after(async () => {
+      await runSimulator();
+    });
 
     return NextResponse.json(data, { status: 201 });
   } catch (error) {
