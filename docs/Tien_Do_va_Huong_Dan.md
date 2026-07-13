@@ -13,10 +13,12 @@ Chúng ta đã thiết lập hạ tầng dự án (boilerplate) đạt chuẩn *
    - Tích hợp **Tailwind CSS v4** mới nhất (dùng CSS variables biên dịch cực nhanh).
    - Thiết kế giao diện trang chủ chuyên nghiệp (Landing Page) với chế độ tối (Dark Mode), hiệu ứng mượt mà và các Lucide Icons tại [page.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/page.tsx).
    - Tinh chỉnh Metadata tiêu đề và mô tả chuẩn dự án PlatPrint tại [layout.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/layout.tsx).
-2. **Cấu hình Standard Quality Controls (Đảm bảo chất lượng code):**
+2. **Cấu hình Standard Quality Controls & Guidelines (Quy chuẩn code & Rules):**
    - Cấu hình **Prettier** định dạng code tự động thống nhất tại file [.prettierrc](file:///d:/se/NguyenDinhBao_Round2_Submission-/.prettierrc).
    - Cập nhật **ESLint Flat Config** tại [eslint.config.mjs](file:///d:/se/NguyenDinhBao_Round2_Submission-/eslint.config.mjs) tích hợp `eslint-config-prettier` để triệt tiêu hoàn toàn xung đột giữa quy tắc linter và format.
    - Cấu hình **Commitlint** tại [commitlint.config.js](file:///d:/se/NguyenDinhBao_Round2_Submission-/commitlint.config.js) bắt buộc thông điệp commit phải tuân thủ chuẩn **Conventional Commits** (`feat:`, `fix:`, `chore:`, `docs:`...).
+   - Biên soạn cẩm nang phát triển [CLAUDE.md](file:///d:/se/NguyenDinhBao_Round2_Submission-/CLAUDE.md) thiết lập các lệnh chạy dự án, quy tắc bảo mật chống IDOR (RLS), quy chuẩn viết code kiểu dữ liệu an toàn (Type-Safety) và quy định Conventional Commits.
+   - Dựng hệ thống thiết kế (Design System) tại [app/globals.css](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/globals.css) với các biến màu sắc thương hiệu, các tiện ích glassmorphism (`glass-panel`, `glass-input`) và các animation/keyframes in ấn mượt mà.
 3. **Thiết lập Git Hooks tự động (Husky & Lint-staged):**
    - Kích hoạt Husky v9.
    - Tạo hook **pre-commit** chạy `npx lint-staged` (tự động chạy `eslint --fix` và `prettier --write` đối với duy nhất các file được staged, tối ưu tốc độ commit).
