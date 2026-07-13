@@ -50,7 +50,11 @@ export default function StorePage() {
 
   // Flow State
   const [submitting, setSubmitting] = useState(false);
-  const [orderResult, setOrderResult] = useState<{ success: boolean; message: string; orderId?: string } | null>(null);
+  const [orderResult, setOrderResult] = useState<{
+    success: boolean;
+    message: string;
+    orderId?: string;
+  } | null>(null);
 
   // Fetch products and user auth profile
   useEffect(() => {
@@ -62,7 +66,9 @@ export default function StorePage() {
         setProducts(prodData);
 
         // Fetch auth state
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         setUser(user);
 
         if (user) {
@@ -93,7 +99,7 @@ export default function StorePage() {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
         return prev.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item,
         );
       }
       return [...prev, { product, quantity: 1 }];
@@ -111,7 +117,7 @@ export default function StorePage() {
           }
           return item;
         })
-        .filter((item) => item.quantity > 0)
+        .filter((item) => item.quantity > 0),
     );
   };
 
@@ -226,11 +232,13 @@ export default function StorePage() {
       if (profile) {
         setRewardPoints(profile.reward_points);
       }
-
     } catch (err) {
       setOrderResult({
         success: false,
-        message: err instanceof Error ? err.message : 'Đặt hàng thất bại. Vui lòng kiểm tra lại số dư hoặc tồn kho.',
+        message:
+          err instanceof Error
+            ? err.message
+            : 'Đặt hàng thất bại. Vui lòng kiểm tra lại số dư hoặc tồn kho.',
       });
     } finally {
       setSubmitting(false);
@@ -259,9 +267,15 @@ export default function StorePage() {
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
-            <Link href="/print" className="hover:text-white transition-colors">In ấn từ xa</Link>
-            <Link href="/store" className="text-white">Gian hàng</Link>
-            <Link href="/chat" className="hover:text-white transition-colors">Hỗ trợ AI</Link>
+            <Link href="/print" className="hover:text-white transition-colors">
+              In ấn từ xa
+            </Link>
+            <Link href="/store" className="text-white">
+              Gian hàng
+            </Link>
+            <Link href="/chat" className="hover:text-white transition-colors">
+              Hỗ trợ AI
+            </Link>
           </nav>
           <div className="flex items-center gap-4">
             <button
@@ -269,7 +283,9 @@ export default function StorePage() {
               className="relative p-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-zinc-300 hover:text-white transition-all flex items-center gap-2"
             >
               <ShoppingCart className="w-4 h-4 text-indigo-400" />
-              <span className="text-xs font-bold">{cart.reduce((sum, i) => sum + i.quantity, 0)}</span>
+              <span className="text-xs font-bold">
+                {cart.reduce((sum, i) => sum + i.quantity, 0)}
+              </span>
             </button>
             {user ? (
               <Link
@@ -293,7 +309,9 @@ export default function StorePage() {
       {/* Main Container */}
       <main className="flex-1 max-w-6xl mx-auto px-6 py-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
         {/* Products Grid (7 cols) */}
-        <div className={`${isCartOpen ? 'lg:col-span-7' : 'lg:col-span-12'} transition-all duration-300 space-y-6`}>
+        <div
+          className={`${isCartOpen ? 'lg:col-span-7' : 'lg:col-span-12'} transition-all duration-300 space-y-6`}
+        >
           <div className="flex justify-between items-center">
             <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent flex items-center gap-2">
               <ShoppingBag className="w-6 h-6 text-indigo-400" /> Gian hàng ấn phẩm in sẵn
@@ -305,9 +323,14 @@ export default function StorePage() {
             )}
           </div>
 
-          <div className={`grid grid-cols-1 md:grid-cols-2 ${isCartOpen ? 'xl:grid-cols-2' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-6`}>
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 ${isCartOpen ? 'xl:grid-cols-2' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-6`}
+          >
             {products.map((product) => (
-              <div key={product.id} className="glass-panel p-5 rounded-2xl border border-zinc-800 flex flex-col justify-between hover:border-zinc-700 transition-all hover:scale-[1.01] group">
+              <div
+                key={product.id}
+                className="glass-panel-interactive p-5 rounded-2xl flex flex-col justify-between group"
+              >
                 <div className="space-y-4">
                   {/* Mock Product image placeholder container */}
                   <div className="w-full h-32 rounded-xl bg-zinc-950/60 border border-zinc-900 flex items-center justify-center text-zinc-600 relative overflow-hidden group-hover:border-indigo-500/20 transition-all">
@@ -317,8 +340,12 @@ export default function StorePage() {
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white group-hover:text-indigo-400 transition-colors">{product.name}</h3>
-                    <p className="text-xs text-zinc-500 mt-1 line-clamp-2 font-medium">{product.description}</p>
+                    <h3 className="text-base font-bold text-white group-hover:text-indigo-400 transition-colors">
+                      {product.name}
+                    </h3>
+                    <p className="text-xs text-zinc-500 mt-1 line-clamp-2 font-medium">
+                      {product.description}
+                    </p>
                   </div>
                 </div>
                 <div className="mt-5 flex justify-between items-center border-t border-zinc-900/60 pt-4">
@@ -362,10 +389,17 @@ export default function StorePage() {
                   {/* Cart list */}
                   <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
                     {cart.map((item) => (
-                      <div key={item.product.id} className="flex items-center justify-between p-3 bg-zinc-950/40 border border-zinc-900 rounded-xl gap-4">
+                      <div
+                        key={item.product.id}
+                        className="flex items-center justify-between p-3 bg-zinc-950/40 border border-zinc-900 rounded-xl gap-4"
+                      >
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-bold text-white truncate">{item.product.name}</h4>
-                          <span className="text-xs text-zinc-500 font-bold">${item.product.price.toFixed(2)}</span>
+                          <h4 className="text-sm font-bold text-white truncate">
+                            {item.product.name}
+                          </h4>
+                          <span className="text-xs text-zinc-500 font-bold">
+                            ${item.product.price.toFixed(2)}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2.5">
                           <button
@@ -398,7 +432,9 @@ export default function StorePage() {
                     {/* User Auth block checking */}
                     {!user ? (
                       <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-xl text-center text-sm">
-                        <p className="text-zinc-400 mb-3">Vui lòng đăng nhập để thanh toán đơn hàng.</p>
+                        <p className="text-zinc-400 mb-3">
+                          Vui lòng đăng nhập để thanh toán đơn hàng.
+                        </p>
                         <Link
                           href="/auth"
                           className="inline-block py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all"
@@ -421,7 +457,9 @@ export default function StorePage() {
                             <h4 className="font-bold text-emerald-400">Đặt hàng thành công!</h4>
                             <p className="text-xs text-zinc-400">{orderResult.message}</p>
                             {orderResult.orderId && (
-                              <p className="text-[10px] font-mono bg-zinc-950 py-1 rounded text-zinc-500">ID: {orderResult.orderId}</p>
+                              <p className="text-[10px] font-mono bg-zinc-950 py-1 rounded text-zinc-500">
+                                ID: {orderResult.orderId}
+                              </p>
                             )}
                           </>
                         ) : (
@@ -458,7 +496,11 @@ export default function StorePage() {
                           <input
                             type="text"
                             required={deliveryType === 'shipping'}
-                            placeholder={deliveryType === 'shipping' ? "Địa chỉ giao hàng" : "Không yêu cầu địa chỉ"}
+                            placeholder={
+                              deliveryType === 'shipping'
+                                ? 'Địa chỉ giao hàng'
+                                : 'Không yêu cầu địa chỉ'
+                            }
                             value={address}
                             onChange={(e) => setAddress(e.target.value)}
                             disabled={deliveryType === 'pickup'}
@@ -470,9 +512,14 @@ export default function StorePage() {
                         <div className="flex gap-2 bg-zinc-950/80 p-1 rounded-lg border border-zinc-900">
                           <button
                             type="button"
-                            onClick={() => { setDeliveryType('pickup'); setAddress(''); }}
+                            onClick={() => {
+                              setDeliveryType('pickup');
+                              setAddress('');
+                            }}
                             className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                              deliveryType === 'pickup' ? 'bg-indigo-600 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'
+                              deliveryType === 'pickup'
+                                ? 'bg-indigo-600 text-white shadow'
+                                : 'text-zinc-500 hover:text-zinc-300'
                             }`}
                           >
                             <Printer className="w-3.5 h-3.5" /> Nhận tại cửa hàng
@@ -481,7 +528,9 @@ export default function StorePage() {
                             type="button"
                             onClick={() => setDeliveryType('shipping')}
                             className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                              deliveryType === 'shipping' ? 'bg-indigo-600 text-white shadow' : 'text-zinc-500 hover:text-zinc-300'
+                              deliveryType === 'shipping'
+                                ? 'bg-indigo-600 text-white shadow'
+                                : 'text-zinc-500 hover:text-zinc-300'
                             }`}
                           >
                             <Truck className="w-3.5 h-3.5" /> Giao tận nơi
@@ -499,11 +548,16 @@ export default function StorePage() {
                                 onChange={(e) => setUsePoints(e.target.checked)}
                                 className="w-4 h-4 accent-indigo-500 cursor-pointer"
                               />
-                              <label htmlFor="use-points" className="text-xs font-semibold text-zinc-300 cursor-pointer select-none">
+                              <label
+                                htmlFor="use-points"
+                                className="text-xs font-semibold text-zinc-300 cursor-pointer select-none"
+                              >
                                 Dùng điểm thưởng giảm giá
                               </label>
                             </div>
-                            <span className="text-xs text-indigo-400 font-bold">Giảm -${getDiscount().toFixed(2)}</span>
+                            <span className="text-xs text-indigo-400 font-bold">
+                              Giảm -${getDiscount().toFixed(2)}
+                            </span>
                           </div>
                         )}
 
@@ -547,7 +601,9 @@ export default function StorePage() {
                         <div className="p-3 bg-zinc-950/60 border border-zinc-900 rounded-xl space-y-2">
                           <div className="flex justify-between items-center text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
                             <span>Sandbox Thử nghiệm lỗi</span>
-                            <span className="px-1.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/10 rounded font-semibold scale-90">Simulate</span>
+                            <span className="px-1.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/10 rounded font-semibold scale-90">
+                              Simulate
+                            </span>
                           </div>
                           <div className="flex flex-wrap gap-1.5">
                             <button
@@ -598,7 +654,8 @@ export default function StorePage() {
                             <span className="text-white">${getTotal().toFixed(2)}</span>
                           </div>
                           <div className="text-[10px] text-emerald-400 flex items-center gap-1.5 pt-1.5 border-t border-dashed border-zinc-900">
-                            <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Nhận +{getPointsEarned()} điểm thưởng từ đơn hàng này!
+                            <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Nhận +
+                            {getPointsEarned()} điểm thưởng từ đơn hàng này!
                           </div>
                         </div>
 
@@ -614,7 +671,8 @@ export default function StorePage() {
                             </>
                           ) : (
                             <>
-                              <CreditCard className="w-4 h-4" /> Thanh toán một chạm (${getTotal().toFixed(2)})
+                              <CreditCard className="w-4 h-4" /> Thanh toán một chạm ($
+                              {getTotal().toFixed(2)})
                             </>
                           )}
                         </button>

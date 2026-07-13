@@ -72,7 +72,7 @@ export default function Home() {
         {/* Features Grid */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-32">
           {/* Card 1 */}
-          <div className="p-8 bg-zinc-900/50 border border-zinc-800 rounded-2xl space-y-4 hover:border-zinc-700 transition-colors">
+          <div className="glass-panel-interactive rounded-2xl p-8 space-y-4">
             <div className="p-3 bg-indigo-500/10 rounded-xl w-fit text-indigo-400">
               <Printer className="w-6 h-6" />
             </div>
@@ -84,7 +84,7 @@ export default function Home() {
           </div>
 
           {/* Card 2 */}
-          <div className="p-8 bg-zinc-900/50 border border-zinc-800 rounded-2xl space-y-4 hover:border-zinc-700 transition-colors">
+          <div className="glass-panel-interactive rounded-2xl p-8 space-y-4">
             <div className="p-3 bg-violet-500/10 rounded-xl w-fit text-violet-400">
               <ShieldCheck className="w-6 h-6" />
             </div>
@@ -96,7 +96,7 @@ export default function Home() {
           </div>
 
           {/* Card 3 */}
-          <div className="p-8 bg-zinc-900/50 border border-zinc-800 rounded-2xl space-y-4 hover:border-zinc-700 transition-colors">
+          <div className="glass-panel-interactive rounded-2xl p-8 space-y-4">
             <div className="p-3 bg-purple-500/10 rounded-xl w-fit text-purple-400">
               <MessageSquare className="w-6 h-6" />
             </div>

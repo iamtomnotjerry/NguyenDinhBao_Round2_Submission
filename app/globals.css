@@ -69,9 +69,25 @@
 
 /* Glassmorphism design utility classes */
 @utility glass-panel {
-  background-color: rgba(24, 24, 27, 0.6);
+  background-color: rgba(20, 20, 25, 0.45);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@utility glass-panel-interactive {
+  background-color: rgba(20, 20, 25, 0.45);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    border-color: rgba(99, 102, 241, 0.25);
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.04);
+    transform: translateY(-2px);
+  }
 }
 
 @utility glass-input {
@@ -103,6 +119,25 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+.premium-bg {
+  position: relative;
+}
+
+.premium-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center top;
+  mask-image: radial-gradient(ellipse 60% 45% at 50% 0px, #000 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 45% at 50% 0px, #000 30%, transparent 100%);
+  pointer-events: none;
 }
 
 body {
