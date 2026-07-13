@@ -8,9 +8,11 @@ Tài liệu này tổng hợp chi tiết toàn bộ các thiết lập đã hoà
 
 Chúng ta đã thiết lập hạ tầng dự án (boilerplate) đạt chuẩn **Enterprise & Senior Coder** với tính tự động hóa và bảo mật cao:
 
-1. **Khởi tạo mã nguồn dự án Next.js:**
+1. **Khởi tạo và thiết kế dự án Next.js:**
    - Dựng dự án Next.js 15+ (App Router) sử dụng TypeScript tại thư mục dự án [NguyenDinhBao_Round2_Submission-](file:///d:/se/NguyenDinhBao_Round2_Submission-).
    - Tích hợp **Tailwind CSS v4** mới nhất (dùng CSS variables biên dịch cực nhanh).
+   - Thiết kế giao diện trang chủ chuyên nghiệp (Landing Page) với chế độ tối (Dark Mode), hiệu ứng mượt mà và các Lucide Icons tại [page.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/page.tsx).
+   - Tinh chỉnh Metadata tiêu đề và mô tả chuẩn dự án PlatPrint tại [layout.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/layout.tsx).
 2. **Cấu hình Standard Quality Controls (Đảm bảo chất lượng code):**
    - Cấu hình **Prettier** định dạng code tự động thống nhất tại file [.prettierrc](file:///d:/se/NguyenDinhBao_Round2_Submission-/.prettierrc).
    - Cập nhật **ESLint Flat Config** tại [eslint.config.mjs](file:///d:/se/NguyenDinhBao_Round2_Submission-/eslint.config.mjs) tích hợp `eslint-config-prettier` để triệt tiêu hoàn toàn xung đột giữa quy tắc linter và format.
