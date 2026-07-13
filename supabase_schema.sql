@@ -159,6 +159,8 @@ create policy "Allow users to read their own print jobs"
   on public.print_jobs for select using (auth.uid() = user_id);
 create policy "Allow users to create their own print jobs" 
   on public.print_jobs for insert with check (auth.uid() = user_id);
+create policy "Allow users to update their own print jobs" 
+  on public.print_jobs for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 -- Payment Tokens Policies
 create policy "Allow users to read their own payment tokens" 
