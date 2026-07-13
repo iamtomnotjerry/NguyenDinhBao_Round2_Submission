@@ -28,7 +28,7 @@ Chúng ta đã thiết lập hạ tầng dự án (boilerplate) đạt chuẩn *
    - Viết file [lib/utils.ts](file:///d:/se/NguyenDinhBao_Round2_Submission-/lib/utils.ts) cung cấp hàm `cn(...)` (sử dụng `clsx` và `tailwind-merge`) giúp ghép các class Tailwind CSS động mượt mà.
    - Viết file [lib/supabase/client.ts](file:///d:/se/NguyenDinhBao_Round2_Submission-/lib/supabase/client.ts) khởi tạo client-side Supabase.
    - Viết file [lib/supabase/server.ts](file:///d:/se/NguyenDinhBao_Round2_Submission-/lib/supabase/server.ts) khởi tạo server-side Supabase phục vụ Server Components và APIs.
-   - Viết file [middleware.ts](file:///d:/se/NguyenDinhBao_Round2_Submission-/middleware.ts) tự động refresh session Supabase JWT, bảo đảm chính sách RLS DB hoạt động trơn tru.
+   - Viết file [middleware.ts](file:///d:/se/NguyenDinhBao_Round2_Submission-/middleware.ts) tự động refresh session Supabase JWT, bảo đảm chính sách RLS DB hoạt động trơn tru. Đã xử lý cơ chế skip-safe khi chưa có file cấu hình `.env.local` giúp dự án không bị sập (crash) khi lập trình local dev.
 5. **Thiết kế Database Schema, Config mẫu & Kiểu dữ liệu TypeScript:**
    - Tạo file [supabase_schema.sql](file:///d:/se/NguyenDinhBao_Round2_Submission-/supabase_schema.sql) định nghĩa 9 bảng dữ liệu, khóa ngoại, chỉ mục (Indexes) hiệu năng cao, chính sách Row Level Security (RLS) bảo mật và Stored Procedure Pessimistic Locking chống lỗi tồn kho.
    - Thiết lập kiểu dữ liệu TypeScript tự động đồng bộ từ Database tại [database.types.ts](file:///d:/se/NguyenDinhBao_Round2_Submission-/types/database.types.ts) giúp kiểm soát lỗi gõ sai tên cột ngay từ IDE.
