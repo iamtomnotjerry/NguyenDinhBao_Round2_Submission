@@ -30,12 +30,7 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Initialize Vercel AI SDK useChat hook using DefaultChatTransport
-  const {
-    messages,
-    sendMessage,
-    status,
-    setMessages,
-  } = useChat({
+  const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
       body: {
@@ -60,7 +55,9 @@ export default function ChatPage() {
   // Check auth and fetch/create chat session
   useEffect(() => {
     const initChat = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
       setLoadingAuth(false);
 
@@ -75,7 +72,7 @@ export default function ChatPage() {
 
         if (session) {
           setSessionId(session.id);
-          
+
           // Load past messages
           const { data: pastMsgs } = await supabase
             .from('chat_messages')
@@ -89,7 +86,7 @@ export default function ChatPage() {
                 id: m.id,
                 role: m.sender === 'user' ? 'user' : 'assistant',
                 parts: [{ type: 'text', text: m.message }],
-              }))
+              })),
             );
           }
         }
@@ -113,6 +110,21 @@ export default function ChatPage() {
 
     try {
       await sendMessage({ text: textToSend });
+
+      // If we don't have a sessionId, fetch the one created by the server
+      if (!sessionId && user) {
+        setTimeout(async () => {
+          const { data: session } = await supabase
+            .from('chat_sessions')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .maybeSingle();
+          if (session) {
+            setSessionId(session.id);
+          }
+        }, 1500);
+      }
     } catch (err) {
       console.error('Error sending message:', err);
     }
@@ -123,6 +135,21 @@ export default function ChatPage() {
     if (isLoading) return;
     try {
       await sendMessage({ text: questionText });
+
+      // If we don't have a sessionId, fetch the one created by the server
+      if (!sessionId && user) {
+        setTimeout(async () => {
+          const { data: session } = await supabase
+            .from('chat_sessions')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .maybeSingle();
+          if (session) {
+            setSessionId(session.id);
+          }
+        }, 1500);
+      }
     } catch (err) {
       console.error('Error sending quick question:', err);
     }
@@ -150,9 +177,15 @@ export default function ChatPage() {
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
-            <Link href="/print" className="hover:text-white transition-colors">In ấn từ xa</Link>
-            <Link href="/store" className="hover:text-white transition-colors">Gian hàng</Link>
-            <Link href="/chat" className="text-white">Hỗ trợ AI</Link>
+            <Link href="/print" className="hover:text-white transition-colors">
+              In ấn từ xa
+            </Link>
+            <Link href="/store" className="hover:text-white transition-colors">
+              Gian hàng
+            </Link>
+            <Link href="/chat" className="text-white">
+              Hỗ trợ AI
+            </Link>
           </nav>
           <div>
             {user ? (
@@ -184,7 +217,8 @@ export default function ChatPage() {
             </div>
             <h2 className="text-2xl font-bold">Vui lòng đăng nhập để sử dụng chat hỗ trợ</h2>
             <p className="text-zinc-400 max-w-md">
-              Để được hỗ trợ giải đáp các thắc mắc về in ấn từ xa, lỗi thanh toán thẻ hoặc kiểm tra điểm thưởng, bạn cần đăng nhập tài khoản.
+              Để được hỗ trợ giải đáp các thắc mắc về in ấn từ xa, lỗi thanh toán thẻ hoặc kiểm tra
+              điểm thưởng, bạn cần đăng nhập tài khoản.
             </p>
             <Link
               href="/auth"
@@ -225,11 +259,14 @@ export default function ChatPage() {
                   <div className="space-y-2">
                     <h4 className="font-bold text-white">Bắt đầu trò chuyện với AI</h4>
                     <p className="text-xs text-zinc-500">
-                      Tôi có thể giúp bạn giải đáp các vấn đề về in ấn từ xa, tính giá tiền, lỗi thẻ sandbox, hoặc kết nối tới con người khi cần.
+                      Tôi có thể giúp bạn giải đáp các vấn đề về in ấn từ xa, tính giá tiền, lỗi thẻ
+                      sandbox, hoặc kết nối tới con người khi cần.
                     </p>
                   </div>
                   <div className="w-full space-y-2 pt-4">
-                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider text-left pl-2">Gợi ý câu hỏi</p>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider text-left pl-2">
+                      Gợi ý câu hỏi
+                    </p>
                     <button
                       onClick={() => handleQuickQuestion('Làm thế nào để in tài liệu đen trắng?')}
                       className="w-full text-left p-3 bg-zinc-950 border border-zinc-900 hover:border-zinc-800 text-xs rounded-xl text-zinc-300 transition-all flex items-center gap-2"
@@ -238,7 +275,9 @@ export default function ChatPage() {
                       <span>Làm thế nào để in tài liệu đen trắng?</span>
                     </button>
                     <button
-                      onClick={() => handleQuickQuestion('Tôi bị lỗi thanh toán thẻ sandbox thì làm sao?')}
+                      onClick={() =>
+                        handleQuickQuestion('Tôi bị lỗi thanh toán thẻ sandbox thì làm sao?')
+                      }
                       className="w-full text-left p-3 bg-zinc-950 border border-zinc-900 hover:border-zinc-800 text-xs rounded-xl text-zinc-300 transition-all flex items-center gap-2"
                     >
                       <HelpCircle className="w-4 h-4 text-indigo-400 shrink-0" />
@@ -261,8 +300,11 @@ export default function ChatPage() {
                     .filter((part) => part.type === 'text')
                     .map((part) => (part as { text: string }).text)
                     .join('');
-                  
-                  const displayContent = text.replace('[FORWARD_TO_HUMAN]', '').trim();
+
+                  const displayContent = text
+                    .replace(/^session_id:[a-f0-9-]{36}\s*/i, '')
+                    .replace('[FORWARD_TO_HUMAN]', '')
+                    .trim();
 
                   return (
                     <div
@@ -279,7 +321,11 @@ export default function ChatPage() {
                             : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
                         }`}
                       >
-                        {m.role === 'user' ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                        {m.role === 'user' ? (
+                          <User className="w-4 h-4" />
+                        ) : (
+                          <Sparkles className="w-4 h-4" />
+                        )}
                       </div>
 
                       {/* Content Bubble */}
@@ -324,13 +370,17 @@ export default function ChatPage() {
               <div className="bg-amber-500/10 border-y border-amber-500/20 p-3 px-6 text-xs text-amber-400 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 animate-pulse" />
                 <span>
-                  <strong>Yêu cầu chuyển tiếp:</strong> AI đã kích hoạt chuyển cuộc gọi này tới hỗ trợ viên con người. Hỗ trợ viên sẽ sớm phản hồi trong chatbox này.
+                  <strong>Yêu cầu chuyển tiếp:</strong> AI đã kích hoạt chuyển cuộc gọi này tới hỗ
+                  trợ viên con người. Hỗ trợ viên sẽ sớm phản hồi trong chatbox này.
                 </span>
               </div>
             )}
 
             {/* Input Submission Bar */}
-            <form onSubmit={handleSubmitForm} className="border-t border-zinc-900 p-4 bg-zinc-950/80 flex gap-3 z-10">
+            <form
+              onSubmit={handleSubmitForm}
+              className="border-t border-zinc-900 p-4 bg-zinc-950/80 flex gap-3 z-10"
+            >
               <input
                 type="text"
                 value={input}

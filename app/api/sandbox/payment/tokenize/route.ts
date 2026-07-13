@@ -3,12 +3,15 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { cardNumber, cardBrand, expMonth, expYear } = body;
+    const cardNumber = body.card_number || body.cardNumber;
+    const cardBrand = body.card_brand || body.cardBrand;
+    const expMonth = body.exp_month || body.expMonth;
+    const expYear = body.exp_year || body.expYear;
 
-    if (!cardNumber || cardNumber.length < 12) {
+    if (!cardNumber || typeof cardNumber !== 'string' || cardNumber.length < 12) {
       return NextResponse.json(
         { error: 'Số thẻ không hợp lệ (Card number must be at least 12 digits)' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -26,8 +29,11 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     return NextResponse.json(
-      { error: 'Internal Server Error', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      {
+        error: 'Internal Server Error',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
     );
   }
 }
