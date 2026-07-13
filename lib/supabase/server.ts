@@ -1,16 +1,17 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import { Database } from '@/types/database.types';
+import { SafeDatabase } from '@/types/database.types';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Supabase client for use in Server Components, Server Actions, and Route Handlers.
  * Handles cookies reading and writing asynchronously.
  * Generic Database parameter enforces type safety.
  */
-export async function createClient() {
+export async function createClient(): Promise<SupabaseClient<SafeDatabase, 'public'>> {
   const cookieStore = await cookies();
 
-  return createServerClient<Database>(
+  return createServerClient<SafeDatabase, 'public'>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {

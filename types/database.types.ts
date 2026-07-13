@@ -282,9 +282,31 @@ export interface Database {
         };
         Returns: string;
       };
+      rollback_failed_order: {
+        Args: {
+          p_order_id: string;
+        };
+        Returns: unknown;
+      };
     };
     Enums: {
       [_ in never]: never;
     };
   };
 }
+
+/**
+ * Enterprise-grade wrapper that patches missing generated Relationships types.
+ * Without this, newer versions of @supabase/supabase-js fallback to 'never' typings on table operations.
+ */
+export type SafeDatabase = {
+  public: {
+    Tables: {
+      [K in keyof Database['public']['Tables']]: Database['public']['Tables'][K] & { Relationships: [] }
+    }
+    Views: Database['public']['Views']
+    Functions: Database['public']['Functions']
+    Enums: Database['public']['Enums']
+  }
+}
+

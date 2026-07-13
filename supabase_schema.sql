@@ -277,3 +277,56 @@ begin
   return v_order_id;
 end;
 $$ language plpgsql security definer;
+
+-- =========================================================================
+-- 7. STORED PROCEDURE FOR ATOMIC ORDER ROLLBACK ON PAYMENT FAILURE
+-- =========================================================================
+create or replace function public.rollback_failed_order(p_order_id uuid)
+returns void as $$
+declare
+  item record;
+  v_user_id uuid;
+  v_points_used integer;
+  v_points_earned integer;
+begin
+  -- 1. Get order details and lock the order row
+  select user_id, points_used, points_earned into v_user_id, v_points_used, v_points_earned
+  from public.orders
+  where id = p_order_id and status = 'pending'
+  for update;
+  
+  if v_user_id is null then
+    return; -- Order already processed, failed, or doesn't exist
+  end if;
+
+  -- 2. Update order status to failed
+  update public.orders
+  set status = 'failed'
+  where id = p_order_id;
+
+  -- 3. Restore product stock (atomic increment)
+  for item in select product_id, quantity from public.order_items where order_id = p_order_id loop
+    if item.product_id is not null then
+      update public.products
+      set stock = stock + item.quantity
+      where id = item.product_id;
+    end if;
+  end loop;
+
+  -- 4. Restore user points
+  update public.profiles
+  set reward_points = reward_points + v_points_used - v_points_earned
+  where id = v_user_id;
+
+  -- 5. Log points history rollback
+  if v_points_used > 0 then
+    insert into public.reward_points_history (user_id, points, type, description)
+    values (v_user_id, v_points_used, 'earn', 'Hoàn điểm do thanh toán lỗi đơn ' || p_order_id);
+  end if;
+  if v_points_earned > 0 then
+    insert into public.reward_points_history (user_id, points, type, description)
+    values (v_user_id, -v_points_earned, 'spend', 'Thu hồi điểm tích lũy do thanh toán lỗi đơn ' || p_order_id);
+  end if;
+end;
+$$ language plpgsql security definer;
+
