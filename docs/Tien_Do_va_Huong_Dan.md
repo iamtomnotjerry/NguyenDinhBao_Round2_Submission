@@ -21,15 +21,20 @@ Chúng ta đã thiết lập hạ tầng dự án (boilerplate) đạt chuẩn *
    - Tạo hook **commit-msg** chạy `commitlint` kiểm duyệt tin nhắn commit.
 4. **Dựng kiến trúc kết nối Supabase Cloud & Core Helpers:**
    - Cài đặt SDK kết nối `@supabase/supabase-js` và thư viện xử lý phiên cookie `@supabase/ssr`.
-   - Viết file [lib/utils.ts](file:///d:/se/NguyenDinhBao_Round2_Submission-/lib/utils.ts) cung cấp hàm `cn(...)` giúp ghép các class Tailwind CSS động mượt mà.
+   - Viết file [lib/utils.ts](file:///d:/se/NguyenDinhBao_Round2_Submission-/lib/utils.ts) cung cấp hàm `cn(...)` (sử dụng `clsx` và `tailwind-merge`) giúp ghép các class Tailwind CSS động mượt mà.
    - Viết file [lib/supabase/client.ts](file:///d:/se/NguyenDinhBao_Round2_Submission-/lib/supabase/client.ts) khởi tạo client-side Supabase.
    - Viết file [lib/supabase/server.ts](file:///d:/se/NguyenDinhBao_Round2_Submission-/lib/supabase/server.ts) khởi tạo server-side Supabase phục vụ Server Components và APIs.
    - Viết file [middleware.ts](file:///d:/se/NguyenDinhBao_Round2_Submission-/middleware.ts) tự động refresh session Supabase JWT, bảo đảm chính sách RLS DB hoạt động trơn tru.
-5. **Thiết kế Database Schema & Config mẫu:**
+5. **Thiết kế Database Schema, Config mẫu & Kiểu dữ liệu TypeScript:**
    - Tạo file [supabase_schema.sql](file:///d:/se/NguyenDinhBao_Round2_Submission-/supabase_schema.sql) định nghĩa 9 bảng dữ liệu, khóa ngoại, chỉ mục (Indexes) hiệu năng cao, chính sách Row Level Security (RLS) bảo mật và Stored Procedure Pessimistic Locking chống lỗi tồn kho.
+   - Thiết lập kiểu dữ liệu TypeScript tự động đồng bộ từ Database tại [database.types.ts](file:///d:/se/NguyenDinhBao_Round2_Submission-/types/database.types.ts) giúp kiểm soát lỗi gõ sai tên cột ngay từ IDE.
+   - Cấu hình kiểu generic `<Database>` cho cả 2 Supabase clients (client-side và server-side) đảm bảo **100% Type-Safety**.
    - Tạo file [.env.local.example](file:///d:/se/NguyenDinhBao_Round2_Submission-/.env.local.example) hướng dẫn cấu hình API Keys.
-6. **Đồng bộ hóa Git:**
-   - Đẩy toàn bộ cấu hình dự án gốc lên Github Repo cá nhân.
+6. **Kiểm tra biên dịch và cài đặt SDK:**
+   - Cài đặt Vercel AI SDK (`ai` & `@ai-sdk/google`) cho Gemini Chatbot, `lucide-react` cho icons giao diện.
+   - Chạy lệnh kiểm tra biên dịch `npx tsc --noEmit` hoàn tất thành công với **0 lỗi**.
+7. **Đồng bộ hóa Git:**
+   - Đẩy toàn bộ cấu hình dự án gốc và các bản cập nhật lên Github Repo cá nhân.
 
 ---
 
