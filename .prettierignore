@@ -1,0 +1,10 @@
+# Ignore build directories and vendor files
+node_modules
+.next
+out
+build
+dist
+package-lock.json
+
+# Ignore Supabase SQL file
+supabase_schema.sql
