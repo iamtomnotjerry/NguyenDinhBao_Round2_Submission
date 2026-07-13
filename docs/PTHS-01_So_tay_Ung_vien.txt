@@ -1,0 +1,192 @@
+NỘI BỘ — CÓ THỂ CHIA SẺ VỚI ỨNG VIÊN (INTERNAL — CANDIDATE-FACING)
+
+Sổ tay Ứng viên (Candidate Handbook)
+Bộ Tiêu chuẩn Tuyển dụng Kỹ thuật Plat (Plat Technical Hiring Standard — PTHS) — Volume 1/6
+
+Kiểm soát tài liệu (Document Control)
+Tên tài liệu (Document Title)
+Sổ tay Ứng viên (Candidate Handbook)
+Mã tài liệu (Document ID)
+PTHS-01
+Phân loại (Classification)
+Nội bộ — Có thể chia sẻ với ứng viên (Internal — Candidate-Facing)
+Đơn vị sở hữu (Document Owner)
+Bộ phận Chiến lược Nhân tài Kỹ thuật (Engineering Talent Strategy)
+Người soạn thảo (Prepared By)
+Bộ phận Chiến lược Nhân tài Kỹ thuật
+Người rà soát (Reviewed By)
+Trưởng bộ phận Tuyển dụng Kỹ thuật (Head of Technical Recruiting)
+Người phê duyệt (Approved By)
+Ban Lãnh đạo Công nghệ Plat Labs
+Ngày hiệu lực (Effective Date)
+07/10/2026
+Chu kỳ rà soát (Review Cycle)
+Hàng năm, hoặc khi có thay đổi trọng yếu trong quy trình tuyển dụng
+Tài liệu liên quan (Related Documents)
+PTHS-00, PTHS-02, PTHS-03, PTHS-04
+
+Lịch sử phiên bản (Version History)
+Phiên bản
+Ngày
+Người thực hiện
+Mô tả thay đổi
+0.1
+07/10/2026
+Bộ phận Chiến lược Nhân tài Kỹ thuật
+Bản dự thảo đầu tiên.
+1.0
+07/10/2026
+Ban Lãnh đạo Công nghệ Plat Labs
+Phiên bản chính thức, phát hành cho ứng viên.
+
+Phê duyệt (Approval)
+Người soạn thảo (Prepared By)
+Người rà soát (Reviewed By)
+Người phê duyệt (Approved By)
+Nguyen Hoang Nhat
+Adam Fleury
+Adam Fleury
+Talent Strategy Lead
+Head of Technical Recruiting
+CTO / VP Engineering
+Chữ ký / Ngày: 
+07/10/2026
+Chữ ký / Ngày: 
+07/10/2026
+Chữ ký / Ngày: 
+07/10/2026
+
+Mục lục (Table of Contents)
+
+
+
+1. Giới thiệu
+Tài liệu này là bản hướng dẫn dành cho ứng viên tham gia quy trình đánh giá năng lực kỹ thuật tại Plat Labs, áp dụng cho cả hai nhánh Kỹ sư An ninh (Security Engineer) và Kỹ sư Phần mềm (Software Engineer). Nội dung tại đây giải thích các quy định, lịch trình, cách thức nộp bài, cách trình bày bằng chứng, cách viết báo cáo, và quy tắc đạo đức mà ứng viên cần tuân thủ trong suốt quá trình đánh giá.
+Tài liệu này được cung cấp cho ứng viên trước khi bắt đầu Vòng 1 và là tài liệu tham chiếu chính thức duy nhất về quy trình; mọi trao đổi qua email hoặc lời nói không thay thế nội dung được quy định tại đây. Trường hợp có mâu thuẫn giữa hướng dẫn bằng lời và tài liệu này, nội dung trong tài liệu này được ưu tiên áp dụng.
+2. Quy định chung (Rules)
+2.1 Điều kiện tham gia
+Ứng viên tham gia đánh giá kỹ thuật phải đã hoàn tất bước sàng lọc hồ sơ và trao đổi ban đầu với bộ phận tuyển dụng, xác nhận nhánh kỹ thuật (An ninh hoặc Phần mềm) và cấp bậc mục tiêu dự kiến theo PTHS-00, Mục 3.
+2.2 Thiết bị và môi trường làm bài
+Đối với Vòng 1, ứng viên sử dụng nền tảng đánh giá trực tuyến do Plat Labs cung cấp; không yêu cầu cài đặt phần mềm trên máy cá nhân.
+Đối với Vòng 2, ứng viên nhánh An ninh truy cập môi trường lab biệt lập qua kết nối được cấp riêng (VPN/VDI); ứng viên nhánh Phần mềm được cấp một môi trường phát triển (development environment) hoặc kho mã nguồn mẫu để làm việc trên máy cá nhân.
+Ứng viên chịu trách nhiệm đảm bảo kết nối internet ổn định và thiết bị cá nhân đáp ứng yêu cầu kỹ thuật tối thiểu được nêu trong thư mời tương ứng; sự cố kỹ thuật từ phía ứng viên không đương nhiên dẫn đến gia hạn thời gian, trừ trường hợp được bộ phận tuyển dụng xác nhận là sự cố ngoài khả năng kiểm soát của ứng viên.
+2.3 Sử dụng công cụ hỗ trợ và tài nguyên bên ngoài
+Ứng viên được phép tra cứu tài liệu công khai (documentation, tài liệu kỹ thuật chính thức) trong Vòng 1 và Vòng 2, trừ khi đề bài quy định khác. Việc sử dụng công cụ hỗ trợ viết mã tự động (bao gồm các công cụ tạo mã dựa trên mô hình ngôn ngữ lớn) được quy định cụ thể trong từng đề bài tại PTHS-02/PTHS-03. Việc trao đổi trực tiếp với người khác về nội dung đề bài trong quá trình làm bài không được phép trong bất kỳ trường hợp nào.
+2.4 Hoãn và đổi lịch
+Yêu cầu đổi lịch được gửi tới bộ phận tuyển dụng tối thiểu 24 giờ trước thời điểm đã đặt lịch, trừ trường hợp khẩn cấp bất khả kháng. Mỗi ứng viên được đổi lịch tối đa hai lần cho toàn bộ quy trình; từ lần thứ ba, yêu cầu đổi lịch cần được Trưởng bộ phận tuyển dụng phê duyệt riêng.
+2.5 Ghi âm, ghi hình
+Vòng 3 (bảo vệ kỹ thuật) có thể được ghi hình phục vụ mục đích hiệu chuẩn nội bộ giữa các giám khảo, không sử dụng cho mục đích khác. Ứng viên được thông báo trước khi ghi hình và có quyền từ chối; trường hợp từ chối, hội đồng giám khảo tham dự trực tiếp đầy đủ để đảm bảo tính khách quan thay cho việc xem lại bản ghi.
+3. Lịch trình đánh giá (Assessment Timeline)
+Bảng 3.1 mô tả lịch trình tổng quát từ khi xác nhận tham gia đến khi có kết quả cuối cùng. Thời lượng cụ thể của từng vòng theo từng nhánh được nêu chi tiết trong PTHS-02 (An ninh) và PTHS-03 (Phần mềm).
+Giai đoạn
+Thời lượng dự kiến
+Hình thức
+Xác nhận tham gia & gửi tài liệu hướng dẫn
+1 ngày làm việc
+Email / Cổng thông tin ứng viên
+Vòng 1 — Nền tảng kỹ thuật
+60–90 phút
+Không áp dụng
+Khoảng nghỉ giữa Vòng 1 và Vòng 2
+3–5 ngày làm việc
+Không áp dụng
+Vòng 2 — Bài thực hành chuyên sâu
+1-2 ngày làm việc (nhánh An ninh) hoặc 3–5 ngày lịch (nhánh Phần mềm, hình thức take-home)
+Môi trường lab biệt lập / Take-home
+Nộp báo cáo/giải pháp Vòng 2
+Trong vòng 24 giờ sau khi kết thúc thời gian làm bài
+Trình bày qua Email / Cổng thông tin ứng viên
+Vòng 3 — Bảo vệ kỹ thuật & Phỏng vấn hội đồng
+60–90 phút
+Trực tiếp hoặc trực tuyến có camera
+Tổng hợp kết quả & Quyết định tuyển dụng
+3–5 ngày làm việc sau Vòng 3
+Không áp dụng
+Tổng thời gian dự kiến từ khi bắt đầu Vòng 1 đến khi có quyết định cuối cùng là khoảng hai đến ba tuần lịch. Bộ phận tuyển dụng thông báo kết quả của từng vòng, kể cả trường hợp không tiếp tục, trong vòng ba ngày làm việc kể từ khi hội đồng giám khảo hoàn tất chấm điểm vòng đó.
+4. Hướng dẫn nộp bài (Submission Guide)
+4.1 Định dạng và kênh nộp bài
+Bài nộp cho Vòng 2 được thực hiện qua cổng thông tin ứng viên; không chấp nhận nộp bài qua email cá nhân, trừ trường hợp cổng thông tin gặp sự cố kỹ thuật được bộ phận tuyển dụng xác nhận bằng văn bản.
+Nhánh
+Định dạng bài nộp
+Quy ước đặt tên
+Kỹ sư An ninh
+Báo cáo kỹ thuật định dạng PDF theo mẫu PTHS-04, kèm tệp bằng chứng đính kèm (ảnh chụp màn hình, log, tệp capture) trong một thư mục nén.
+[TênỨngViên]_Round2_Report.pdf
+Kỹ sư Phần mềm
+Kho mã nguồn (repository) kèm lịch sử commit, tệp README mô tả cách chạy và các quyết định thiết kế chính.
+[TênỨngViên]_Round2_Submission
+4.2 Thời hạn nộp bài
+Bài nộp sau thời hạn quy định hướng dẫn trong thư mời được đánh dấu nộp trễ; bài nộp trễ dưới ba mươi phút vẫn được chấm nhưng ghi nhận vào hồ sơ đánh giá, trong khi bài nộp trễ trên ba mươi phút không được chấp nhận trừ trường hợp có xác nhận sự cố kỹ thuật từ bộ phận tuyển dụng.
+4.3 Cam kết về tính nguyên bản
+Ứng viên xác nhận bài nộp là sản phẩm do chính mình thực hiện trong thời gian quy định. Việc sử dụng đoạn mã hoặc nội dung có sẵn từ nguồn công khai được chấp nhận nếu có ghi chú nguồn rõ ràng trong bài nộp; việc sao chép toàn bộ giải pháp từ nguồn bên ngoài mà không có ghi chú được coi là vi phạm quy tắc đạo đức tại Mục 6.
+5. Hướng dẫn trình bày bằng chứng (Evidence Guide)
+Bằng chứng là phần cốt lõi quyết định chất lượng bài nộp, đặc biệt đối với nhánh An ninh, nơi kết luận không có bằng chứng minh họa không được tính là phát hiện hợp lệ. Mục này áp dụng cho cả hai nhánh với mức độ chi tiết khác nhau.
+5.1 Các loại bằng chứng được chấp nhận
+Loại bằng chứng
+Áp dụng cho
+Yêu cầu tối thiểu
+Ảnh chụp màn hình (Screenshot)
+Cả hai nhánh
+Hiển thị đầy đủ ngữ cảnh (thanh địa chỉ, dấu thời gian nếu có), không cắt xén phần thể hiện kết quả.
+Bản ghi yêu cầu/phản hồi (Request/Response Capture)
+Kỹ sư An ninh
+Bao gồm đầy đủ header liên quan; dữ liệu nhạy cảm được che (redact) nhưng vẫn giữ cấu trúc minh họa được vấn đề.
+Kết quả dòng lệnh (Terminal Output)
+Cả hai nhánh
+Sao chép dạng văn bản thuần, không chỉ ảnh chụp, để giám khảo có thể tìm kiếm và đối chiếu.
+Lịch sử commit (Commit History)
+Kỹ sư Phần mềm
+Thông điệp commit phản ánh trung thực tiến trình thực hiện; không gộp toàn bộ thành một commit duy nhất ở cuối.
+Mã minh chứng khái niệm (Proof-of-Concept Code)
+Kỹ sư An ninh
+Kèm hướng dẫn tái hiện từng bước; chỉ chạy được trong phạm vi môi trường lab được cấp.
+5.2 Nguyên tắc đánh số và tham chiếu bằng chứng
+Mỗi bằng chứng được gán một mã tham chiếu duy nhất (ví dụ EV-01, EV-02) và được trích dẫn tường minh trong phần Phát hiện (Findings) của báo cáo theo mẫu PTHS-04. Báo cáo có phát hiện không kèm mã tham chiếu bằng chứng tương ứng được giám khảo coi là chưa đủ căn cứ và bị hạ điểm ở tiêu chí liên quan.
+5.3 Che dữ liệu nhạy cảm
+Trường hợp bằng chứng chứa thông tin xác thực (mật khẩu, khóa API) được cấp riêng cho ứng viên, ứng viên che một phần thông tin này trong bằng chứng đính kèm nhưng giữ đủ phần còn lại để giám khảo xác minh được bối cảnh; đây là một tiêu chí đánh giá tính chuyên nghiệp trong xử lý dữ liệu nhạy cảm.
+6. Hướng dẫn viết báo cáo (Report Writing Guide)
+Ứng viên nhánh An ninh sử dụng mẫu báo cáo tại PTHS-04 cho Vòng 2 và Vòng 3. Ứng viên nhánh Phần mềm sử dụng phần tương ứng của PTHS-04 dành cho tài liệu thiết kế kỹ thuật (technical design document) khi đề bài yêu cầu. Mục này nêu các nguyên tắc viết áp dụng chung, không thay thế cấu trúc chi tiết tại PTHS-04.
+Viết cho đúng đối tượng đọc. Phần Tóm tắt điều hành (Executive Summary) được viết cho người đọc không chuyên về kỹ thuật, tập trung vào tác động nghiệp vụ; phần Chi tiết kỹ thuật được viết cho người đọc có nền tảng chuyên môn tương đương giám khảo.
+Mỗi phát hiện đứng độc lập. Mỗi phát hiện trong báo cáo bao gồm đầy đủ mô tả, bằng chứng, mức độ nghiêm trọng, và khuyến nghị khắc phục, không yêu cầu người đọc phải tham chiếu chéo giữa nhiều phát hiện để hiểu một vấn đề.
+Phân biệt sự kiện và suy đoán. Báo cáo phân biệt rõ điều đã được xác minh bằng bằng chứng cụ thể với điều được suy luận nhưng chưa kiểm chứng; nội dung suy đoán được ghi chú rõ ràng là giả thuyết, không trình bày như một kết luận đã xác nhận.
+Khuyến nghị phải khả thi. Khuyến nghị khắc phục nêu hành động cụ thể có thể triển khai, không dừng ở nhận định chung chung như "cần tăng cường bảo mật".
+Súc tích, không lặp lại. Báo cáo trình bày ngắn gọn, tránh lặp lại cùng một thông tin ở nhiều phần khác nhau; độ dài không phải là tiêu chí được cộng điểm.
+7. Quy tắc đạo đức nghề nghiệp (Professional Ethics)
+Ứng viên tham gia đánh giá kỹ thuật tại Plat Labs cam kết tuân thủ các quy tắc đạo đức sau; vi phạm bất kỳ điều khoản nào có thể dẫn đến việc chấm dứt tư cách ứng viên ngay lập tức, không phụ thuộc vào kết quả các vòng trước đó.
+Tuân thủ phạm vi được ủy quyền. Ứng viên nhánh An ninh chỉ thao tác trong phạm vi được nêu tại văn bản ủy quyền kiểm thử theo PTHS-00, Mục 6; mọi thao tác vượt phạm vi, kể cả với mục đích thể hiện thêm năng lực, đều là vi phạm nghiêm trọng.
+Bảo mật nội dung đánh giá. Ứng viên không sao chép, chụp lại, hoặc chia sẻ đề bài, dữ liệu lab, hoặc bất kỳ tài liệu nào liên quan đến bài đánh giá ra ngoài phạm vi buổi làm bài, kể cả sau khi quy trình tuyển dụng kết thúc, dù kết quả là được tuyển hay không.
+Trung thực trong báo cáo. Ứng viên không được trình bày phát hiện không có căn cứ thực tế, không phóng đại mức độ nghiêm trọng, và không nhận thực hiện công việc do người khác làm thay.
+Không cấu kết giữa các ứng viên. Ứng viên không trao đổi nội dung đề bài, đáp án, hoặc chiến lược làm bài với ứng viên khác đang hoặc sẽ tham gia cùng quy trình tuyển dụng.
+Công bố xung đột lợi ích. Ứng viên có quan hệ nhân sự hiện tại với đối tác, khách hàng, hoặc đối thủ cạnh tranh trực tiếp của Plat Labs có liên quan đến nội dung bài đánh giá cần công bố với bộ phận tuyển dụng trước khi bắt đầu Vòng 2.
+Ứng xử chuyên nghiệp với giám khảo. Ứng viên trao đổi với giám khảo và bộ phận tuyển dụng trên tinh thần tôn trọng; hành vi thiếu chuyên nghiệp trong bất kỳ giai đoạn nào của quy trình được ghi nhận và có thể ảnh hưởng đến quyết định tuyển dụng.
+8. Câu hỏi thường gặp (FAQ)
+8.1 Tôi có thể đặt câu hỏi làm rõ đề bài trong lúc làm bài không?
+Được. Vòng 2 và Vòng 3 có kênh liên lạc trực tiếp với giám khảo phụ trách hoặc bộ phận tuyển dụng để làm rõ phạm vi đề bài; giám khảo không cung cấp gợi ý về cách giải quyết vấn đề, chỉ làm rõ những điểm mơ hồ về yêu cầu.
+8.2 Nếu tôi phát hiện vấn đề nằm ngoài phạm vi đề bài thì sao?
+Dừng thao tác đối với phần nằm ngoài phạm vi và báo cáo ngay cho bộ phận phụ trách đánh giá theo quy định tại PTHS-00, Mục 6. Việc báo cáo trung thực một phát hiện ngoài phạm vi, thay vì tiếp tục khai thác, được ghi nhận tích cực trong đánh giá tính chuyên nghiệp.
+8.3 Nếu tôi không hoàn thành hết các nhiệm vụ trong thời gian quy định thì sao?
+Bài nộp được chấm dựa trên chất lượng và chiều sâu của phần đã hoàn thành; hoàn thành một phần nhiệm vụ với chất lượng cao thường được đánh giá tốt hơn hoàn thành toàn bộ ở mức hời hợt. Ứng viên nên ưu tiên theo mức độ quan trọng được gợi ý trong đề bài khi thời gian hạn chế.
+8.4 Tôi có nhận được phản hồi nếu không được tuyển không?
+Có. Bộ phận tuyển dụng cung cấp phản hồi tổng quan về điểm mạnh và điểm cần cải thiện dựa trên đánh giá của hội đồng giám khảo; phản hồi không bao gồm điểm số chi tiết theo từng tiêu chí hoặc nội dung đề bài.
+8.5 Tôi có thể tham gia lại quy trình đánh giá sau khi không đạt không?
+Ứng viên có thể ứng tuyển lại sau tối thiểu sáu tháng kể từ lần đánh giá gần nhất, trừ trường hợp bị chấm dứt tư cách ứng viên do vi phạm quy tắc đạo đức tại Mục 7, khi đó việc ứng tuyển lại do Trưởng bộ phận tuyển dụng xem xét riêng.
+8.6 Dữ liệu bài nộp của tôi được lưu trữ trong bao lâu?
+Bài nộp và hồ sơ đánh giá được lưu trữ theo chính sách lưu trữ dữ liệu ứng viên hiện hành của Plat Labs; ứng viên có quyền yêu cầu xóa dữ liệu cá nhân theo quy định pháp luật về bảo vệ dữ liệu áp dụng tại nơi ứng viên cư trú.
+8.7 Tôi có được sử dụng công cụ AI hỗ trợ viết mã hoặc viết báo cáo không?
+Tùy theo từng đề bài. Đề bài tại PTHS-02/PTHS-03 nêu rõ công cụ nào được phép sử dụng cho từng vòng; ứng viên tuân thủ đúng phạm vi được nêu, và khi được phép sử dụng, cần ghi chú rõ phần nội dung có hỗ trợ từ công cụ AI trong bài nộp.
+
+Phụ lục A — Danh mục kiểm tra trước khi nộp bài (Pre-Submission Checklist)
+Hạng mục
+Đã hoàn tất
+Bài nộp tuân thủ đúng định dạng và quy ước đặt tên tại Mục 4.1
+[ ]
+Mọi phát hiện có mã tham chiếu bằng chứng tương ứng theo Mục 5.2
+[ ]
+Dữ liệu nhạy cảm trong bằng chứng đã được che theo Mục 5.3
+[ ]
+Báo cáo tuân thủ cấu trúc mẫu tại PTHS-04
+[ ]
+Phần nội dung có hỗ trợ từ công cụ AI (nếu có) đã được ghi chú theo Mục 8.7
+[ ]
+Bài nộp được gửi qua đúng kênh và trước thời hạn quy định tại Mục 4.2
+[ ]

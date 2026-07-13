@@ -1,0 +1,187 @@
+NỘI BỘ — BẢO MẬT (INTERNAL — CONFIDENTIAL) — PHÂN PHỐI GIỚI HẠN CHO NHÂN SỰ TUYỂN DỤNG KỸ THUẬT
+
+Mẫu Báo cáo Kỹ thuật (Technical Report Template)
+Bộ Tiêu chuẩn Tuyển dụng Kỹ thuật Plat (Plat Technical Hiring Standard — PTHS) — Volume 4/6
+Kiểm soát tài liệu (Document Control)
+Tên tài liệu (Document Title)
+Mẫu Báo cáo Kỹ thuật (Technical Report Template)
+Mã tài liệu (Document ID)
+PTHS-04
+Phân loại (Classification)
+Nội bộ — Bảo mật (Internal — Confidential)
+Đơn vị sở hữu (Document Owner)
+Bộ phận Chiến lược Nhân tài Kỹ thuật (Engineering Talent Strategy), phối hợp Trưởng bộ phận An ninh Kỹ thuật & Trưởng bộ phận Kỹ thuật Phần mềm
+Người soạn thảo (Prepared By)
+Bộ phận Chiến lược Nhân tài Kỹ thuật, phối hợp Security Assessment Content Team & Software Assessment Content Team
+Người rà soát (Reviewed By)
+Hội đồng Kỹ sư An ninh Cấp cao & Hội đồng Kỹ sư Phần mềm Cấp cao
+Người phê duyệt (Approved By)
+Ban Lãnh đạo Công nghệ Plat Labs
+Ngày hiệu lực (Effective Date)
+07/12/2026
+Chu kỳ rà soát (Review Cycle)
+Hàng năm, hoặc khi PTHS-02/PTHS-03 thay đổi cấu trúc báo cáo yêu cầu
+Tài liệu liên quan (Related Documents)
+PTHS-00, PTHS-01, PTHS-02, PTHS-03, PTHS-05
+
+Lịch sử phiên bản (Version History)
+Phiên bản
+Ngày
+Người thực hiện
+Mô tả thay đổi
+0.1
+07/10/2026
+Engineering Talent Strategy
+Bản dự thảo đầu tiên, thí điểm nội bộ.
+1.0
+07/12/2026
+Ban Lãnh đạo Công nghệ Plat Labs
+Phiên bản chính thức sau hiệu chuẩn.
+
+Phê duyệt (Approval)
+Người soạn thảo (Prepared By)
+Người rà soát (Reviewed By)
+Người phê duyệt (Approved By)
+Nguyen Hoang Nhat
+Adam Fleury
+Adam Fleury
+Engineering Talent Lead
+Senior Engineer Review Panel
+CTO / VP Engineering
+Chữ ký / Ngày: 07/10/2026
+Chữ ký / Ngày: 07/12/2026
+Chữ ký / Ngày: 07/12/2026
+
+Mục lục (Table of Contents)
+
+
+
+1. Mục đích
+Tài liệu này quy định cấu trúc mẫu dùng chung cho các sản phẩm bàn giao dạng văn bản trong quy trình đánh giá kỹ thuật PTHS, nhằm đảm bảo tính nhất quán khi giám khảo chấm bài giữa các ứng viên cùng cấp bậc và cùng chuyên môn, theo nguyên tắc Công bằng qua Chuẩn hóa tại PTHS-00, Mục 2.
+Tài liệu gồm hai phần độc lập: Phần A quy định mẫu Báo cáo Đánh giá Kỹ thuật dành cho nhánh Kỹ sư An ninh; Phần B quy định mẫu README / Tài liệu Thiết kế Kỹ thuật dành cho nhánh Kỹ sư Phần mềm.
+2. Phạm vi áp dụng
+Phần A áp dụng cho ứng viên nhánh Kỹ sư An ninh khi nộp bài Vòng 2 theo đề bài tại PTHS-02, và khi chuẩn bị nội dung trình bày cho Vòng 3 theo PTHS-01, Mục 6.
+Phần B áp dụng cho ứng viên nhánh Kỹ sư Phần mềm khi nộp tài liệu README kèm mã nguồn Vòng 2 theo đề bài tại PTHS-03, ở cả bốn học phần A–D.
+Tài liệu này không thay thế các nguyên tắc viết báo cáo chung tại PTHS-01, Mục 6; các nguyên tắc đó áp dụng song song với cấu trúc mẫu quy định tại đây.
+3. Nguyên tắc sử dụng
+Mỗi Assessment hoặc học phần nộp một bài riêng theo đúng cấu trúc mẫu tương ứng; không gộp nhiều Assessment vào một tài liệu.
+Giữ nguyên thứ tự và tiêu đề các mục trong mẫu; có thể ghi "Không áp dụng" đối với mục không liên quan đến đề bài cụ thể, nhưng không được bỏ mục.
+Thay thế toàn bộ nội dung hướng dẫn (in nghiêng, trong dấu ngoặc vuông) bằng nội dung thực tế trước khi nộp bài; nội dung hướng dẫn còn sót lại trong bài nộp được giám khảo ghi nhận là chưa hoàn thiện.
+Tuân thủ quy ước đặt tên tệp và kênh nộp bài tại PTHS-01, Mục 4.1.
+
+Phần A — Mẫu Báo cáo Đánh giá Kỹ thuật (Kỹ sư An ninh)
+A.1 Hướng dẫn sử dụng
+Mẫu tại Phần A áp dụng cho từng Assessment trong đề bài PTHS-02; mỗi Assessment nộp một Technical Assessment Report riêng theo cấu trúc dưới đây, định dạng PDF, đặt tên theo quy ước tại PTHS-01, Mục 4.1.
+Phần Phát hiện An ninh (Mục A.2.6) có thể lặp lại định dạng tại Mục A.3 nhiều lần trong cùng một báo cáo, mỗi lần tương ứng với một phát hiện độc lập.
+A.2 Cấu trúc báo cáo
+A.2.1 Tóm tắt điều hành (Executive Summary)
+[Hướng dẫn: Tóm tắt trong 3–5 câu, viết cho người đọc không chuyên về kỹ thuật. Nêu mục tiêu đánh giá, số lượng và mức độ nghiêm trọng tổng quan của các phát hiện, và khuyến nghị ưu tiên hàng đầu. Không sử dụng thuật ngữ kỹ thuật chuyên sâu.]
+A.2.2 Phạm vi (Scope)
+[Hướng dẫn: Liệt kê hệ thống, thành phần, hoặc kịch bản thuộc phạm vi đánh giá theo đề bài tại PTHS-02; nêu rõ những gì nằm ngoài phạm vi nếu có.]
+A.2.3 Phương pháp luận (Methodology)
+[Hướng dẫn: Mô tả cách tiếp cận, các bước thực hiện, và công cụ/kỹ thuật đã sử dụng. Có thể tham chiếu các khung phương pháp luận công khai liên quan (PTES, OWASP WSTG/ASVS/MASVS, MITRE ATT&CK) theo PTHS-00, Mục 9, nếu phù hợp.]
+A.2.4 Đánh giá Bề mặt Tấn công (Attack Surface Assessment)
+[Hướng dẫn: Liệt kê các điểm vào (entry point), thành phần, hoặc luồng dữ liệu có khả năng bị khai thác, được xác định trong quá trình khảo sát hệ thống.]
+A.2.5 Mô hình Mối đe dọa (Threat Model)
+[Hướng dẫn: Nêu các tác nhân đe dọa (threat actor) giả định, mục tiêu của họ, và các kịch bản tấn công khả thi tương ứng với phạm vi đánh giá.]
+A.2.6 Phát hiện An ninh (Security Findings)
+[Hướng dẫn: Trình bày mỗi phát hiện độc lập, theo định dạng và các trường thông tin quy định tại Mục A.3.]
+A.2.7 Đánh giá Rủi ro (Risk Assessment)
+[Hướng dẫn: Tổng hợp mức độ rủi ro chung dựa trên các phát hiện đã nêu, xem xét khả năng khai thác (likelihood) kết hợp với mức độ ảnh hưởng (impact).]
+A.2.8 Ảnh hưởng đến Doanh nghiệp (Business Impact)
+[Hướng dẫn: Diễn giải các phát hiện kỹ thuật thành ảnh hưởng cụ thể đối với hoạt động kinh doanh: gián đoạn dịch vụ, rò rỉ dữ liệu, ảnh hưởng uy tín, hoặc chi phí khắc phục.]
+A.2.9 Cơ hội Phát hiện (Detection Opportunities)
+[Hướng dẫn: Đề xuất các chỉ báo (indicator), nhật ký (log), hoặc cơ chế giám sát có thể giúp phát hiện sớm hành vi tấn công tương tự trong tương lai.]
+A.2.10 Khuyến nghị Ứng phó Sự cố (Incident Response Recommendations)
+[Hướng dẫn: Đề xuất các bước cô lập, điều tra, và khắc phục áp dụng cho tình huống trong đề bài, nếu tình huống được mô tả như một sự cố đang diễn ra.]
+A.2.11 Khuyến nghị Phòng thủ (Hardening Recommendations)
+[Hướng dẫn: Đề xuất các biện pháp phòng vệ dài hạn nhằm giảm thiểu nguy cơ tái diễn, sắp xếp theo thứ tự ưu tiên triển khai.]
+A.2.12 Phụ lục Bằng chứng (Evidence Appendix)
+[Hướng dẫn: Liệt kê toàn bộ bằng chứng đã sử dụng, theo định dạng quy định tại Mục A.5, khớp với các mã tham chiếu (EV-xx) được trích dẫn trong phần Phát hiện.]
+A.3 Định dạng một Phát hiện An ninh (Finding)
+Mỗi phát hiện trong Mục A.2.6 trình bày theo định dạng sau, lặp lại cho từng phát hiện (F-01, F-02, ...):
+Mã phát hiện (Finding ID)
+F-01
+Tiêu đề (Title)
+[Tên ngắn gọn mô tả vấn đề]
+Mức độ nghiêm trọng (Severity)
+[Critical / High / Medium / Low / Informational — theo thang tại Mục A.4]
+Thành phần / Tài sản bị ảnh hưởng (Affected Component)
+[Hệ thống, dịch vụ, hoặc tài sản cụ thể bị ảnh hưởng]
+Mã bằng chứng liên quan (Evidence Reference)
+[EV-01, EV-02, ...]
+Mô tả (Description)
+[Mô tả kỹ thuật của vấn đề và cách xác định]
+Ảnh hưởng (Impact)
+[Hậu quả nếu vấn đề bị khai thác]
+Khuyến nghị khắc phục (Recommendation)
+[Hành động cụ thể, khả thi để khắc phục]
+A.4 Thang đánh giá Mức độ nghiêm trọng (Severity Rating Scale)
+Mức độ nghiêm trọng của mỗi phát hiện được xác định dựa trên khả năng khai thác (likelihood) kết hợp với mức độ ảnh hưởng (impact), tham chiếu tinh thần chung của CVSS v3.1 nêu tại PTHS-00, Mục 9, không yêu cầu tính điểm CVSS chi tiết.
+Mức độ
+Tiêu chí chung
+Critical
+Cho phép kiểm soát hoàn toàn hệ thống hoặc truy cập/đánh cắp dữ liệu nhạy cảm trên diện rộng, hoặc gây gián đoạn dịch vụ nghiêm trọng, mà không đòi hỏi điều kiện tiên quyết đáng kể.
+High
+Cho phép truy cập trái phép vào dữ liệu hoặc chức năng nhạy cảm, hoặc leo thang đặc quyền đáng kể, nhưng đòi hỏi một số điều kiện tiên quyết cụ thể.
+Medium
+Ảnh hưởng đến tính bảo mật, toàn vẹn, hoặc sẵn sàng của hệ thống ở phạm vi giới hạn, hoặc đòi hỏi nhiều điều kiện tiên quyết/tương tác người dùng để khai thác.
+Low
+Ảnh hưởng nhỏ, khó khai thác trong điều kiện thực tế, hoặc chủ yếu mang tính lý thuyết.
+Informational
+Quan sát có giá trị tham khảo nhưng không cấu thành rủi ro an ninh trực tiếp; thường liên quan đến thông lệ tốt nhất (best practice).
+A.5 Định dạng Phụ lục Bằng chứng (Evidence Appendix)
+Mỗi bằng chứng được gán một mã tham chiếu duy nhất theo PTHS-01, Mục 5.2, và liệt kê trong bảng sau:
+Mã bằng chứng
+Loại
+Mô tả
+Tệp / Tham chiếu
+EV-01
+[Ảnh chụp màn hình / Log / PoC / ...]
+[Mô tả ngắn nội dung bằng chứng]
+[Tên tệp trong thư mục bằng chứng]
+EV-02
+[...]
+[...]
+[...]
+
+Phần B — Mẫu README / Tài liệu Thiết kế Kỹ thuật (Kỹ sư Phần mềm)
+B.1 Khi nào sử dụng
+Mẫu tại Phần B áp dụng cho tài liệu README nộp kèm kho mã nguồn ở cả bốn học phần Vòng 2 (A–D) theo đề bài tại PTHS-03; đây cũng là "tài liệu thiết kế kỹ thuật" được đề cập tại PTHS-01, Mục 6.
+B.2 Cấu trúc README
+B.2.1 Tổng quan (Overview)
+[Hướng dẫn: Mô tả ngắn gọn bài toán nghiệp vụ và giải pháp đã xây dựng, trong 3–5 câu.]
+B.2.2 Kiến trúc & Quyết định Thiết kế Chính (Architecture & Key Design Decisions)
+[Hướng dẫn: Trình bày theo định dạng bảng tại Mục B.2.2 bên dưới: mỗi quyết định thiết kế chính đi kèm phương án thay thế đã cân nhắc và lý do lựa chọn.]
+Quyết định thiết kế
+Phương án thay thế đã cân nhắc
+Lý do lựa chọn
+[Ví dụ: cơ chế đảm bảo tính nhất quán]
+[Ví dụ: khóa mức hàng / giao dịch DB / optimistic locking]
+[Lý do lựa chọn phương án đã chọn]
+[...]
+[...]
+[...]
+B.2.3 Lược đồ Dữ liệu / Thiết kế API (Data Model / API Design)
+[Hướng dẫn: Mô tả lược đồ cơ sở dữ liệu hoặc đặc tả API liên quan, nếu bài toán yêu cầu. Có thể bỏ qua nếu không áp dụng cho học phần được giao (xem biến thể tại Mục B.3).]
+B.2.4 Đánh đổi Đã Cân nhắc (Trade-offs Considered)
+[Hướng dẫn: Nêu các đánh đổi kỹ thuật chính đã cân nhắc, ví dụ giữa hiệu năng và độ phức tạp, hoặc giữa tính nhất quán và khả năng mở rộng.]
+B.2.5 Chiến lược Kiểm thử (Testing Approach)
+[Hướng dẫn: Mô tả phạm vi và loại kiểm thử đã thực hiện, bao gồm các trường hợp biên hoặc điều kiện tranh chấp (nếu có) được kiểm thử riêng.]
+B.2.6 Hướng dẫn Chạy Dự án (How to Run)
+[Hướng dẫn: Liệt kê các bước cài đặt và chạy dự án cục bộ, bao gồm biến môi trường hoặc dữ liệu mẫu cần thiết.]
+B.2.7 Công cụ AI Hỗ trợ (AI Tool Usage Disclosure)
+[Hướng dẫn: Nếu đề bài cho phép sử dụng công cụ sinh mã tự động, ghi chú rõ phần nội dung có hỗ trợ và mức độ hỗ trợ, theo PTHS-01, Mục 8.7. Ghi "Không áp dụng" nếu không sử dụng công cụ AI.]
+B.2.8 Giới hạn & Hướng Phát triển Tiếp theo (Known Limitations & Future Improvements)
+[Hướng dẫn: Nêu các giới hạn đã biết của giải pháp hiện tại và hướng cải thiện nếu có thêm thời gian thực hiện.]
+B.3 Biến thể theo học phần
+Học phần C (Kỹ thuật Học máy) và Học phần D (Hệ thống AI Ứng dụng & LLM): bổ sung mục "Kết quả Đánh giá Mô hình" (Model Evaluation Results) ngay sau Mục B.2.4, mô tả độ đo sử dụng, kết quả đạt được, và phân tích các trường hợp dự đoán sai.
+Học phần B (Frontend & Trải nghiệm Đa nền tảng): Mục B.2.3 (Lược đồ Dữ liệu / Thiết kế API) có thể thay bằng "Kiến trúc Component & Quản lý Trạng thái" khi học phần không yêu cầu xây dựng API riêng.
+Ứng viên chuyên môn Mobile, Desktop, hoặc Embedded thực hiện Học phần B điều chỉnh Mục B.2.6 (Hướng dẫn Chạy Dự án) phù hợp với nền tảng và công cụ build tương ứng.
+Đề bài có cấu phần AI tích hợp trong sản phẩm (ví dụ tính năng chat/dịch thuật dựa trên LLM, như tại PTHS-03 "Bài tập" — Bài A): bổ sung mục "Kiến trúc Tính năng AI (AI Feature Architecture)" ngay sau Mục B.2.3, mô tả mô hình/dịch vụ AI sử dụng, chiến lược tích hợp (prompt, RAG, hoặc gọi công cụ), cơ chế xử lý khi AI không đủ thông tin để trả lời, và ước tính chi phí/độ trễ liên quan.
+
+Phụ lục — Ghi chú Nội bộ dành cho Bộ phận Tuyển dụng
+Tài liệu này thuộc phân loại Nội bộ — Bảo mật theo PTHS-00, Mục 8, và không được gửi trực tiếp cho ứng viên dưới định dạng gốc.
+Khi gửi thư mời Vòng 2, Bộ phận Chiến lược Nhân tài Kỹ thuật trích xuất một bản sao "sạch" của Phần A hoặc Phần B tương ứng với nhánh ứng tuyển, loại bỏ banner phân loại, khối Kiểm soát tài liệu, và Phụ lục nội bộ này.
+Bản sao gửi ứng viên chỉ giữ lại cấu trúc mẫu và nội dung hướng dẫn điền (Mục A.2–A.5 hoặc B.2–B.3), phù hợp với mức phân loại Nội bộ — Có thể chia sẻ với ứng viên áp dụng cho nội dung này khi đã tách khỏi tài liệu gốc.
+Mọi cập nhật cấu trúc mẫu tại đây cần đồng bộ với PTHS-01, Mục 4 và Mục 6, và thông báo cho giám khảo đang hoạt động trước khi áp dụng cho đợt tuyển dụng tiếp theo.

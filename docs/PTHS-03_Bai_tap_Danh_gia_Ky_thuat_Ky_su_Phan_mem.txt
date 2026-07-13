@@ -1,0 +1,119 @@
+NỘI BỘ — HẠN CHẾ (INTERNAL — RESTRICTED) — CHỈ DÀNH CHO GIÁM KHẢO
+
+Bài tập Đánh giá Kỹ thuật — Kỹ sư Phần mềm AI-Integrated
+Bộ Tiêu chuẩn Tuyển dụng Kỹ thuật Plat (Plat Technical Hiring Standard — PTHS) — Volume 3/6
+Kiểm soát tài liệu (Document Control)
+Tên tài liệu (Document Title)
+Bài tập Đánh giá Kỹ thuật — Kỹ sư Phần mềm AI-Integrated (Software Engineer Technical Assessment Exercise)
+Mã tài liệu (Document ID)
+PTHS-03
+Phân loại (Classification)
+Nội bộ — Hạn chế (Internal — Restricted)
+Đơn vị sở hữu (Document Owner)
+Trưởng bộ phận Kỹ thuật Phần mềm (Head of Software Engineering)
+Người soạn thảo (Prepared By)
+Nhóm Xây dựng Nội dung Đánh giá Phần mềm (Software Assessment Content Team)
+Người rà soát (Reviewed By)
+Hội đồng Kỹ sư Phần mềm Cấp cao (Senior Software Engineer Review Panel)
+Người phê duyệt (Approved By)
+Trưởng bộ phận Kỹ thuật Phần mềm & Ban Lãnh đạo Công nghệ Plat Labs
+Ngày hiệu lực (Effective Date)
+07/12/2026
+Chu kỳ rà soát (Review Cycle)
+Hàng năm, hoặc khi có thay đổi trọng yếu trong quy trình tuyển dụng
+Tài liệu liên quan (Related Documents)
+PTHS-00, PTHS-01, PTHS-03, PTHS-04, PTHS-05
+
+Lịch sử phiên bản (Version History)
+Phiên bản
+Ngày
+Người thực hiện
+Mô tả thay đổi
+0.1
+07/10/2026
+Software Assessment Content Team
+Bản dự thảo đầu tiên, thí điểm nội bộ.
+1.0
+07/12/2026
+Trưởng bộ phận Kỹ thuật Phần mềm
+Phiên bản chính thức sau hiệu chuẩn.
+
+Phê duyệt (Approval)
+Người soạn thảo (Prepared By)
+Người rà soát (Reviewed By)
+Người phê duyệt (Approved By)
+Nguyen Hoang Nhat
+Adam Fleury
+Adam Fleury
+Software Assessment Lead
+Senior Software Engineer
+Head of Software Engineering
+Chữ ký / Ngày: 07/10/2026
+Chữ ký / Ngày: 07/12/2026
+Chữ ký / Ngày: 07/12/2026
+
+Mục lục (Table of Contents)
+
+
+
+1. Mục đích
+Bài tập đánh giá năng lực Full-stack Engineering tích hợp AI (AI-Integrated Software Engineering) của ứng viên ở cấp độ có kinh nghiệm (khoảng 3 năm trở lên, tương đương L2–L3 theo PTHS-00, Mục 3), thông qua việc thiết kế và triển khai một nền tảng thương mại điện tử thực chiến kết hợp dịch vụ in ấn từ xa.
+Ứng viên phải chứng minh khả năng thiết kế kiến trúc Full-stack hoàn chỉnh, xử lý thanh toán an toàn, đảm bảo bảo mật nhiều lớp, thiết kế hệ thống chịu tải đồng thời cao, và tích hợp một tính năng có thành phần AI vào sản phẩm.
+2. Cấu trúc bài đánh giá
+Vòng 2 gồm một bài thực hành duy nhất — Bài A — được thiết kế để đánh giá đồng thời nhiều năng lực: kiến trúc hệ thống, bảo mật, hiệu năng, và tư duy tích hợp AI vào sản phẩm thực tế. Ứng viên được phép lựa chọn ngôn ngữ, framework, và kiến trúc phù hợp, nhưng phải trình bày và bảo vệ được các quyết định kỹ thuật trong tài liệu nộp kèm.
+2.1 Bài A — PlatPrint: Nền tảng In ấn Từ xa & Gian hàng Ấn phẩm
+Bối cảnh
+Plat Labs đang xây dựng PlatPrint — một dịch vụ mới cho phép khách hàng gửi lệnh in tài liệu từ xa đến các máy in vật lý đặt tại những địa điểm đối tác (cửa hàng, bưu cục, trung tâm in ấn) để nhận trực tiếp, đồng thời vận hành một gian hàng trực tuyến bán các ấn phẩm in sẵn phổ biến.
+Đội ngũ sản phẩm cần một ứng viên có khả năng tự thiết kế và triển khai toàn bộ luồng nghiệp vụ này ở mức production-ready về mặt kiến trúc, có cân nhắc đầy đủ bảo mật, hiệu năng, và khả năng tích hợp AI cho trải nghiệm khách hàng quốc tế.
+Phạm vi
+Luồng đặt lệnh in từ xa: tải tệp, cấu hình in, xem trước, chọn địa điểm nhận, gửi lệnh in.
+Gian hàng bán các ấn phẩm in sẵn (tập sách, báo/tạp chí, hóa đơn, biểu mẫu hành chính, v.v.).
+Thanh toán, tích điểm thưởng, và tính năng chat hỗ trợ khách hàng quốc tế.
+Không yêu cầu tích hợp máy in vật lý hay cổng thanh toán thật; môi trường đánh giá cung cấp các dịch vụ mô phỏng (simulator/sandbox) tương ứng.
+Giả định
+Ứng viên được cấp khung dự án mẫu, một Print Queue Simulator mô phỏng máy in vật lý, một cổng thanh toán dạng sandbox, và (tùy chọn) quyền truy cập tạm thời vào giao diện lập trình mô hình ngôn ngữ lớn cho tính năng chat.
+Ứng viên tự do lựa chọn ngôn ngữ lập trình, framework, và hệ quản trị cơ sở dữ liệu trong danh sách được hỗ trợ trên hạ tầng đánh giá.
+Việc sử dụng công cụ hỗ trợ sinh mã tự động được phép, với điều kiện ứng viên ghi chú rõ phần nội dung có hỗ trợ trong README theo PTHS-01, Mục 8.7.
+Dữ liệu mẫu mô phỏng quy mô giao dịch đủ lớn để đánh giá cân nhắc về hiệu năng và khả năng mở rộng.
+Yêu cầu chức năng — Luồng In ấn Từ xa
+Khách hàng lưu trữ phương thức thanh toán trên tài khoản để tái sử dụng cho các lệnh in sau.
+Tải lên tệp cần in (PDF, hình ảnh, tài liệu văn phòng phổ biến).
+Chọn cấu hình in: màu/đen trắng, số lượng bản in, khổ giấy, đóng gáy (nếu áp dụng).
+Hệ thống render bản xem trước (preview) của tài liệu theo đúng cấu hình đã chọn.
+Khách hàng bấm "Bắt đầu" để xác nhận đơn in, sau đó chọn máy in tại địa điểm đến để nhận ấn phẩm.
+Khách hàng bấm lệnh in; hệ thống gửi lệnh đến máy in tương ứng qua Print Queue Simulator, máy in mô phỏng tự động "xuất" các trang in theo cấu hình đã chọn.
+Yêu cầu chức năng — Gian hàng Ấn phẩm In sẵn
+Danh mục ấn phẩm in sẵn: tập sách (booklet), báo/tạp chí, hóa đơn, biểu mẫu/đơn từ hành chính, và các loại tương tự.
+Giỏ hàng, đặt hàng, và lựa chọn nhận tại địa điểm hoặc giao tận nơi.
+Quản lý tồn kho cơ bản cho các ấn phẩm in sẵn, đồng bộ với luồng đặt hàng.
+Yêu cầu chức năng — Thanh toán & Tích điểm thưởng
+Tích hợp cổng thanh toán sandbox, hỗ trợ lưu phương thức thanh toán và thanh toán một chạm cho đơn hàng sau.
+Xử lý các luồng lỗi thanh toán: thẻ hết hạn, giao dịch bị từ chối, hết thời gian chờ (timeout).
+Tích lũy điểm thưởng theo giá trị đơn hàng (in ấn hoặc mua ấn phẩm) và cho phép quy đổi điểm thành ưu đãi cho đơn hàng tiếp theo.
+Hiển thị lịch sử tích điểm và sử dụng điểm của khách hàng.
+Yêu cầu chức năng — Chat Hỗ trợ Khách hàng Quốc tế (AI-Assisted)
+Tính năng chat trực tuyến hỗ trợ khách hàng sử dụng nhiều ngôn ngữ khác nhau.
+Tích hợp khả năng dịch thuật hoặc trợ lý ảo dựa trên mô hình ngôn ngữ lớn (LLM) để trả lời câu hỏi thường gặp hoặc hỗ trợ hội thoại đa ngôn ngữ theo thời gian thực.
+Xử lý hợp lý trường hợp trợ lý AI không đủ thông tin để trả lời, bao gồm cơ chế chuyển tiếp cho luồng hỗ trợ tiếp theo.
+Yêu cầu phi chức năng
+Bảo mật nhiều lớp: xác thực, phân quyền, mã hóa dữ liệu nhạy cảm, và phòng vệ trước các lớp tấn công phổ biến (injection, XSS, CSRF, IDOR và tương đương) trên cả luồng in ấn và luồng thanh toán.
+Hiệu năng & khả năng mở rộng: hệ thống cần xử lý được từ 100 đến 1.000 yêu cầu đồng thời (ví dụ giờ cao điểm nhiều khách hàng cùng tải tệp, xem preview, hoặc gửi lệnh in); ứng viên trình bày chiến lược đảm bảo hiệu năng đã áp dụng (caching, hàng đợi xử lý bất đồng bộ, tối ưu truy vấn cơ sở dữ liệu, v.v.).
+Thiết kế cơ sở dữ liệu hỗ trợ đồng thời luồng in theo yêu cầu và luồng gian hàng bán ấn phẩm in sẵn, đảm bảo toàn vẹn dữ liệu đơn hàng và tồn kho.
+Kiến trúc Full-stack rõ ràng, gồm giao diện người dùng (frontend), các dịch vụ backend, và tài liệu kiến trúc tổng thể.
+3. Hồ sơ nộp
+Ứng viên nộp một kho mã nguồn (repository) kèm lịch sử commit, theo định dạng và quy ước đặt tên tại PTHS-01, Mục 4.1, cùng một tài liệu README theo mẫu tại PTHS-04, Phần B (bao gồm mục bổ sung "Kiến trúc Tính năng AI" cho cấu phần chat quốc tế), bao gồm tối thiểu:
+Tổng quan giải pháp và kiến trúc tổng thể.
+Các quyết định thiết kế chính và đánh đổi đã cân nhắc, đặc biệt đối với bảo mật thanh toán và xử lý đồng thời.
+Thiết kế lược đồ cơ sở dữ liệu.
+Kiến trúc tính năng AI cho chat quốc tế (mô hình/dịch vụ sử dụng, chiến lược tích hợp, xử lý khi AI không đủ thông tin).
+Chiến lược kiểm thử và hướng dẫn chạy dự án.
+Ghi chú về mức độ hỗ trợ từ công cụ AI trong quá trình thực hiện, theo PTHS-01, Mục 8.7.
+4. Tiêu chí đánh giá
+Ứng viên được đánh giá dựa trên các năng lực sau:
+Tính đúng đắn và đầy đủ của chức năng nghiệp vụ (luồng in ấn, gian hàng, thanh toán, tích điểm).
+Chất lượng kiến trúc Full-stack (frontend, backend, và cách hai phần phối hợp).
+Bảo mật và xử lý thanh toán an toàn.
+Hiệu năng và khả năng mở rộng dưới điều kiện tải đồng thời cao.
+Chất lượng thiết kế cơ sở dữ liệu.
+Chất lượng tư duy tích hợp tính năng AI vào sản phẩm (chat hỗ trợ quốc tế).
+Chất lượng mã nguồn, kiểm thử, và tài liệu bàn giao.
