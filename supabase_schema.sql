@@ -330,3 +330,32 @@ begin
 end;
 $$ language plpgsql security definer;
 
+-- =========================================================================
+-- 8. STORAGE RLS POLICIES FOR BUCKET "print-files"
+-- =========================================================================
+-- Cho phép người dùng đã đăng nhập tải file lên (INSERT)
+create policy "Allow authenticated insert to print-files"
+on storage.objects for insert
+to authenticated
+with check (bucket_id = 'print-files' and auth.uid() = owner);
+
+-- Cho phép người dùng đã đăng nhập đọc file (SELECT)
+create policy "Allow authenticated select from print-files"
+on storage.objects for select
+to authenticated
+using (bucket_id = 'print-files');
+
+-- Cho phép người dùng cập nhật file của mình (UPDATE)
+create policy "Allow owner update in print-files"
+on storage.objects for update
+to authenticated
+using (bucket_id = 'print-files' and auth.uid() = owner)
+with check (bucket_id = 'print-files' and auth.uid() = owner);
+
+-- Cho phép người dùng xóa file của mình (DELETE)
+create policy "Allow owner delete in print-files"
+on storage.objects for delete
+to authenticated
+using (bucket_id = 'print-files' and auth.uid() = owner);
+
+
