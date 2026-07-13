@@ -63,7 +63,9 @@ export default function PrintPage() {
   // Check auth state
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
       setLoading(false);
     };
@@ -165,9 +167,9 @@ export default function PrintPage() {
       if (uploadError) throw new Error(`Không thể upload file: ${uploadError.message}`);
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('print-files')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('print-files').getPublicUrl(filePath);
 
       // 2. Call local Print Job API route (which initializes database & triggers simulator background loop)
       const res = await fetch('/api/print-jobs', {
@@ -204,7 +206,7 @@ export default function PrintPage() {
           (payload) => {
             const updatedJob = payload.new as PrintJob;
             setActiveJob(updatedJob);
-            
+
             // Map status to progress bar percentage
             if (updatedJob.status === 'pending') setPrintProgress(10);
             else if (updatedJob.status === 'rendering') setPrintProgress(40);
@@ -217,10 +219,9 @@ export default function PrintPage() {
               setPrintProgress(0);
               supabase.removeChannel(channel);
             }
-          }
+          },
         )
         .subscribe();
-
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi ngoài ý muốn.');
     } finally {
@@ -229,9 +230,9 @@ export default function PrintPage() {
   };
 
   const calculateCost = () => {
-    const pagePrice = configColor === 'color' ? 0.50 : 0.10;
-    const bindingPrice = configBinding === 'spiral' ? 2.00 : configBinding === 'stapled' ? 0.50 : 0.00;
-    return (totalPages * configCopies * pagePrice) + bindingPrice;
+    const pagePrice = configColor === 'color' ? 0.5 : 0.1;
+    const bindingPrice = configBinding === 'spiral' ? 2.0 : configBinding === 'stapled' ? 0.5 : 0.0;
+    return totalPages * configCopies * pagePrice + bindingPrice;
   };
 
   if (loading) {
@@ -256,9 +257,15 @@ export default function PrintPage() {
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
-            <Link href="/print" className="text-white">In ấn từ xa</Link>
-            <Link href="/store" className="hover:text-white transition-colors">Gian hàng</Link>
-            <Link href="/chat" className="hover:text-white transition-colors">Hỗ trợ AI</Link>
+            <Link href="/print" className="text-white">
+              In ấn từ xa
+            </Link>
+            <Link href="/store" className="hover:text-white transition-colors">
+              Gian hàng
+            </Link>
+            <Link href="/chat" className="hover:text-white transition-colors">
+              Hỗ trợ AI
+            </Link>
           </nav>
           <div>
             {user ? (
@@ -290,7 +297,8 @@ export default function PrintPage() {
             </div>
             <h2 className="text-2xl font-bold">Vui lòng đăng nhập để bắt đầu in ấn</h2>
             <p className="text-zinc-400 max-w-md">
-              Để upload tài liệu PDF, cấu hình in, theo dõi tiến độ in realtime và tích lũy điểm thưởng, bạn cần có tài khoản PlatPrint.
+              Để upload tài liệu PDF, cấu hình in, theo dõi tiến độ in realtime và tích lũy điểm
+              thưởng, bạn cần có tài khoản PlatPrint.
             </p>
             <Link
               href="/auth"
@@ -303,9 +311,25 @@ export default function PrintPage() {
           /* Printing Queue Simulation Screen */
           <div className="lg:col-span-12 glass-panel p-8 rounded-3xl border border-zinc-800 flex flex-col items-center justify-center min-h-[500px] text-center space-y-8">
             <div className="relative">
-              {/* Spinning print loader animation */}
-              <div className="w-24 h-24 rounded-full border-4 border-indigo-500/10 border-t-indigo-500 animate-spin" />
-              <Printer className="w-8 h-8 text-indigo-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              {/* Dynamic print loader animation */}
+              <div
+                className={`w-24 h-24 rounded-full border-4 transition-all duration-700 ${
+                  activeJob.status === 'completed'
+                    ? 'border-emerald-500/20 border-t-emerald-500'
+                    : activeJob.status === 'failed'
+                      ? 'border-red-500/20 border-t-red-500'
+                      : 'border-indigo-500/10 border-t-indigo-500 animate-spin'
+                }`}
+              />
+              <Printer
+                className={`w-8 h-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-colors duration-700 ${
+                  activeJob.status === 'completed'
+                    ? 'text-emerald-400'
+                    : activeJob.status === 'failed'
+                      ? 'text-red-400'
+                      : 'text-indigo-400'
+                }`}
+              />
             </div>
 
             <div className="space-y-3">
@@ -339,7 +363,9 @@ export default function PrintPage() {
             <div className="w-full max-w-md p-4 bg-zinc-950/50 border border-zinc-900 rounded-2xl text-left space-y-3 text-sm text-zinc-400">
               <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
                 <span className="font-semibold text-white">Lịch sử sự kiện in ấn</span>
-                <span className="text-xs px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 font-bold border border-indigo-500/10">Realtime</span>
+                <span className="text-xs px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 font-bold border border-indigo-500/10">
+                  Realtime
+                </span>
               </div>
               <div className="space-y-2 font-mono text-xs">
                 <div className="flex items-start gap-2">
@@ -349,19 +375,27 @@ export default function PrintPage() {
                 {printProgress >= 40 && (
                   <div className="flex items-start gap-2">
                     <span className="text-indigo-400">[✓]</span>
-                    <span>Nạp tài liệu & render preview hoàn tất (1 / {activeJob.total_pages} trang)</span>
+                    <span>
+                      Nạp tài liệu & render preview hoàn tất (1 / {activeJob.total_pages} trang)
+                    </span>
                   </div>
                 )}
                 {printProgress >= 70 && (
                   <div className="flex items-start gap-2">
                     <span className="text-indigo-400">[⚙]</span>
-                    <span>Đang phun mực & cán giấy ({activeJob.config_color === 'color' ? 'In màu' : 'Đen trắng'})</span>
+                    <span>
+                      Đang phun mực & cán giấy (
+                      {activeJob.config_color === 'color' ? 'In màu' : 'Đen trắng'})
+                    </span>
                   </div>
                 )}
                 {printProgress === 100 && (
                   <div className="flex items-start gap-2 text-emerald-400 font-semibold">
                     <span className="text-emerald-400">[✓]</span>
-                    <span>Máy in đã hoàn thành in. Vui lòng nhận tài liệu tại {activeJob.printer_location}.</span>
+                    <span>
+                      Máy in đã hoàn thành in. Vui lòng nhận tài liệu tại{' '}
+                      {activeJob.printer_location}.
+                    </span>
                   </div>
                 )}
               </div>
@@ -425,8 +459,12 @@ export default function PrintPage() {
                   ) : (
                     <div className="flex flex-col items-center space-y-2">
                       <UploadCloud className="w-10 h-10 text-zinc-500 group-hover:text-indigo-400 transition-colors" />
-                      <p className="text-zinc-300 text-sm font-bold">Kéo thả hoặc click để upload tài liệu</p>
-                      <p className="text-zinc-500 text-xs font-semibold">Hỗ trợ PDF hoặc Hình ảnh</p>
+                      <p className="text-zinc-300 text-sm font-bold">
+                        Kéo thả hoặc click để upload tài liệu
+                      </p>
+                      <p className="text-zinc-500 text-xs font-semibold">
+                        Hỗ trợ PDF hoặc Hình ảnh
+                      </p>
                     </div>
                   )}
                 </div>
@@ -466,17 +504,23 @@ export default function PrintPage() {
                   {/* Config Copies & Paper Size */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Số lượng bản in</label>
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                        Số lượng bản in
+                      </label>
                       <input
                         type="number"
                         min="1"
                         value={configCopies}
-                        onChange={(e) => setConfigCopies(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                        onChange={(e) =>
+                          setConfigCopies(Math.max(1, parseInt(e.target.value, 10) || 1))
+                        }
                         className="w-full bg-zinc-950 border border-zinc-800 hover:border-zinc-700 focus:border-indigo-500 py-3 px-4 rounded-xl text-sm focus:outline-none transition-all text-white font-bold"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Khổ giấy</label>
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                        Khổ giấy
+                      </label>
                       <select
                         value={configPaperSize}
                         onChange={(e) => setConfigPaperSize(e.target.value as 'a4' | 'a3' | 'a5')}
@@ -491,7 +535,9 @@ export default function PrintPage() {
 
                   {/* Config Binding Options */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Gia công đóng gáy</label>
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                      Gia công đóng gáy
+                    </label>
                     <div className="grid grid-cols-3 gap-3">
                       {(['none', 'stapled', 'spiral'] as const).map((b) => (
                         <button
@@ -513,7 +559,9 @@ export default function PrintPage() {
 
                   {/* Select Location */}
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Địa điểm máy in nhận tài liệu</label>
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                      Địa điểm máy in nhận tài liệu
+                    </label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-400" />
                       <select
@@ -521,9 +569,15 @@ export default function PrintPage() {
                         onChange={(e) => setPrinterLocation(e.target.value)}
                         className="w-full pl-10 pr-4 py-3 bg-zinc-950 border border-zinc-800 hover:border-zinc-700 focus:border-indigo-500 rounded-xl text-sm focus:outline-none transition-all text-white font-bold"
                       >
-                        <option value="Cửa hàng A - Quận 1, TPHCM">Cửa hàng A - Quận 1, TPHCM (Mở cửa 24/7)</option>
-                        <option value="Bưu cục Plat - Quận Cầu Giấy, HN">Bưu cục Plat - Quận Cầu Giấy, HN (Mở cửa 8h - 20h)</option>
-                        <option value="Bưu điện Trung tâm - Quận Hải Châu, ĐN">Bưu điện Trung tâm - Quận Hải Châu, ĐN</option>
+                        <option value="Cửa hàng A - Quận 1, TPHCM">
+                          Cửa hàng A - Quận 1, TPHCM (Mở cửa 24/7)
+                        </option>
+                        <option value="Bưu cục Plat - Quận Cầu Giấy, HN">
+                          Bưu cục Plat - Quận Cầu Giấy, HN (Mở cửa 8h - 20h)
+                        </option>
+                        <option value="Bưu điện Trung tâm - Quận Hải Châu, ĐN">
+                          Bưu điện Trung tâm - Quận Hải Châu, ĐN
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -585,7 +639,9 @@ export default function PrintPage() {
                   ) : (
                     <div className="text-center p-8">
                       <FileText className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-                      <p className="text-zinc-500 text-xs font-semibold">Tải tài liệu lên ở khung bên trái để xem trước cấu hình in thực tế.</p>
+                      <p className="text-zinc-500 text-xs font-semibold">
+                        Tải tài liệu lên ở khung bên trái để xem trước cấu hình in thực tế.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -594,7 +650,9 @@ export default function PrintPage() {
                 <div className="mt-6 pt-4 border-t border-zinc-900 space-y-4">
                   <div className="flex justify-between items-center text-sm font-semibold">
                     <span className="text-zinc-400">Ước tính giá lệnh in:</span>
-                    <span className="text-xl font-bold text-white">${calculateCost().toFixed(2)}</span>
+                    <span className="text-xl font-bold text-white">
+                      ${calculateCost().toFixed(2)}
+                    </span>
                   </div>
 
                   <button
@@ -608,7 +666,8 @@ export default function PrintPage() {
                       </>
                     ) : (
                       <>
-                        <Printer className="w-4 h-4" /> Bắt đầu in ấn (${calculateCost().toFixed(2)})
+                        <Printer className="w-4 h-4" /> Bắt đầu in ấn (${calculateCost().toFixed(2)}
+                        )
                       </>
                     )}
                   </button>
