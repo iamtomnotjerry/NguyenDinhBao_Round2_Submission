@@ -9,6 +9,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Standard micro-interaction classes for buttons and links */
+export const btnInteractive = 'cursor-pointer transition-all duration-300 active:scale-[0.98]';
+export const btnInteractiveSm = 'cursor-pointer transition-all duration-300 active:scale-95';
+
 /**
  * Unifies print cost calculations across frontend pages and backend API routes.
  */

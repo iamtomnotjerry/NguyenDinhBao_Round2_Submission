@@ -3,6 +3,7 @@
 import { UIMessage } from '@ai-sdk/react';
 import { HelpCircle, User, Sparkles, AlertCircle, Send, Clock } from 'lucide-react';
 import React, { RefObject } from 'react';
+import { btnInteractive, cn } from '@/lib/utils';
 
 interface ChatBoxProps {
   messages: UIMessage[];
@@ -67,7 +68,10 @@ export default function ChatBox({
                 </p>
                 <button
                   onClick={() => handleQuickQuestion('Làm thế nào để in tài liệu đen trắng?')}
-                  className="w-full text-left p-3.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 hover:border-emerald-500/30 hover:pl-5 text-xs rounded-xl text-zinc-300 hover:text-white transition-all duration-300 flex items-center gap-2 border-l-2 border-l-emerald-500 cursor-pointer active:scale-[0.99]"
+                  className={cn(
+                    'w-full text-left p-3.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 hover:border-emerald-500/30 hover:pl-5 text-xs rounded-xl text-zinc-300 hover:text-white flex items-center gap-2 border-l-2 border-l-emerald-500',
+                    btnInteractive,
+                  )}
                 >
                   <HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span className="font-semibold">Làm thế nào để in tài liệu đen trắng?</span>
@@ -76,7 +80,10 @@ export default function ChatBox({
                   onClick={() =>
                     handleQuickQuestion('Tôi bị lỗi thanh toán thẻ sandbox thì làm sao?')
                   }
-                  className="w-full text-left p-3.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 hover:border-emerald-500/30 hover:pl-5 text-xs rounded-xl text-zinc-300 hover:text-white transition-all duration-300 flex items-center gap-2 border-l-2 border-l-emerald-500 cursor-pointer active:scale-[0.99]"
+                  className={cn(
+                    'w-full text-left p-3.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 hover:border-emerald-500/30 hover:pl-5 text-xs rounded-xl text-zinc-300 hover:text-white flex items-center gap-2 border-l-2 border-l-emerald-500',
+                    btnInteractive,
+                  )}
                 >
                   <HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span className="font-semibold">
@@ -85,7 +92,10 @@ export default function ChatBox({
                 </button>
                 <button
                   onClick={() => handleQuickQuestion('Hãy chuyển tôi gặp hỗ trợ viên thực tế')}
-                  className="w-full text-left p-3.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 hover:border-emerald-500/30 hover:pl-5 text-xs rounded-xl text-zinc-300 hover:text-white transition-all duration-300 flex items-center gap-2 border-l-2 border-l-emerald-500 cursor-pointer active:scale-[0.99]"
+                  className={cn(
+                    'w-full text-left p-3.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 hover:border-emerald-500/30 hover:pl-5 text-xs rounded-xl text-zinc-300 hover:text-white flex items-center gap-2 border-l-2 border-l-emerald-500',
+                    btnInteractive,
+                  )}
                 >
                   <HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span className="font-semibold">Hãy chuyển tôi gặp hỗ trợ viên thực tế</span>
@@ -265,7 +275,10 @@ export default function ChatBox({
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="p-3 bg-gradient-to-tr from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:pointer-events-none rounded-xl text-white shadow-lg shadow-emerald-500/15 flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+            className={cn(
+              'p-3 bg-gradient-to-tr from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:pointer-events-none rounded-xl text-white shadow-lg shadow-emerald-500/15 flex items-center justify-center hover:scale-105',
+              btnInteractive,
+            )}
           >
             <Send className="w-4 h-4" />
           </button>

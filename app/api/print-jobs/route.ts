@@ -54,15 +54,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Chưa đăng nhập (Unauthorized)' }, { status: 401 });
     }
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    const token = session?.access_token;
-
     const body = await request.json();
     const {
       file_name,
-      file_url,
+      file_path,
       config_color,
       config_copies,
       config_paper_size,
@@ -74,7 +69,7 @@ export async function POST(request: Request) {
     // Validation
     if (
       !file_name ||
-      !file_url ||
+      !file_path ||
       !config_color ||
       !config_paper_size ||
       !config_binding ||
@@ -93,7 +88,7 @@ export async function POST(request: Request) {
       .insert({
         user_id: user.id,
         file_name,
-        file_url,
+        file_path,
         config_color,
         config_copies: config_copies || 1,
         config_paper_size,
@@ -115,29 +110,21 @@ export async function POST(request: Request) {
     // -------------------------------------------------------------
     // RUN SIMULATOR ASYNCHRONOUSLY IN BACKGROUND
     // We respond 201 immediately, letting the promise run in background.
-    // We use a direct client to bypass next/headers cookies() after response completes.
+    // Requires SUPABASE_SERVICE_ROLE_KEY — client UPDATE policy is removed for security.
     // -------------------------------------------------------------
     const runSimulator = async () => {
       try {
-        const useServiceRole = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const clientOptions = useServiceRole
-          ? undefined
-          : token
-            ? {
-                global: {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                },
-              }
-            : undefined;
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (!serviceRoleKey) {
+          console.error(
+            'SUPABASE_SERVICE_ROLE_KEY is required for print job simulator. Status updates skipped.',
+          );
+          return;
+        }
 
         const adminSupabase = createDirectClient<SafeDatabase>(
           process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          useServiceRole
-            ? process.env.SUPABASE_SERVICE_ROLE_KEY!
-            : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-          clientOptions,
+          serviceRoleKey,
         );
 
         // 1. After 2s: pending -> rendering
@@ -156,8 +143,6 @@ export async function POST(request: Request) {
       }
     };
 
-    // Trigger after response completes to guarantee serverless container stays alive
-    // [OPTIMIZATION v2.0]: await the async runSimulator promise so Vercel does not terminate container early
     after(async () => {
       await runSimulator();
     });

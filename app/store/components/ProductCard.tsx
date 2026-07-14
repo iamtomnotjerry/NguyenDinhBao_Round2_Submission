@@ -2,6 +2,7 @@
 
 import { SafeDatabase } from '@/types/database.types';
 import { ShoppingBag } from 'lucide-react';
+import { btnInteractive, cn } from '@/lib/utils';
 
 type Product = SafeDatabase['public']['Tables']['products']['Row'];
 
@@ -127,7 +128,10 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           <button
             onClick={() => onAddToCart(product)}
             disabled={isOutOfStock}
-            className="py-2 px-4 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-600 hover:border-emerald-500 text-emerald-400 hover:text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50 disabled:pointer-events-none active:scale-[0.97] cursor-pointer"
+            className={cn(
+              'py-2 px-4 bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-600 hover:border-emerald-500 text-emerald-400 hover:text-white rounded-lg text-xs font-bold disabled:opacity-50 disabled:pointer-events-none',
+              btnInteractive,
+            )}
           >
             {isOutOfStock ? 'Hết hàng' : 'Thêm giỏ hàng'}
           </button>

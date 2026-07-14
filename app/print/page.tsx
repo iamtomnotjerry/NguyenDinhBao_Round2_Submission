@@ -5,14 +5,16 @@ import { supabase } from '@/lib/supabase/client';
 import { SafeDatabase } from '@/types/database.types';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import Header from '@/components/Header';
-import { Printer, RefreshCw, ArrowRight } from 'lucide-react';
+import { Printer, RefreshCw, ArrowRight, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
-import { calculatePrintCost } from '@/lib/utils';
+import { calculatePrintCost, btnInteractive, cn } from '@/lib/utils';
+import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
 import PrintPreview from './components/PrintPreview';
 import PrintProgressView from './components/PrintProgressView';
 import PrintConfigForm from './components/PrintConfigForm';
 
 type PrintJob = SafeDatabase['public']['Tables']['print_jobs']['Row'];
+type PdfjsModule = typeof import('pdfjs-dist');
 
 export default function PrintPage() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -23,10 +25,8 @@ export default function PrintPage() {
   const [fileName, setFileName] = useState('');
   const [fileUrl, setFileUrl] = useState('');
   const [totalPages, setTotalPages] = useState(1);
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  const [pdfjsLib, setPdfjsLib] = useState<any>(null);
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const [pdfjsLib, setPdfjsLib] = useState<PdfjsModule | null>(null);
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
 
   // Load pdfjs-dist dynamically on client side only
   useEffect(() => {
@@ -50,6 +50,7 @@ export default function PrintPage() {
   const [submitting, setSubmitting] = useState(false);
   const [activeJob, setActiveJob] = useState<PrintJob | null>(null);
   const [printProgress, setPrintProgress] = useState(0);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -72,8 +73,7 @@ export default function PrintPage() {
     if (!file || file.type !== 'application/pdf' || !pdfDoc || !canvasRef.current) return;
 
     let isCurrent = true;
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    let activeRenderTask: any = null;
+    let activeRenderTask: RenderTask | null = null;
 
     const renderPage = async () => {
       try {
@@ -126,6 +126,7 @@ export default function PrintPage() {
     setFileName(selectedFile.name);
     setPdfDoc(null);
     setTotalPages(1);
+    setSubmitError(null);
 
     // If PDF, count pages and render preview
     if (selectedFile.type === 'application/pdf' && pdfjsLib) {
@@ -167,9 +168,10 @@ export default function PrintPage() {
     if (!file || !user) return;
     setSubmitting(true);
     setPrintProgress(0);
+    setSubmitError(null);
 
     try {
-      // 1. Upload file to Supabase Storage
+      // 1. Upload file to Supabase Storage — store storage path (not signed URL) in DB
       const fileExt = file.name.split('.').pop();
       const uniqueFileName = `${user.id}_${Date.now()}.${fileExt}`;
       const filePath = `print_jobs/${uniqueFileName}`;
@@ -180,25 +182,13 @@ export default function PrintPage() {
 
       if (uploadError) throw new Error(`Không thể upload file: ${uploadError.message}`);
 
-      // [SECURITY FIX]: Use createSignedUrl instead of getPublicUrl to prevent IDOR bypass.
-      // getPublicUrl generates a direct HTTP URL that bypasses RLS entirely on public buckets.
-      // createSignedUrl generates a time-limited, authenticated URL that respects bucket privacy.
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-        .from('print-files')
-        .createSignedUrl(filePath, 86400); // 24 hours expiry
-
-      if (signedUrlError || !signedUrlData?.signedUrl) {
-        throw new Error('Không thể tạo URL truy cập tệp in. Vui lòng thử lại.');
-      }
-      const secureFileUrl = signedUrlData.signedUrl;
-
-      // 2. Call local Print Job API route (which initializes database & triggers simulator background loop)
+      // 2. Call local Print Job API — pass file_path; signed URLs are generated on-demand when reading
       const res = await fetch('/api/print-jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           file_name: fileName,
-          file_url: secureFileUrl,
+          file_path: filePath,
           config_color: configColor,
           config_copies: configCopies,
           config_paper_size: configPaperSize,
@@ -244,7 +234,7 @@ export default function PrintPage() {
         )
         .subscribe();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Đã xảy ra lỗi ngoài ý muốn.');
+      setSubmitError(err instanceof Error ? err.message : 'Đã xảy ra lỗi ngoài ý muốn.');
     } finally {
       setSubmitting(false);
     }
@@ -278,7 +268,10 @@ export default function PrintPage() {
                 </p>
                 <Link
                   href="/auth"
-                  className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl font-bold transition-transform hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"
+                  className={cn(
+                    'px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl font-bold hover:scale-[1.02] flex items-center gap-2',
+                    btnInteractive,
+                  )}
                 >
                   Đăng nhập / Đăng ký ngay <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -292,10 +285,30 @@ export default function PrintPage() {
                 setActiveJob(null);
                 setFile(null);
                 setFileName('');
+                setSubmitError(null);
               }}
             />
           ) : (
             <>
+              {submitError && (
+                <div className="lg:col-span-12 p-4 rounded-2xl border bg-red-500/10 border-red-500/20 text-red-400 flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+                  <div className="flex-1 space-y-1">
+                    <h4 className="font-bold text-sm">Không thể khởi tạo lệnh in</h4>
+                    <p className="text-xs text-zinc-400">{submitError}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSubmitError(null)}
+                    className={cn(
+                      'text-xs font-bold text-red-400 hover:text-red-300 underline',
+                      btnInteractive,
+                    )}
+                  >
+                    Đóng
+                  </button>
+                </div>
+              )}
               <PrintConfigForm
                 file={file}
                 fileName={fileName}

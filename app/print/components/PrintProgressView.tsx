@@ -3,6 +3,7 @@
 import { SafeDatabase } from '@/types/database.types';
 import { Printer, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { btnInteractive, cn } from '@/lib/utils';
 
 type PrintJob = SafeDatabase['public']['Tables']['print_jobs']['Row'];
 
@@ -114,13 +115,19 @@ export default function PrintProgressView({
           <div className="flex flex-wrap gap-4 justify-center">
             <button
               onClick={onPrintNew}
-              className="px-6 py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 font-bold rounded-xl transition-all flex items-center gap-2 text-sm text-white cursor-pointer active:scale-[0.97]"
+              className={cn(
+                'px-6 py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 font-bold rounded-xl flex items-center gap-2 text-sm text-white',
+                btnInteractive,
+              )}
             >
               In tài liệu mới <ArrowRight className="w-4 h-4 text-emerald-400" />
             </button>
             <Link
               href="/dashboard?tab=print"
-              className="px-6 py-3 bg-gradient-to-tr from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 font-bold rounded-xl transition-all flex items-center gap-2 text-sm text-black cursor-pointer active:scale-[0.97] shadow-lg shadow-emerald-500/10"
+              className={cn(
+                'px-6 py-3 bg-gradient-to-tr from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 font-bold rounded-xl flex items-center gap-2 text-sm text-black shadow-lg shadow-emerald-500/10',
+                btnInteractive,
+              )}
             >
               Xem lịch sử in ấn
             </Link>

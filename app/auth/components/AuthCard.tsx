@@ -2,6 +2,7 @@
 
 import { Mail, Lock, UserPlus, LogIn } from 'lucide-react';
 import React from 'react';
+import { btnInteractive, cn } from '@/lib/utils';
 
 interface AuthCardProps {
   email: string;
@@ -96,7 +97,10 @@ export default function AuthCard({
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/10 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 mt-4 cursor-pointer"
+              className={cn(
+                'w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/10 hover:scale-[1.01] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 mt-4',
+                btnInteractive,
+              )}
             >
               {loading ? (
                 <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -121,7 +125,10 @@ export default function AuthCard({
                 setIsSignUp(!isSignUp);
                 setMessage(null);
               }}
-              className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors cursor-pointer"
+              className={cn(
+                'text-emerald-400 hover:text-emerald-300 font-semibold',
+                btnInteractive,
+              )}
             >
               {isSignUp ? 'Đăng nhập ngay' : 'Đăng ký tài khoản mới'}
             </button>

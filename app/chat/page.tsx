@@ -9,6 +9,7 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 import Header from '@/components/Header';
 import { MessageSquare, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { btnInteractive, cn } from '@/lib/utils';
 import ChatBox from './components/ChatBox';
 
 type ChatMessageRow = SafeDatabase['public']['Tables']['chat_messages']['Row'];
@@ -158,7 +159,10 @@ export default function ChatPage() {
                 </p>
                 <Link
                   href="/auth"
-                  className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl font-bold text-sm transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                  className={cn(
+                    'px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl font-bold text-sm hover:scale-[1.02]',
+                    btnInteractive,
+                  )}
                 >
                   Đăng nhập / Đăng ký
                 </Link>

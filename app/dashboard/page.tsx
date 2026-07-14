@@ -7,6 +7,7 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 import Header from '@/components/Header';
 import { Printer, ShoppingBag, Gift, LogOut, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { btnInteractive, cn } from '@/lib/utils';
 import DashboardOverview from './components/DashboardOverview';
 import DashboardPrintJobs from './components/DashboardPrintJobs';
 import DashboardOrders from './components/DashboardOrders';
@@ -118,7 +119,10 @@ export default function DashboardPage() {
       <Header>
         <button
           onClick={handleSignOut}
-          className="p-2 text-zinc-500 hover:text-red-400 transition-colors border border-transparent hover:border-red-500/10 hover:bg-red-500/5 rounded-xl flex items-center gap-1.5 text-xs font-bold mr-2"
+          className={cn(
+            'p-2 text-zinc-500 hover:text-red-400 border border-transparent hover:border-red-500/10 hover:bg-red-500/5 rounded-xl flex items-center gap-1.5 text-xs font-bold mr-2',
+            btnInteractive,
+          )}
         >
           <LogOut className="w-4 h-4" /> Đăng xuất
         </button>
@@ -165,31 +169,37 @@ export default function DashboardPage() {
               <div className="glass-bezel-inner !p-3 flex flex-col gap-1">
                 <button
                   onClick={() => setActiveTab('overview')}
-                  className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-3 cursor-pointer active:scale-[0.98] ${
+                  className={cn(
+                    'w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center gap-3',
+                    btnInteractive,
                     activeTab === 'overview'
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-lg shadow-emerald-500/10'
-                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30'
-                  }`}
+                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30',
+                  )}
                 >
                   <Gift className="w-4 h-4" /> Tổng quan & Điểm
                 </button>
                 <button
                   onClick={() => setActiveTab('print')}
-                  className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-3 cursor-pointer active:scale-[0.98] ${
+                  className={cn(
+                    'w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center gap-3',
+                    btnInteractive,
                     activeTab === 'print'
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-lg shadow-emerald-500/10'
-                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30'
-                  }`}
+                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30',
+                  )}
                 >
                   <Printer className="w-4 h-4" /> Lịch sử in ấn ({printJobs.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('orders')}
-                  className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-3 cursor-pointer active:scale-[0.98] ${
+                  className={cn(
+                    'w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center gap-3',
+                    btnInteractive,
                     activeTab === 'orders'
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-lg shadow-emerald-500/10'
-                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30'
-                  }`}
+                      : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30',
+                  )}
                 >
                   <ShoppingBag className="w-4 h-4" /> Đơn hàng cửa hàng ({orders.length})
                 </button>

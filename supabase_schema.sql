@@ -1,6 +1,10 @@
 -- =========================================================================
 -- PLATPRINT DATABASE SCHEMA & POLICIES (SUPABASE POSTGRESQL)
--- Version: 2.0 (Optimized, Secure & Production-Ready)
+-- Version: 3.0 (Optimized, Secure & Production-Ready)
+--
+-- CHỈ dùng cho database MỚI / trống.
+-- Nếu đã có bảng (lỗi "relation profiles already exists") → chạy
+-- supabase_migration_v3.sql thay vì file này.
 -- =========================================================================
 
 -- Kích hoạt extension UUID
@@ -57,7 +61,7 @@ CREATE TABLE public.print_jobs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT null,
   file_name TEXT NOT NULL,
-  file_url TEXT NOT NULL,
+  file_path TEXT NOT NULL,
   config_color TEXT CHECK (config_color IN ('color', 'bw')) NOT null,
   config_copies INTEGER DEFAULT 1 CHECK (config_copies > 0),
   config_paper_size TEXT CHECK (config_paper_size IN ('a4', 'a3', 'a5')) NOT null,
@@ -161,15 +165,12 @@ CREATE POLICY "Allow users to create order items"
   );
 
 -- Print Jobs Policies
--- [SECURITY NOTE]: Quyền UPDATE của user được mở để cho phép Simulator chạy cục bộ khi thiếu Service Role Key.
--- Trong hệ thống production, chính sách UPDATE này nên được gỡ bỏ và trạng thái lệnh in chỉ được thay đổi 
--- bởi server-side admin client (Service Role Client).
+-- [SECURITY v3.0]: Không cho phép client UPDATE print_jobs. Trạng thái lệnh in chỉ được
+-- thay đổi bởi Background Simulator qua Service Role Client (SUPABASE_SERVICE_ROLE_KEY).
 CREATE POLICY "Allow users to read their own print jobs" 
   ON public.print_jobs FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Allow users to create their own print jobs" 
   ON public.print_jobs FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Allow users to update their own print jobs" 
-  ON public.print_jobs FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
 -- Payment Tokens Policies
 CREATE POLICY "Allow users to manage their own payment tokens" 
@@ -332,7 +333,17 @@ BEGIN
   SET status = 'failed', idempotency_key = NULL
   WHERE id = p_order_id;
 
-  -- 3. Hoàn trả lại số lượng tồn kho sản phẩm
+  -- 3. Khoá dòng sản phẩm liên quan theo thứ tự ID tăng dần trước khi hoàn trả tồn kho
+  PERFORM 1
+  FROM public.products
+  WHERE id IN (
+    SELECT product_id FROM public.order_items
+    WHERE order_id = p_order_id AND product_id IS NOT NULL
+  )
+  ORDER BY id ASC
+  FOR UPDATE;
+
+  -- 3b. Hoàn trả lại số lượng tồn kho sản phẩm
   FOR item IN SELECT product_id, quantity FROM public.order_items WHERE order_id = p_order_id LOOP
     IF item.product_id IS NOT NULL THEN
       UPDATE public.products

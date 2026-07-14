@@ -2,6 +2,7 @@
 
 import { FileText, UploadCloud, Settings, MapPin, Printer, RefreshCw } from 'lucide-react';
 import { RefObject } from 'react';
+import { btnInteractive, cn } from '@/lib/utils';
 
 interface PrintConfigFormProps {
   file: File | null;
@@ -59,9 +60,11 @@ export default function PrintConfigForm({
           {/* File Upload Slot */}
           <div
             onClick={handleUploadClick}
-            className={`border-2 border-dashed border-zinc-800 rounded-2xl p-8 text-center cursor-pointer hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all relative overflow-hidden group active:scale-[0.99] ${
-              file ? 'bg-zinc-900/20' : ''
-            }`}
+            className={cn(
+              'border-2 border-dashed border-zinc-800 rounded-2xl p-8 text-center hover:border-emerald-500/50 hover:bg-emerald-500/5 relative overflow-hidden group',
+              btnInteractive,
+              file && 'bg-zinc-900/20',
+            )}
           >
             <input
               type="file"
@@ -84,7 +87,13 @@ export default function PrintConfigForm({
                 <p className="text-zinc-500 text-xs font-semibold">
                   {(file.size / 1024 / 1024).toFixed(2)} MB • {totalPages} trang
                 </p>
-                <button className="text-emerald-400 hover:text-emerald-300 text-xs font-bold pt-2 underline transition-colors">
+                <button
+                  type="button"
+                  className={cn(
+                    'text-emerald-400 hover:text-emerald-300 text-xs font-bold pt-2 underline',
+                    btnInteractive,
+                  )}
+                >
                   Chọn tệp khác
                 </button>
               </div>
@@ -110,11 +119,13 @@ export default function PrintConfigForm({
               <button
                 type="button"
                 onClick={() => setConfigColor('color')}
-                className={`p-4 rounded-xl border font-bold text-sm transition-all flex flex-col items-center gap-1 cursor-pointer active:scale-[0.98] ${
+                className={cn(
+                  'p-4 rounded-xl border font-bold text-sm flex flex-col items-center gap-1',
+                  btnInteractive,
                   configColor === 'color'
                     ? 'border-emerald-500 bg-emerald-500/5 text-white shadow shadow-emerald-950/20'
-                    : 'border-zinc-800 hover:border-zinc-700 text-zinc-400'
-                }`}
+                    : 'border-zinc-800 hover:border-zinc-700 text-zinc-400',
+                )}
               >
                 <span className="bg-gradient-to-r from-red-500 via-green-500 to-blue-500 w-4 h-4 rounded-full" />
                 In màu ($0.5/trang)
@@ -122,11 +133,13 @@ export default function PrintConfigForm({
               <button
                 type="button"
                 onClick={() => setConfigColor('bw')}
-                className={`p-4 rounded-xl border font-bold text-sm transition-all flex flex-col items-center gap-1 cursor-pointer active:scale-[0.98] ${
+                className={cn(
+                  'p-4 rounded-xl border font-bold text-sm flex flex-col items-center gap-1',
+                  btnInteractive,
                   configColor === 'bw'
                     ? 'border-emerald-500 bg-emerald-500/5 text-white shadow shadow-emerald-950/20'
-                    : 'border-zinc-800 hover:border-zinc-700 text-zinc-400'
-                }`}
+                    : 'border-zinc-800 hover:border-zinc-700 text-zinc-400',
+                )}
               >
                 <span className="bg-zinc-500 w-4 h-4 rounded-full" />
                 Đen trắng ($0.1/trang)
@@ -174,11 +187,13 @@ export default function PrintConfigForm({
                     key={b}
                     type="button"
                     onClick={() => setConfigBinding(b)}
-                    className={`py-3 px-2 rounded-xl border text-xs font-bold transition-all capitalize cursor-pointer active:scale-[0.98] ${
+                    className={cn(
+                      'py-3 px-2 rounded-xl border text-xs font-bold capitalize',
+                      btnInteractive,
                       configBinding === b
                         ? 'border-emerald-500 bg-emerald-500/5 text-white shadow shadow-emerald-950/20'
-                        : 'border-zinc-800 hover:border-zinc-700 text-zinc-400'
-                    }`}
+                        : 'border-zinc-800 hover:border-zinc-700 text-zinc-400',
+                    )}
                   >
                     {b === 'none' && 'Không đóng gáy'}
                     {b === 'stapled' && 'Dập ghim (+ $0.5)'}
@@ -224,7 +239,10 @@ export default function PrintConfigForm({
             <button
               onClick={handlePrintSubmit}
               disabled={!file || submitting || isUploading}
-              className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:pointer-events-none rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 transition-transform hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              className={cn(
+                'w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:pointer-events-none rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 hover:scale-[1.01]',
+                btnInteractive,
+              )}
             >
               {submitting ? (
                 <>

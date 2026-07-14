@@ -118,7 +118,7 @@ export interface Database {
           id: string;
           user_id: string;
           file_name: string;
-          file_url: string;
+          file_path: string;
           config_color: 'color' | 'bw';
           config_copies: number;
           config_paper_size: 'a4' | 'a3' | 'a5';
@@ -133,7 +133,7 @@ export interface Database {
           id?: string;
           user_id: string;
           file_name: string;
-          file_url: string;
+          file_path: string;
           config_color: 'color' | 'bw';
           config_copies?: number;
           config_paper_size: 'a4' | 'a3' | 'a5';
@@ -148,7 +148,7 @@ export interface Database {
           id?: string;
           user_id?: string;
           file_name?: string;
-          file_url?: string;
+          file_path?: string;
           config_color?: 'color' | 'bw';
           config_copies?: number;
           config_paper_size?: 'a4' | 'a3' | 'a5';

@@ -13,4 +13,4 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholde
  * Generic Database parameter enforces type safety.
  * Uses placeholder fallbacks during static build-time compilation.
  */
-export const supabase = createBrowserClient<SafeDatabase>(supabaseUrl, supabaseAnonKey);
+export const supabase = createBrowserClient<SafeDatabase, 'public'>(supabaseUrl, supabaseAnonKey);

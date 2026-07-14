@@ -9,6 +9,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import Header from '@/components/Header';
+import { btnInteractive, cn } from '@/lib/utils';
 
 export default function Home() {
   return (
@@ -44,14 +45,20 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
               <Link
                 href="/print"
-                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-tr from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl font-bold shadow-lg shadow-emerald-500/10 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group text-sm cursor-pointer"
+                className={cn(
+                  'w-full sm:w-auto px-8 py-4 bg-gradient-to-tr from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl font-bold shadow-lg shadow-emerald-500/10 hover:scale-[1.02] flex items-center justify-center gap-2 group text-sm',
+                  btnInteractive,
+                )}
               >
                 <Printer className="w-4.5 h-4.5" /> Bắt đầu in ấn ngay{' '}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
                 href="/store"
-                className="w-full sm:w-auto px-8 py-4 bg-zinc-900/80 hover:bg-zinc-800 rounded-xl font-bold transition-all border border-zinc-850 hover:border-zinc-700 active:scale-[0.98] flex items-center justify-center gap-2 text-sm cursor-pointer"
+                className={cn(
+                  'w-full sm:w-auto px-8 py-4 bg-zinc-900/80 hover:bg-zinc-800 rounded-xl font-bold border border-zinc-850 hover:border-zinc-700 flex items-center justify-center gap-2 text-sm',
+                  btnInteractive,
+                )}
               >
                 <ShoppingBag className="w-4.5 h-4.5 text-emerald-400" /> Xem gian hàng ấn phẩm
               </Link>
@@ -197,7 +204,10 @@ export default function Home() {
                 </div>
                 <Link
                   href="/chat"
-                  className="w-full md:w-auto px-6 py-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-750 hover:bg-zinc-850 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 whitespace-nowrap active:scale-[0.98] cursor-pointer"
+                  className={cn(
+                    'w-full md:w-auto px-6 py-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-750 hover:bg-zinc-850 rounded-xl font-bold text-xs flex items-center justify-center gap-2 whitespace-nowrap',
+                    btnInteractive,
+                  )}
                 >
                   Trải nghiệm Chat ngay <ArrowRight className="w-3.5 h-3.5 text-emerald-400" />
                 </Link>
@@ -212,13 +222,13 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-zinc-500">
           <span>&copy; 2026 PlatPrint. Tuyển dụng Kỹ sư Phần mềm - Vòng 2.</span>
           <div className="flex gap-6 font-semibold">
-            <a href="#" className="hover:text-zinc-300 transition-colors">
+            <a href="#" className={cn('hover:text-zinc-300', btnInteractive)}>
               Nội quy
             </a>
-            <a href="#" className="hover:text-zinc-300 transition-colors">
+            <a href="#" className={cn('hover:text-zinc-300', btnInteractive)}>
               Bảo mật
             </a>
-            <a href="#" className="hover:text-zinc-300 transition-colors">
+            <a href="#" className={cn('hover:text-zinc-300', btnInteractive)}>
               Liên hệ
             </a>
           </div>

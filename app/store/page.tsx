@@ -7,6 +7,7 @@ import { User as SupabaseUser } from '@supabase/supabase-js';
 import Header from '@/components/Header';
 import { ShoppingBag, ShoppingCart, Gift, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { btnInteractive, cn } from '@/lib/utils';
 import ProductCard from './components/ProductCard';
 import CartDrawer from './components/CartDrawer';
 
@@ -255,7 +256,10 @@ export default function StorePage() {
       <Header>
         <button
           onClick={() => setIsCartOpen(!isCartOpen)}
-          className="relative p-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-zinc-300 hover:text-white transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+          className={cn(
+            'relative p-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-zinc-300 hover:text-white flex items-center gap-2',
+            btnInteractive,
+          )}
         >
           <ShoppingCart className="w-4 h-4 text-emerald-400" />
           <span className="text-xs font-bold">{cart.reduce((sum, i) => sum + i.quantity, 0)}</span>

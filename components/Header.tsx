@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Printer, User, LogIn } from 'lucide-react';
+import { btnInteractive, cn } from '@/lib/utils';
 
 interface HeaderProps {
   children?: React.ReactNode;
@@ -58,11 +59,13 @@ export default function Header({ children }: HeaderProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-4.5 py-2 rounded-full transition-all duration-300 active:scale-[0.96] cursor-pointer ${
+                className={cn(
+                  'px-4.5 py-2 rounded-full',
+                  btnInteractive,
                   isActive
                     ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm'
-                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900/35'
-                }`}
+                    : 'text-zinc-400 hover:text-white hover:bg-zinc-900/35',
+                )}
               >
                 {item.name}
               </Link>
@@ -75,16 +78,21 @@ export default function Header({ children }: HeaderProps) {
           {user ? (
             <Link
               href="/dashboard"
-              className={`px-4 py-2 bg-zinc-900/50 hover:bg-zinc-800 text-xs font-bold rounded-full transition-all duration-200 border border-zinc-850 hover:border-zinc-700 flex items-center gap-1.5 active:scale-[0.96] cursor-pointer ${
-                pathname === '/dashboard' ? 'border-emerald-500/30 text-emerald-400' : ''
-              }`}
+              className={cn(
+                'px-4 py-2 bg-zinc-900/50 hover:bg-zinc-800 text-xs font-bold rounded-full border border-zinc-850 hover:border-zinc-700 flex items-center gap-1.5',
+                btnInteractive,
+                pathname === '/dashboard' && 'border-emerald-500/30 text-emerald-400',
+              )}
             >
               <User className="w-3.5 h-3.5 text-emerald-400" /> Dashboard
             </Link>
           ) : (
             <Link
               href="/auth"
-              className="px-4.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-xs font-bold rounded-full transition-all duration-300 shadow-lg shadow-emerald-600/10 flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              className={cn(
+                'px-4.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-xs font-bold rounded-full shadow-lg shadow-emerald-600/10 flex items-center gap-1.5 hover:scale-[1.02]',
+                btnInteractive,
+              )}
             >
               <LogIn className="w-3.5 h-3.5" /> Đăng nhập
             </Link>
