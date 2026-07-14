@@ -12,6 +12,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Keyboard focus ring — matches Input emerald focus treatment */
+export const focusRing =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]';
+
 /** Standard micro-interaction classes for buttons and links */
-export const btnInteractive = 'cursor-pointer transition-all duration-300 active:scale-[0.98]';
-export const btnInteractiveSm = 'cursor-pointer transition-all duration-300 active:scale-95';
+export const btnInteractive = `cursor-pointer transition-all duration-300 active:scale-[0.98] ${focusRing}`;
+export const btnInteractiveSm = `cursor-pointer transition-all duration-300 active:scale-95 ${focusRing}`;
+
+/** Idle nav / chip hover — full muted fill so it stays visible on light glass panels */
+export const hoverIdle = `cursor-pointer transition-colors hover:bg-muted hover:text-fg ${focusRing}`;

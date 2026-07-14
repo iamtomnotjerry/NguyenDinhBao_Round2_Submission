@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { FormField } from '@/components/ui/FormField';
-import { SegmentOption } from '@/components/ui/SegmentOption';
+import { SegmentOption, SegmentGroup } from '@/components/ui/SegmentOption';
 import { useLocale } from '@/lib/i18n/context';
 import type { PrintConfig, FinishOption, PaperSize } from '@/lib/print/types';
 import { PAPER_SIZE_LABELS } from '@/lib/print/types';
@@ -319,7 +319,7 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
                 <label className="text-xs font-bold text-muted-fg uppercase tracking-wider">
                   {t.print.pageSelection}
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <SegmentGroup label={t.print.pageSelection} className="grid grid-cols-3 gap-2">
                   {(['all', 'current', 'custom'] as const).map((mode) => (
                     <SegmentOption
                       radio
@@ -334,7 +334,7 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
                           : t.print.pagesCustom}
                     </SegmentOption>
                   ))}
-                </div>
+                </SegmentGroup>
                 {config.pageMode === 'custom' && (
                   <Input
                     value={config.customPages}
@@ -379,7 +379,7 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
                 <label className="text-xs font-bold text-muted-fg uppercase tracking-wider">
                   {t.print.duplex}
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <SegmentGroup label={t.print.duplex} className="grid grid-cols-3 gap-2">
                   {(
                     [
                       ['simplex', t.print.duplexSimplex],
@@ -396,7 +396,7 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
                       {label}
                     </SegmentOption>
                   ))}
-                </div>
+                </SegmentGroup>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -479,7 +479,10 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
                 <label className="text-xs font-bold text-muted-fg uppercase tracking-wider">
                   {t.print.binding}
                 </label>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                <SegmentGroup
+                  label={t.print.binding}
+                  className="grid grid-cols-2 md:grid-cols-5 gap-2"
+                >
                   {(['none', 'stapled', 'spiral', 'glue', 'hardcover'] as const).map((b) => (
                     <SegmentOption
                       radio
@@ -500,7 +503,7 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
                               : t.print.bindHardcover}
                     </SegmentOption>
                   ))}
-                </div>
+                </SegmentGroup>
               </div>
 
               <div className="space-y-2">
@@ -533,7 +536,10 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
               title={t.print.sectionFulfillment}
               icon={<MapPin className="w-4 h-4 text-muted-fg shrink-0" />}
             >
-              <div className="flex gap-2 bg-elevated/80 p-1 rounded-lg border border-line">
+              <SegmentGroup
+                label={t.print.sectionFulfillment}
+                className="flex gap-2 bg-elevated/80 p-1 rounded-lg border border-line"
+              >
                 <SegmentOption
                   radio
                   selected={config.deliveryType === 'pickup'}
@@ -558,7 +564,7 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
                 >
                   <Truck className="w-3.5 h-3.5" /> {t.print.delivery}
                 </SegmentOption>
-              </div>
+              </SegmentGroup>
               {config.deliveryType === 'pickup' ? (
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400 z-10 pointer-events-none" />
@@ -632,7 +638,7 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
                     <p className="text-[10px] font-bold uppercase text-muted-fg tracking-wider">
                       {t.print.savedCards}
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <SegmentGroup label={t.print.savedCards} className="flex flex-wrap gap-2">
                       <SegmentOption
                         dense
                         radio
@@ -660,7 +666,7 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
                           {c.card_brand} ••{c.last4}
                         </SegmentOption>
                       ))}
-                    </div>
+                    </SegmentGroup>
                   </div>
                 )}
 

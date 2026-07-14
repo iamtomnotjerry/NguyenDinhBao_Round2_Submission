@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import { ViewTransitions } from 'next-view-transitions';
 import AppProviders from '@/components/AppProviders';
 import './globals.css';
 
@@ -40,20 +39,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ViewTransitions>
-      <html
-        lang="vi"
-        suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
-        data-theme="dark"
-      >
-        <head>
-          <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-        </head>
-        <body className="min-h-full flex flex-col premium-bg bg-[var(--background)] text-[var(--foreground)] selection:bg-emerald-500 selection:text-black pb-20 md:pb-0">
-          <AppProviders>{children}</AppProviders>
-        </body>
-      </html>
-    </ViewTransitions>
+    <html
+      lang="vi"
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+      data-theme="dark"
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="min-h-full flex flex-col premium-bg bg-[var(--background)] text-[var(--foreground)] selection:bg-emerald-500 selection:text-black pb-20 md:pb-0">
+        <AppProviders>{children}</AppProviders>
+      </body>
+    </html>
   );
 }

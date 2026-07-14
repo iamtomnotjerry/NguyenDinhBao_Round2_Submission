@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Command } from 'cmdk';
-import { useTransitionRouter } from 'next-view-transitions';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   Printer,
   ShoppingBag,
@@ -18,7 +18,8 @@ import { cn } from '@/lib/utils';
 
 export default function CommandPalette() {
   const [open, setOpen] = useState(false);
-  const router = useTransitionRouter();
+  const router = useRouter();
+  const pathname = usePathname();
   const { t } = useLocale();
 
   useEffect(() => {
@@ -45,12 +46,17 @@ export default function CommandPalette() {
     [router],
   );
 
+  const authHref =
+    pathname && pathname !== '/' && pathname !== '/auth'
+      ? `/auth?next=${encodeURIComponent(pathname)}`
+      : '/auth';
+
   const items = [
     { href: '/print', label: t.nav.print, icon: Printer, hint: t.command.printHint },
     { href: '/store', label: t.nav.store, icon: ShoppingBag, hint: t.command.storeHint },
     { href: '/chat', label: t.nav.chat, icon: MessageSquare, hint: t.command.chatHint },
     { href: '/dashboard', label: t.nav.dashboard, icon: LayoutDashboard, hint: t.command.dashHint },
-    { href: '/auth', label: t.nav.login, icon: LogIn, hint: t.command.authHint },
+    { href: authHref, label: t.nav.login, icon: LogIn, hint: t.command.authHint },
     { href: '/', label: t.brand, icon: Sparkles, hint: t.command.homeHint },
   ];
 

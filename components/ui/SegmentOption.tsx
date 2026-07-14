@@ -1,4 +1,4 @@
-import { cn, btnInteractive } from '@/lib/utils';
+import { cn, btnInteractive, hoverIdle } from '@/lib/utils';
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 export type SegmentOptionProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -29,7 +29,7 @@ export function SegmentOption({
         dense ? 'px-2.5 py-1.5 text-[10px] rounded-lg' : 'py-2 px-1 text-xs',
         selected
           ? 'border-emerald-500 bg-emerald-500/5 text-fg'
-          : 'border-edge text-secondary hover:text-fg',
+          : cn('border-edge text-secondary hover:border-edge-strong', hoverIdle),
         className,
       )}
       {...props}

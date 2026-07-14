@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/auth');
+    redirect('/auth?next=/dashboard');
   }
 
   const [{ data: profile }, { data: jobs }, { data: ords }, { data: history }] = await Promise.all([

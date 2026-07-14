@@ -162,7 +162,7 @@ export default function ChatBox({
                       className={`p-4 rounded-2xl text-sm leading-relaxed ${
                         m.role === 'user'
                           ? 'bg-gradient-to-tr from-emerald-600 to-teal-600 text-fg rounded-tr-none shadow-lg shadow-emerald-950/10'
-                          : 'bg-muted/40 border border-line/80 backdrop-blur-md text-on-brand rounded-tl-none shadow-inner'
+                          : 'bg-muted/40 border border-line/80 backdrop-blur-md text-fg rounded-tl-none shadow-inner'
                       }`}
                     >
                       {m.role === 'user' ? (

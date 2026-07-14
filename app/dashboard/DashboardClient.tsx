@@ -7,17 +7,18 @@ import { springSoft } from '@/lib/motion';
 import PageReveal from '@/components/PageReveal';
 import { supabase } from '@/lib/supabase/client';
 import { SafeDatabase } from '@/types/database.types';
-import Header from '@/components/Header';
 import { PageShell } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
+import { HeaderSlot } from '@/components/HeaderSlot';
 import AppFooter from '@/components/AppFooter';
 import { Printer, ShoppingBag, Gift, LogOut, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import { cn, hoverIdle } from '@/lib/utils';
 import DashboardOverview from './components/DashboardOverview';
 import DashboardPrintJobs from './components/DashboardPrintJobs';
 import DashboardOrders from './components/DashboardOrders';
 import { useLocale } from '@/lib/i18n/context';
+import { useAuthUser } from '@/lib/auth/user-context';
 
 type PrintJob = SafeDatabase['public']['Tables']['print_jobs']['Row'];
 type Order = SafeDatabase['public']['Tables']['orders']['Row'];
@@ -55,15 +56,7 @@ export default function DashboardClient({
   const pointsHistory = initialPointsHistory;
 
   const [activeTab, setActiveTab] = useQueryState('tab', tabParser);
-
-  // Refresh on tab visibility
-  useEffect(() => {
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') router.refresh();
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [router]);
+  const { refreshUser } = useAuthUser();
 
   // Live updates for this user's jobs/orders
   useEffect(() => {
@@ -105,6 +98,7 @@ export default function DashboardClient({
   const handleSignOut = async () => {
     setSigningOut(true);
     await supabase.auth.signOut();
+    await refreshUser();
     router.push('/auth');
     router.refresh();
   };
@@ -118,7 +112,7 @@ export default function DashboardClient({
 
   return (
     <PageShell className="selection:text-fg">
-      <Header>
+      <HeaderSlot>
         <div className="flex items-center gap-1.5">
           <Button
             variant="ghost"
@@ -141,7 +135,7 @@ export default function DashboardClient({
             <span className="hidden sm:inline">{t.dashboard.signOut}</span>
           </Button>
         </div>
-      </Header>
+      </HeaderSlot>
 
       <main className="flex-1 max-w-6xl mx-auto px-6 py-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
         <div className="lg:col-span-3 space-y-6">
@@ -196,10 +190,8 @@ export default function DashboardClient({
                     aria-selected={activeTab === id}
                     onClick={() => void setActiveTab(id)}
                     className={cn(
-                      'relative w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center gap-3 transition-colors',
-                      activeTab === id
-                        ? 'text-black'
-                        : 'text-muted-fg hover:text-secondary-strong hover:bg-muted/30',
+                      'relative w-full py-3 px-4 rounded-xl text-xs font-bold flex items-center gap-3',
+                      activeTab === id ? 'text-black' : cn('text-muted-fg', hoverIdle),
                     )}
                   >
                     {activeTab === id && (

@@ -1,6 +1,5 @@
 import type { NextConfig } from 'next';
 
-/** View transitions via next-view-transitions only. */
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [

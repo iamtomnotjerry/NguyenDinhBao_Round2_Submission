@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { motion, useReducedMotion } from 'motion/react';
 import { Printer, ShoppingBag, MessageSquare, LayoutDashboard } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/context';
-import { cn } from '@/lib/utils';
+import { cn, hoverIdle } from '@/lib/utils';
 import { springSoft } from '@/lib/motion';
 
 /** Fixed bottom nav for mobile — desktop uses Header capsule nav. */
@@ -34,8 +34,8 @@ export default function MobileNav() {
               <TransitionLink
                 href={href}
                 className={cn(
-                  'relative flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-semibold',
-                  active ? 'text-emerald-400' : 'text-muted-fg hover:text-secondary-strong',
+                  'relative flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-semibold mx-1 rounded-xl',
+                  active ? 'text-emerald-400' : cn('text-muted-fg', hoverIdle),
                 )}
               >
                 {active && (

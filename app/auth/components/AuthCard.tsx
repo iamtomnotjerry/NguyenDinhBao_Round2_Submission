@@ -65,7 +65,7 @@ export default function AuthCard({
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.25 }}
               >
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-secondary-strong bg-clip-text text-transparent">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-fg to-secondary-strong bg-clip-text text-transparent">
                   {isSignUp ? t.auth.createAccount : t.auth.welcomeBack}
                 </h2>
                 <p className="text-muted-fg text-sm mt-2 font-medium">
@@ -140,7 +140,7 @@ export default function AuthCard({
                 className="w-full mt-4 shadow-lg shadow-emerald-500/10"
               >
                 {loading ? (
-                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="w-5 h-5 border-2 border-on-brand border-t-transparent rounded-full animate-spin" />
                 ) : isSignUp ? (
                   <>
                     <UserPlus className="w-4 h-4" /> {t.auth.signUp}

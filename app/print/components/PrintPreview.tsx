@@ -154,7 +154,7 @@ export default function PrintPreview({
       btnInteractive,
       active
         ? 'border-emerald-500/45 bg-emerald-500/15 text-emerald-300'
-        : 'border-white/8 bg-elevated/60 text-secondary hover:text-secondary-strong hover:border-white/15',
+        : 'border-edge bg-elevated/60 text-secondary hover:text-fg hover:bg-muted hover:border-edge',
     );
 
   return (
@@ -167,7 +167,7 @@ export default function PrintPreview({
       <div className="glass-bezel-inner flex flex-col min-h-[420px] lg:min-h-[calc(100vh-6.5rem)] lg:max-h-[calc(100vh-5.5rem)]">
         {/* Chrome bar */}
         <motion.div
-          className="shrink-0 flex flex-wrap items-center justify-between gap-3 px-4 md:px-5 py-3 border-b border-white/6 bg-elevated/40"
+          className="shrink-0 flex flex-wrap items-center justify-between gap-3 px-4 md:px-5 py-3 border-b border-line bg-elevated/40"
           initial={reduce ? false : { opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: easeOutExpo, delay: 0.06 }}
@@ -187,10 +187,10 @@ export default function PrintPreview({
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/80 border border-white/8 text-secondary">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/80 border border-edge text-secondary">
               {PAPER_SIZE_LABELS[configPaperSize]}
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/80 border border-white/8 text-secondary">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/80 border border-edge text-secondary">
               {pageIsColor ? t.print.labelColor : t.print.labelBw}
             </span>
             {configBinding !== 'none' && (
@@ -204,7 +204,7 @@ export default function PrintPreview({
         {/* Toolbar */}
         {file && isPdf && (
           <motion.div
-            className="shrink-0 flex items-center gap-1.5 px-4 md:px-5 py-2.5 border-b border-white/5 bg-elevated/25 overflow-x-auto"
+            className="shrink-0 flex items-center gap-1.5 px-4 md:px-5 py-2.5 border-b border-line bg-elevated/25 overflow-x-auto"
             initial={reduce ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.35, ease: easeOutExpo, delay: 0.1 }}
@@ -352,7 +352,7 @@ export default function PrintPreview({
 
         {/* Filmstrip / pager */}
         {file && (
-          <div className="shrink-0 border-t border-white/6 bg-elevated/55 px-4 md:px-5 py-3 space-y-2.5">
+          <div className="shrink-0 border-t border-line bg-elevated/55 px-4 md:px-5 py-3 space-y-2.5">
             <div className="flex items-center justify-between gap-3">
               <p className="text-[11px] text-muted-fg font-medium truncate">{file.name}</p>
               <p className="text-[12px] font-mono font-bold text-secondary shrink-0 tabular-nums">
@@ -374,7 +374,7 @@ export default function PrintPreview({
                   onClick={goPrev}
                   disabled={activePage <= 1 || isRendering}
                   className={cn(
-                    'h-9 w-9 rounded-lg bg-muted border border-white/8 text-secondary-strong disabled:opacity-35',
+                    'h-9 w-9 rounded-lg bg-muted border border-edge text-secondary-strong disabled:opacity-35',
                     btnInteractive,
                   )}
                 >
@@ -388,14 +388,14 @@ export default function PrintPreview({
                   onChange={(e) =>
                     setCurrentPage(Math.min(totalPages, Math.max(1, Number(e.target.value) || 1)))
                   }
-                  className="w-14 text-center bg-elevated border border-white/8 rounded-lg text-xs py-2 text-fg font-mono"
+                  className="w-14 text-center bg-elevated border border-edge rounded-lg text-xs py-2 text-fg font-mono"
                 />
                 <button
                   type="button"
                   onClick={goNext}
                   disabled={activePage >= totalPages || isRendering}
                   className={cn(
-                    'h-9 w-9 rounded-lg bg-muted border border-white/8 text-secondary-strong disabled:opacity-35',
+                    'h-9 w-9 rounded-lg bg-muted border border-edge text-secondary-strong disabled:opacity-35',
                     btnInteractive,
                   )}
                 >
@@ -412,7 +412,7 @@ export default function PrintPreview({
                         btnInteractive,
                         page === activePage
                           ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300'
-                          : 'bg-elevated border-white/8 text-muted-fg hover:text-secondary-strong',
+                          : 'bg-elevated border-edge text-muted-fg hover:text-fg hover:bg-muted',
                       )}
                     >
                       {page}

@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "sync:pdf-worker": "node -e \"require('fs').copyFileSync('node_modules/pdfjs-dist/build/pdf.worker.min.mjs','public/pdf.worker.min.mjs')\"",
+    "postinstall": "npm run sync:pdf-worker",
     "prepare": "husky"
   },
   "dependencies": {
@@ -23,7 +25,6 @@
     "lucide-react": "^1.24.0",
     "motion": "^12.42.2",
     "next": "16.2.10",
-    "next-view-transitions": "^0.3.5",
     "nuqs": "^2.9.0",
     "pdfjs-dist": "^6.1.200",
     "react": "19.2.4",

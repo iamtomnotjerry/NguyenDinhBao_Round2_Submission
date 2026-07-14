@@ -8,8 +8,6 @@ import { supabase } from '@/lib/supabase/client';
 import PageReveal from '@/components/PageReveal';
 import { easeOutExpo } from '@/lib/motion';
 import { SafeDatabase } from '@/types/database.types';
-import { User as SupabaseUser } from '@supabase/supabase-js';
-import Header from '@/components/Header';
 import AppFooter from '@/components/AppFooter';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
 import { Printer, ArrowRight, AlertTriangle } from 'lucide-react';
@@ -19,6 +17,7 @@ import { buildPrintQuote, btnInteractive, cn } from '@/lib/utils';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PrintConfigForm from './components/PrintConfigForm';
 import { useLocale } from '@/lib/i18n/context';
+import { useAuthUser } from '@/lib/auth/user-context';
 import { DEFAULT_PRINT_CONFIG, type PrintConfig } from '@/lib/print/types';
 import { parseColorPages } from '@/lib/print/page-selection';
 import { localizeQuoteError } from '@/lib/print/quote-i18n';
@@ -73,8 +72,8 @@ function progressForStatus(status: string): number {
 export default function PrintClient() {
   const { t } = useLocale();
   const reduce = useReducedMotion();
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuthUser();
+  const [profileLoading, setProfileLoading] = useState(true);
   const [rewardPoints, setRewardPoints] = useState(0);
 
   const [file, setFile] = useState<File | null>(null);
@@ -118,37 +117,49 @@ export default function PrintClient() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       import('pdfjs-dist').then((pdfjs) => {
-        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+        // Self-hosted under /public — synced via `npm run sync:pdf-worker`
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
         setPdfjsLib(pdfjs);
       });
     }
   }, []);
 
   useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('reward_points')
-          .eq('id', user.id)
-          .single();
-        if (profile) setRewardPoints(profile.reward_points);
+    let active = true;
 
-        const { data: tokens } = await supabase
+    const loadProfile = async () => {
+      if (authLoading) return;
+
+      if (!user) {
+        if (active) {
+          setRewardPoints(0);
+          setSavedCards([]);
+          setProfileLoading(false);
+        }
+        return;
+      }
+
+      setProfileLoading(true);
+      const [{ data: profile }, { data: tokens }] = await Promise.all([
+        supabase.from('profiles').select('reward_points').eq('id', user.id).single(),
+        supabase
           .from('payment_tokens')
           .select('*')
           .eq('user_id', user.id)
-          .order('is_default', { ascending: false });
-        if (tokens) setSavedCards(tokens);
-      }
+          .order('is_default', { ascending: false }),
+      ]);
+
+      if (!active) return;
+      if (profile) setRewardPoints(profile.reward_points);
+      if (tokens) setSavedCards(tokens);
+      setProfileLoading(false);
     };
-    checkUser();
-  }, []);
+
+    void loadProfile();
+    return () => {
+      active = false;
+    };
+  }, [user, authLoading]);
 
   const quote = useMemo(
     () => buildPrintQuote(config, effectivePages, currentPage),
@@ -444,9 +455,7 @@ export default function PrintClient() {
 
   return (
     <PageShell className="selection:text-fg">
-      <Header />
-
-      {loading ? (
+      {authLoading || profileLoading ? (
         <LoadingSkeleton variant="page" />
       ) : (
         <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 sm:px-5 lg:px-8 py-6 md:py-8 relative z-10">
@@ -459,7 +468,7 @@ export default function PrintClient() {
                 <h2 className="text-2xl font-bold">{t.print.loginTitle}</h2>
                 <p className="text-secondary max-w-md">{t.print.loginDesc}</p>
                 <TransitionLink
-                  href="/auth"
+                  href="/auth?next=/print"
                   className={cn(
                     'px-8 py-4 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-bold flex items-center gap-2 text-on-brand',
                     btnInteractive,

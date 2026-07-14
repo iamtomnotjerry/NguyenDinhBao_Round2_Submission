@@ -7,7 +7,6 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { easeOutExpo, fadeUp } from '@/lib/motion';
 import { supabase } from '@/lib/supabase/client';
 import { SafeDatabase } from '@/types/database.types';
-import Header from '@/components/Header';
 import AppFooter from '@/components/AppFooter';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
 import { PageShell } from '@/components/ui/Surface';
@@ -179,8 +178,6 @@ export default function ChatClient({
 
   return (
     <PageShell className="h-screen overflow-hidden selection:text-fg">
-      <Header />
-
       {loadingSession ? (
         <LoadingSkeleton variant="chat" />
       ) : (

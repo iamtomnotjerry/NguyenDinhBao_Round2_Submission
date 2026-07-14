@@ -1,50 +1,34 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { TransitionLink } from '@/components/TransitionLink';
 import { usePathname } from 'next/navigation';
 import { motion, useReducedMotion } from 'motion/react';
-import { supabase } from '@/lib/supabase/client';
-import { User as SupabaseUser } from '@supabase/supabase-js';
 import { Printer, User, LogIn, Sun, Moon, Languages, Search } from 'lucide-react';
+import { TransitionLink } from '@/components/TransitionLink';
 import { Button } from '@/components/ui/Button';
-import { btnInteractive, cn } from '@/lib/utils';
+import { btnInteractive, cn, hoverIdle } from '@/lib/utils';
 import { useLocale } from '@/lib/i18n/context';
 import { useTheme } from '@/lib/theme/context';
+import { useAuthUser } from '@/lib/auth/user-context';
+import { HeaderActionsHost } from '@/components/HeaderSlot';
 import { springSoft } from '@/lib/motion';
 
-interface HeaderProps {
-  children?: React.ReactNode;
-}
-
-export default function Header({ children }: HeaderProps) {
-  const [user, setUser] = useState<SupabaseUser | null>(null);
+export default function Header() {
   const pathname = usePathname();
   const { locale, setLocale, t } = useLocale();
   const { theme, toggleTheme } = useTheme();
+  const { user, loading: authLoading } = useAuthUser();
   const reduce = useReducedMotion();
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   const navItems = [
     { name: t.nav.print, href: '/print' },
     { name: t.nav.store, href: '/store' },
     { name: t.nav.chat, href: '/chat' },
   ];
+
+  const authHref =
+    pathname && pathname !== '/' && pathname !== '/auth'
+      ? `/auth?next=${encodeURIComponent(pathname)}`
+      : '/auth';
 
   return (
     <header className="sticky top-4 z-50 transition-all duration-300 w-full px-4">
@@ -56,9 +40,9 @@ export default function Header({ children }: HeaderProps) {
             whileTap={reduce ? undefined : { scale: 0.95 }}
             transition={reduce ? { duration: 0 } : springSoft}
           >
-            <Printer className="w-4 h-4 text-fg" />
+            <Printer className="w-4 h-4 text-on-brand" />
           </motion.div>
-          <span className="text-base font-bold tracking-tight bg-gradient-to-r from-white to-secondary bg-clip-text text-transparent group-hover:to-secondary-strong transition-all duration-300">
+          <span className="text-base font-bold tracking-tight bg-gradient-to-r from-fg to-secondary bg-clip-text text-transparent group-hover:to-secondary-strong transition-all duration-300">
             {t.brand}
           </span>
         </TransitionLink>
@@ -73,7 +57,7 @@ export default function Header({ children }: HeaderProps) {
                 className={cn(
                   'relative px-4.5 py-2 rounded-full',
                   btnInteractive,
-                  isActive ? 'text-emerald-400' : 'text-secondary hover:text-fg hover:bg-muted/35',
+                  isActive ? 'text-emerald-400' : cn('text-secondary', hoverIdle),
                 )}
               >
                 {isActive && (
@@ -127,9 +111,14 @@ export default function Header({ children }: HeaderProps) {
             {locale === 'vi' ? 'EN' : 'VI'}
           </Button>
 
-          {children}
+          <HeaderActionsHost className="flex items-center gap-1.5" />
 
-          {user ? (
+          {authLoading ? (
+            <span
+              aria-hidden
+              className="inline-block h-8 w-[4.5rem] sm:w-[6.5rem] rounded-full bg-muted/50 border border-edge animate-pulse"
+            />
+          ) : user ? (
             <TransitionLink
               href="/dashboard"
               className={cn(
@@ -143,7 +132,7 @@ export default function Header({ children }: HeaderProps) {
             </TransitionLink>
           ) : (
             <TransitionLink
-              href="/auth"
+              href={authHref}
               className={cn(
                 'px-3 sm:px-4.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-xs font-bold rounded-full shadow-lg shadow-emerald-600/10 flex items-center gap-1.5 hover:scale-[1.02] text-on-brand',
                 btnInteractive,

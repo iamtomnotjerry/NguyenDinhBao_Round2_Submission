@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import { motion, useReducedMotion } from 'motion/react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Header from '@/components/Header';
 import { PageShell } from '@/components/ui/Surface';
 import AppFooter from '@/components/AppFooter';
 import AuthCard from './components/AuthCard';
@@ -93,8 +92,6 @@ export default function AuthClient() {
 
   return (
     <PageShell className="selection:text-fg">
-      <Header />
-
       <main className="flex-1 flex flex-col justify-center items-center px-6 py-12 relative overflow-hidden">
         <motion.div
           aria-hidden

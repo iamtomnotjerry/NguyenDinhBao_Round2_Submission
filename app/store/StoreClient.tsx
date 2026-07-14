@@ -8,9 +8,9 @@ import PageReveal from '@/components/PageReveal';
 import { springSoft } from '@/lib/motion';
 import { SafeDatabase } from '@/types/database.types';
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import Header from '@/components/Header';
 import { PageShell, Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
+import { HeaderSlot } from '@/components/HeaderSlot';
 import EmptyState from '@/components/EmptyState';
 import AppFooter from '@/components/AppFooter';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
@@ -336,7 +336,7 @@ export default function StoreClient({ initialProducts }: StoreClientProps) {
 
   return (
     <PageShell>
-      <Header>
+      <HeaderSlot>
         <Button
           variant="ghost"
           size="sm"
@@ -359,7 +359,7 @@ export default function StoreClient({ initialProducts }: StoreClientProps) {
             </motion.span>
           )}
         </Button>
-      </Header>
+      </HeaderSlot>
 
       {loading ? (
         <main className="flex-1 max-w-6xl mx-auto px-6 py-12 w-full">

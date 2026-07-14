@@ -186,7 +186,7 @@ function CartPanel({
             type="button"
             onClick={onClose}
             className={cn(
-              'text-xs text-muted-fg hover:text-secondary-strong font-bold',
+              'text-xs text-muted-fg hover:text-fg font-bold underline-offset-2 hover:underline',
               btnInteractive,
             )}
           >
@@ -210,7 +210,7 @@ function CartPanel({
                   <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl text-center text-sm">
                     <p className="text-secondary mb-3">{t.store.loginToPay}</p>
                     <TransitionLink
-                      href="/auth"
+                      href="/auth?next=/store"
                       className={cn(
                         'inline-block py-2 px-4 bg-emerald-600 hover:bg-emerald-500 text-on-brand rounded-lg text-xs font-bold',
                         btnInteractive,

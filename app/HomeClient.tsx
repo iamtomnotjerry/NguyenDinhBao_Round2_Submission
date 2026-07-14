@@ -12,7 +12,6 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
-import Header from '@/components/Header';
 import { btnInteractive, cn } from '@/lib/utils';
 import { useLocale } from '@/lib/i18n/context';
 import { easeOutExpo, fadeUp, scaleIn, staggerContainer } from '@/lib/motion';
@@ -23,8 +22,6 @@ export default function HomeClient() {
 
   return (
     <PageShell className="relative overflow-hidden">
-      <Header />
-
       <motion.div
         aria-hidden
         className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[140px] pointer-events-none"
