@@ -21,6 +21,7 @@ import {
   Printer,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type Product = SafeDatabase['public']['Tables']['products']['Row'];
 
@@ -118,6 +119,7 @@ const renderProductThumbnail = (name: string, stock: number) => {
 };
 
 export default function StorePage() {
+  const router = useRouter();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [rewardPoints, setRewardPoints] = useState<number>(0);
   const [products, setProducts] = useState<Product[]>([]);
@@ -334,7 +336,8 @@ export default function StorePage() {
 
       setOrderResult({
         success: true,
-        message: 'Thanh toán thành công! Đơn hàng của bạn đã được khởi tạo thành công.',
+        message:
+          'Thanh toán thành công! Đơn hàng của bạn đã được khởi tạo thành công. Bạn đang được chuyển hướng đến trang quản lý đơn hàng...',
         orderId: checkoutData.order?.id || checkoutData.order_id,
       });
 
@@ -344,6 +347,11 @@ export default function StorePage() {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('platprint_cart');
       }
+
+      // Redirect to dashboard orders list after 2.5 seconds
+      setTimeout(() => {
+        router.push('/dashboard?tab=orders');
+      }, 2500);
 
       // Re-fetch profiles reward points
       const { data: profile } = await supabase
@@ -453,7 +461,7 @@ export default function StorePage() {
                     </h3>
                     <button
                       onClick={() => setIsCartOpen(false)}
-                      className="text-xs font-semibold text-zinc-500 hover:text-white transition-colors"
+                      className="text-xs font-semibold text-zinc-500 hover:text-white hover:underline transition-all cursor-pointer active:scale-95"
                     >
                       Đóng
                     </button>
@@ -484,7 +492,7 @@ export default function StorePage() {
                             <div className="flex items-center gap-2.5">
                               <button
                                 onClick={() => updateQuantity(item.product.id, -1)}
-                                className="p-1 hover:bg-zinc-900 border border-zinc-800 rounded text-zinc-400 hover:text-white transition-colors"
+                                className="p-1 hover:bg-zinc-900 border border-zinc-800 rounded text-zinc-400 hover:text-white transition-all cursor-pointer active:scale-90"
                               >
                                 <Minus className="w-3.5 h-3.5" />
                               </button>
@@ -493,14 +501,14 @@ export default function StorePage() {
                               </span>
                               <button
                                 onClick={() => updateQuantity(item.product.id, 1)}
-                                className="p-1 hover:bg-zinc-900 border border-zinc-800 rounded text-zinc-400 hover:text-white transition-colors animate-none"
+                                className="p-1 hover:bg-zinc-900 border border-zinc-800 rounded text-zinc-400 hover:text-white transition-all cursor-pointer active:scale-90"
                                 disabled={item.quantity >= item.product.stock}
                               >
                                 <Plus className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => removeFromCart(item.product.id)}
-                                className="p-1 hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors ml-1"
+                                className="p-1 hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-all cursor-pointer active:scale-90 ml-1"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -719,28 +727,28 @@ export default function StorePage() {
                                 <button
                                   type="button"
                                   onClick={() => handleSelectSimCard('4001')}
-                                  className="px-2 py-1 bg-zinc-900 border border-zinc-800 hover:border-red-500/30 text-[9px] rounded text-zinc-400 font-bold transition-all"
+                                  className="px-2 py-1 bg-zinc-900 border border-zinc-800 hover:border-red-500/30 hover:text-white text-[9px] rounded text-zinc-400 font-bold transition-all cursor-pointer active:scale-95"
                                 >
                                   Hết hạn (4001)
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleSelectSimCard('4002')}
-                                  className="px-2 py-1 bg-zinc-900 border border-zinc-800 hover:border-red-500/30 text-[9px] rounded text-zinc-400 font-bold transition-all"
+                                  className="px-2 py-1 bg-zinc-900 border border-zinc-800 hover:border-red-500/30 hover:text-white text-[9px] rounded text-zinc-400 font-bold transition-all cursor-pointer active:scale-95"
                                 >
                                   Từ chối (4002)
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleSelectSimCard('4003')}
-                                  className="px-2 py-1 bg-zinc-900 border border-zinc-800 hover:border-orange-500/30 text-[9px] rounded text-zinc-400 font-bold transition-all"
+                                  className="px-2 py-1 bg-zinc-900 border border-zinc-800 hover:border-orange-500/30 hover:text-white text-[9px] rounded text-zinc-400 font-bold transition-all cursor-pointer active:scale-95"
                                 >
                                   Timeout (4003)
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleSelectSimCard('9999')}
-                                  className="px-2 py-1 bg-zinc-900 border border-zinc-800 hover:border-emerald-500/30 text-[9px] rounded text-zinc-400 font-bold transition-all"
+                                  className="px-2 py-1 bg-zinc-900 border border-zinc-800 hover:border-emerald-500/30 hover:text-white text-[9px] rounded text-zinc-400 font-bold transition-all cursor-pointer active:scale-95"
                                 >
                                   Thành công
                                 </button>

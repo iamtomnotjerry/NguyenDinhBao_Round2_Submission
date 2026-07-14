@@ -34,7 +34,16 @@ export default function DashboardPage() {
   const [pointsHistory, setPointsHistory] = useState<PointHistory[]>([]);
 
   // Navigation Tab State
-  const [activeTab, setActiveTab] = useState<'overview' | 'print' | 'orders'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'print' | 'orders'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab === 'orders' || tab === 'print' || tab === 'overview') {
+        return tab;
+      }
+    }
+    return 'overview';
+  });
 
   useEffect(() => {
     const fetchDashboardData = async () => {

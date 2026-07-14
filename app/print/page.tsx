@@ -388,16 +388,24 @@ export default function PrintPage() {
                 </div>
 
                 {activeJob.status === 'completed' && (
-                  <button
-                    onClick={() => {
-                      setActiveJob(null);
-                      setFile(null);
-                      setFileName('');
-                    }}
-                    className="px-6 py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 font-bold rounded-xl transition-all flex items-center gap-2 text-sm text-white cursor-pointer active:scale-[0.97]"
-                  >
-                    In tài liệu mới <ArrowRight className="w-4 h-4 text-emerald-400" />
-                  </button>
+                  <div className="flex flex-wrap gap-4 justify-center">
+                    <button
+                      onClick={() => {
+                        setActiveJob(null);
+                        setFile(null);
+                        setFileName('');
+                      }}
+                      className="px-6 py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 font-bold rounded-xl transition-all flex items-center gap-2 text-sm text-white cursor-pointer active:scale-[0.97]"
+                    >
+                      In tài liệu mới <ArrowRight className="w-4 h-4 text-emerald-400" />
+                    </button>
+                    <Link
+                      href="/dashboard?tab=print"
+                      className="px-6 py-3 bg-gradient-to-tr from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 font-bold rounded-xl transition-all flex items-center gap-2 text-sm text-black cursor-pointer active:scale-[0.97] shadow-lg shadow-emerald-500/10"
+                    >
+                      Xem lịch sử in ấn
+                    </Link>
+                  </div>
                 )}
               </div>
             </div>
