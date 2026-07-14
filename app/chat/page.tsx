@@ -53,11 +53,11 @@ export default function ChatPage() {
   // Initialize Vercel AI SDK useChat hook using DefaultChatTransport
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: chatTransport,
-    onFinish: ({ message }) => {
+    onFinish: ({ message }: { message: UIMessage }) => {
       // Extract text content from parts to check for Human Forward signal
-      const text = message.parts
-        .filter((part) => part.type === 'text')
-        .map((part) => (part as { text: string }).text)
+      const text = (message.parts || [])
+        .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
+        .map((part) => part.text)
         .join('');
 
       if (text.includes('[FORWARD_TO_HUMAN]')) {
@@ -251,12 +251,13 @@ export default function ChatPage() {
                       </div>
                     </div>
                   ) : (
-                    /* Messages rendering list */
                     messages.map((m: UIMessage) => {
                       // Extract text content from parts to display
-                      const text = m.parts
-                        .filter((part) => part.type === 'text')
-                        .map((part) => (part as { text: string }).text)
+                      const text = (m.parts || [])
+                        .filter(
+                          (part): part is { type: 'text'; text: string } => part.type === 'text',
+                        )
+                        .map((part) => part.text)
                         .join('');
 
                       const displayContent = text.replace('[FORWARD_TO_HUMAN]', '').trim();
