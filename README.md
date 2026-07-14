@@ -195,6 +195,7 @@ Dự án được tối ưu hóa cấu trúc và giải quyết các lỗi phứ
   - Frontend theo dõi tiến độ qua Supabase Realtime.
   - Client JWT **không** có policy UPDATE trên `print_jobs`. Store checkout cũng dùng cùng service role cho mark-paid / rollback.
 - **Cổng thanh toán Sandbox:** Tokenize/charge chỉ giả lập theo số đuôi thẻ (`4001` hết hạn, `4002` từ chối, `4003` timeout), chưa kết nối Webhook ngân hàng hay cổng PayOS/Momo thật.
+- **Leaked password protection (Supabase Auth):** Tính năng chặn mật khẩu bị lộ (đối chiếu HaveIBeenPwned) chỉ khả dụng từ **Pro Plan** của Supabase — dự án chạy gói Free nên Security Advisor còn 1 cảnh báo WARN này. Đây là giới hạn thương mại của nền tảng, không phải lỗ hổng trong code; khi nâng cấp plan chỉ cần bật toggle tại _Authentication → Attack Protection_.
 
 ### Hướng phát triển tiếp theo
 
