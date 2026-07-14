@@ -145,47 +145,23 @@ export default function StorePage() {
   };
 
   // Calculations
-  const getSubtotal = () =>
-    cart.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
-  const getDiscount = () => {
-    if (!usePoints) return 0;
-    // 1 point = $0.1 discount
-    const maxDiscount = getSubtotal();
-    const pointDiscount = rewardPoints * 0.1;
-    return Math.min(maxDiscount, pointDiscount);
-  };
-  const getPointsUsed = () => {
-    if (!usePoints) return 0;
-    const discount = getDiscount();
-    // 10 points = $1
-    return Math.round(discount * 10);
-  };
-  const getPointsEarned = () => {
-    // 1 point for every $1 paid (subtotal minus discount)
-    const paidAmount = getSubtotal() - getDiscount();
-    return Math.floor(paidAmount);
-  };
-  const getTotal = () => Math.max(0, getSubtotal() - getDiscount());
+  const subtotal = cart.reduce((sum, item) => sum + Number(item.product.price) * item.quantity, 0);
+  const discount = usePoints ? Math.min(subtotal, rewardPoints * 0.1) : 0;
+  const pointsUsed = usePoints ? Math.round(discount * 10) : 0;
+  const pointsEarned = Math.floor(subtotal - discount);
+  const total = Math.max(0, subtotal - discount);
 
   // Set card simulation numbers
   const handleSelectSimCard = (last4: string) => {
-    if (last4 === '4001') {
-      setCardNumber('4111222233334001');
-      setExpiry('12/29');
-      setCvv('123');
-    } else if (last4 === '4002') {
-      setCardNumber('4111222233334002');
-      setExpiry('12/29');
-      setCvv('234');
-    } else if (last4 === '4003') {
-      setCardNumber('4111222233334003');
-      setExpiry('12/29');
-      setCvv('345');
-    } else {
-      setCardNumber('4111222233339999');
-      setExpiry('12/29');
-      setCvv('000');
-    }
+    const cardMap: Record<string, { num: string; exp: string; cvv: string }> = {
+      '4001': { num: '4111222233334001', exp: '12/29', cvv: '123' },
+      '4002': { num: '4111222233334002', exp: '12/29', cvv: '234' },
+      '4003': { num: '4111222233334003', exp: '12/29', cvv: '345' },
+    };
+    const card = cardMap[last4] || { num: '4111222233339999', exp: '12/29', cvv: '000' };
+    setCardNumber(card.num);
+    setExpiry(card.exp);
+    setCvv(card.cvv);
   };
 
   // Perform Checkout
@@ -217,10 +193,10 @@ export default function StorePage() {
             product_id: item.product.id,
             quantity: item.quantity,
           })),
-          total_amount: getTotal(),
-          discount_amount: getDiscount(),
-          points_used: getPointsUsed(),
-          points_earned: getPointsEarned(),
+          total_amount: total,
+          discount_amount: discount,
+          points_used: pointsUsed,
+          points_earned: pointsEarned,
           delivery_type: deliveryType,
           idempotency_key: idempotencyKey,
           card_token: tokenData.card_token,
@@ -344,11 +320,11 @@ export default function StorePage() {
             orderResult={orderResult}
             setOrderResult={setOrderResult}
             handleSelectSimCard={handleSelectSimCard}
-            getSubtotal={getSubtotal}
-            getDiscount={getDiscount}
-            getPointsUsed={getPointsUsed}
-            getTotal={getTotal}
-            getPointsEarned={getPointsEarned}
+            subtotal={subtotal}
+            discount={discount}
+            pointsUsed={pointsUsed}
+            total={total}
+            pointsEarned={pointsEarned}
             handleCheckoutSubmit={handleCheckoutSubmit}
           />
         </main>

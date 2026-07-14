@@ -50,11 +50,11 @@ interface CartDrawerProps {
   orderResult: { success: boolean; message: string; orderId?: string } | null;
   setOrderResult: (res: { success: boolean; message: string; orderId?: string } | null) => void;
   handleSelectSimCard: (type: string) => void;
-  getSubtotal: () => number;
-  getDiscount: () => number;
-  getPointsUsed: () => number;
-  getTotal: () => number;
-  getPointsEarned: () => number;
+  subtotal: number;
+  discount: number;
+  pointsUsed: number;
+  total: number;
+  pointsEarned: number;
   handleCheckoutSubmit: (e: React.FormEvent) => void;
 }
 
@@ -84,11 +84,11 @@ export default function CartDrawer({
   orderResult,
   setOrderResult,
   handleSelectSimCard,
-  getSubtotal,
-  getDiscount,
-  getPointsUsed,
-  getTotal,
-  getPointsEarned,
+  subtotal,
+  discount,
+  pointsUsed,
+  total,
+  pointsEarned,
   handleCheckoutSubmit,
 }: CartDrawerProps) {
   if (!isOpen) return null;
@@ -293,7 +293,7 @@ export default function CartDrawer({
                           </label>
                         </div>
                         <span className="text-xs text-emerald-400 font-bold">
-                          Giảm -${getDiscount().toFixed(2)}
+                          Giảm -${discount.toFixed(2)}
                         </span>
                       </div>
                     )}
@@ -394,21 +394,21 @@ export default function CartDrawer({
                     <div className="bg-zinc-950/60 p-4 border border-zinc-900 rounded-xl space-y-2 text-xs font-semibold">
                       <div className="flex justify-between">
                         <span className="text-zinc-500">Tạm tính:</span>
-                        <span className="text-white">${getSubtotal().toFixed(2)}</span>
+                        <span className="text-white">${subtotal.toFixed(2)}</span>
                       </div>
                       {usePoints && (
                         <div className="flex justify-between text-emerald-400">
-                          <span>Điểm đã dùng ({getPointsUsed()} pts):</span>
-                          <span>-${getDiscount().toFixed(2)}</span>
+                          <span>Điểm đã dùng ({pointsUsed} pts):</span>
+                          <span>-${discount.toFixed(2)}</span>
                         </div>
                       )}
                       <div className="flex justify-between border-t border-zinc-900/60 pt-2 text-sm font-bold">
                         <span className="text-zinc-400">Tổng thanh toán:</span>
-                        <span className="text-white">${getTotal().toFixed(2)}</span>
+                        <span className="text-white">${total.toFixed(2)}</span>
                       </div>
                       <div className="text-[10px] text-emerald-400 flex items-center gap-1.5 pt-1.5 border-t border-dashed border-zinc-900">
-                        <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Nhận +{getPointsEarned()}{' '}
-                        điểm thưởng từ đơn hàng này!
+                        <Sparkles className="w-3.5 h-3.5 animate-pulse" /> Nhận +{pointsEarned} điểm
+                        thưởng từ đơn hàng này!
                       </div>
                     </div>
 
@@ -425,7 +425,7 @@ export default function CartDrawer({
                       ) : (
                         <>
                           <CreditCard className="w-4 h-4" /> Thanh toán một chạm ($
-                          {getTotal().toFixed(2)})
+                          {total.toFixed(2)})
                         </>
                       )}
                     </button>

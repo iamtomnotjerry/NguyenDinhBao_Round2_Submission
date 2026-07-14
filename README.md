@@ -1,126 +1,147 @@
 # PlatPrint - Nền Tảng In Ấn Từ Xa & Cửa Hàng Ấn Phẩm
 
-PlatPrint là hệ thống phần mềm toàn diện hỗ trợ dịch vụ in ấn từ xa và mua bán ấn phẩm trực tuyến dành cho sinh viên và văn phòng. Dự án được phát triển bằng **Next.js App Router (v16)**, **TypeScript**, **Tailwind CSS v4** và **Supabase** (lưu trữ đám mây, xác thực, cơ sở dữ liệu thời gian thực và phân quyền RLS).
+Hệ thống quản lý dịch vụ in ấn từ xa và mua bán ấn phẩm trực tuyến dành cho sinh viên và văn phòng, phát triển bằng **Next.js 15+ App Router**, **TypeScript**, **Tailwind CSS v4** và **Supabase Cloud**.
 
 ---
 
-## 1. Điểm Nhấn Công Nghệ & Tính Năng Nổi Bật
+## 1. Tổng quan (Overview)
 
-### 🖨️ Luồng In Ấn Từ Xa Realtime (Remote Printing)
-
-- **Đếm trang client-side:** Tích hợp `pdfjs-dist` thông qua cơ chế nạp động (Dynamic Import) chạy độc quyền ở client để đếm số trang trực tiếp mà không cần tải toàn bộ tài liệu lên server trước, tối ưu băng thông.
-- **Canvas Preview & Lớp Phủ Gia Công:** Render trang đầu của tài liệu lên Canvas, tự động vẽ lớp phủ lò xo đóng gáy xoắn (Spiral coils) hoặc ghim dập (Staples) bằng CSS lớp phủ động thời gian thực.
-- **Máy In Giả Lập Bất Đồng Bộ (Background Simulator):** Tách biệt luồng in và phản hồi API trong 201ms. Tiến trình chạy ngầm gửi Access Token JWT của chính người dùng (`Authorization: Bearer ${token}`) để vượt qua RLS và cập nhật tiến độ (`pending` ➔ `rendering` ➔ `printing` ➔ `completed`) mà không cần mã khóa đặc quyền Service Role Key.
-- **Đồng bộ Realtime:** Lắng nghe và đồng bộ trạng thái máy in trực tiếp lên màn hình người dùng qua Supabase Realtime channel.
-
-### 🛒 Cửa Hàng Ấn Phẩm & Chống Lỗi Race Condition
-
-- **Pessimistic Locking (Khóa Bi quan):** Mua hàng sử dụng stored procedure `create_order_with_stock_check` của PostgreSQL kết hợp cú pháp `FOR UPDATE` để khoá dòng sản phẩm, ngăn chặn hoàn toàn việc bán quá số lượng tồn kho (Over-selling) khi có nhiều yêu cầu thanh toán đồng thời.
-- **Atomic Rollback:** Khi cổng thanh toán Sandbox trả về lỗi, stored procedure `rollback_failed_order` tự động khôi phục số lượng tồn kho của các sản phẩm và hoàn trả điểm thưởng của người dùng một cách nguyên tử trong duy nhất một transaction.
-- **Mock Payment Sandbox:** Tích hợp bộ lọc thẻ ảo để giả lập các kịch bản thực tế: thẻ hết hạn (4001), giao dịch bị từ chối (4002) và lỗi kết nối chờ 10 giây (4003).
-
-### 💬 Hỗ Trợ Khách Hàng Bằng Chatbot AI Gemini
-
-- Tích hợp **Vercel AI SDK v4** `@ai-sdk/react` kết hợp Gemini API Streaming để trả lời tự động các vấn đề in ấn, giá cả và tính điểm.
-- **Chuyển cuộc gọi thông minh:** Khi phát hiện yêu cầu đặc biệt của khách hàng ngoài phạm vi, AI tự động chèn tín hiệu `[FORWARD_TO_HUMAN]`. Hệ thống backend sẽ đổi trạng thái phiên chat sang `waiting_support` và kích hoạt giao diện cảnh báo chờ nhân viên tiếp quản phòng chat.
+**PlatPrint** giải quyết nhu cầu in ấn tài liệu tức thời từ xa và cung cấp gian hàng mua bán tài liệu in sẵn trực tuyến. Hệ thống cho phép người dùng đăng tải tài liệu PDF/hình ảnh, tự động đếm trang và xem trước bản in (preview) lồng ghép hiệu ứng lò xo/staple trực quan, thanh toán an toàn thông qua token hóa thẻ tín dụng (PCI-DSS compliance), tích lũy và sử dụng điểm thưởng thành viên, đồng thời tương tác với trợ lý AI thông minh để giải đáp thắc mắc dịch vụ và hỗ trợ xử lý lỗi đơn hàng.
 
 ---
 
-## 2. Hướng Dẫn Cài Đặt & Chạy Cục Bộ (Local Setup)
+## 2. Kiến trúc & Quyết định Thiết kế Chính (Architecture & Key Design Decisions)
 
-### Bước 1: Clone và Cài Đặt Thư Viện
+Dự án áp dụng mô hình thiết kế tối ưu hóa tính toàn vẹn dữ liệu, khả năng chịu tải cao và cấu trúc thư mục dạng **Feature-based directory** (thành phần thuộc tính năng nào nằm độc quyền trong thư mục tính năng đó).
 
-```bash
-npm install
-```
+> [!TIP]
+> Xem chi tiết tài liệu hướng dẫn sơ đồ và luồng kiến trúc hệ thống tại **[ARCHITECTURE.md](file:///d:/se/NguyenDinhBao_Round2_Submission-/ARCHITECTURE.md)**.
 
-### Bước 2: Thiết Lập Môi Trường (`.env.local`)
+Dưới đây là các quyết định thiết kế cốt lõi được cân nhắc và áp dụng:
 
-Tạo file `.env.local` ở thư mục gốc của dự án với các cấu hình sau:
-
-```env
-# Supabase Cloud Configuration
-NEXT_PUBLIC_SUPABASE_URL=https://ctojzeltocscuifphiiq.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_QUGljB0YWKojgvblz_JDjw_DS5ShXNl
-
-# AI Integration Configuration (Lấy khóa miễn phí từ Google AI Studio)
-GEMINI_API_KEY=your-gemini-api-key
-
-# Application Configuration
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-### Bước 3: Khởi Tạo Database Schema trên Supabase
-
-1. Đăng nhập vào **Supabase Console** dự án của bạn.
-2. Mở mục **SQL Editor**, copy toàn bộ nội dung file [supabase_schema.sql](file:///d:/PlatPrint/supabase_schema.sql) dán vào và nhấn **Run** để khởi tạo các bảng, chỉ mục, trigger tài khoản, các stored procedure (`create_order_with_stock_check`, `rollback_failed_order`) và chính sách phân quyền RLS.
-
-### Bước 4: Kích Hoạt Realtime & Storage Bucket
-
-Để tính năng Realtime và Upload file hoạt động, hãy chạy các lệnh sau trong SQL Editor:
-
-```sql
--- 1. Bật Realtime cho bảng in ấn
-alter publication supabase_realtime add table public.print_jobs;
-
--- 2. Cấp quyền upload lên storage bucket "print-files" cho user
--- Lệnh SQL cấp quyền đã được tích hợp sẵn ở mục 8 của file supabase_schema.sql
-```
-
-Đồng thời, bạn vào mục **Storage** trên Supabase Dashboard, tạo mới một bucket tên là `print-files` ở chế độ **Public**.
-
-### Bước 5: Chạy Máy Chủ Phát Triển
-
-```bash
-npm run dev
-```
-
-Mở trình duyệt truy cập: [http://localhost:3000](http://localhost:3000).
+| Quyết định thiết kế                                                       | Phương án thay thế đã cân nhắc                                                            | Lý do lựa chọn                                                                                                                                                                                                |
+| :------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Kiểm soát đồng thời (Pessimistic Locking)** ở mức Database cho đơn hàng | Kiểm soát ở mức ứng dụng (Application-level caching) / Khoá lạc quan (Optimistic Locking) | Ngăn ngừa triệt để lỗi bán quá số lượng tồn kho (Over-selling) khi hàng trăm người dùng nhấn mua cùng một lúc. Sử dụng `FOR UPDATE` trong Transaction của PostgreSQL đảm bảo tính nhất quán (ACID) tuyệt đối. |
+| **Xử lý in ấn bất đồng bộ nền (Background Simulator)**                    | Chạy blocking luồng chính (Thread Sleep) hoặc thiết lập Cron job định kỳ                  | Đảm bảo thời gian phản hồi API in ấn cực nhanh (dưới 201ms). Lệnh in được đưa vào Queue chạy nền qua Next.js `after()`, cập nhật trạng thái realtime qua Supabase mà không làm nghẽn Event Loop.              |
+| **Đếm trang PDF ở Client-side** bằng `pdfjs-dist`                         | Upload file lên server rồi phân tích và đếm trang phía backend                            | Tiết kiệm băng thông và tài nguyên CPU của Server. Tệp chỉ được upload khi người dùng xác nhận in, giúp tối ưu chi phí hạ tầng Cloud.                                                                         |
+| **Cấu trúc Component theo tính năng (Feature-based Components)**          | Dồn tất cả mã nguồn trong file `page.tsx` hoặc đặt chung vào thư mục global `/components` | Giúp mã nguồn tách biệt, dễ bảo trì và dễ scale. Các components con chỉ phục vụ cho một tính năng (ví dụ `CartDrawer` của Store) sẽ nằm trong thư mục `/components/` cục bộ của route đó.                     |
 
 ---
 
-## 3. Báo Cáo Kiểm Thử Tải (Load Testing Report)
+## 3. Lược đồ Dữ liệu / Thiết kế API (Data Model / API Design)
 
-Hệ thống API đã được tiến hành thử nghiệm tải bằng thư viện `autocannon` để đánh giá năng lực phản hồi của endpoint `/api/products` (Truy xuất danh mục sản phẩm kết nối trực tiếp cơ sở dữ liệu Supabase Cloud dưới tải nặng):
+Hệ thống giao tiếp qua các RESTful API endpoints chính:
 
-### Câu lệnh kiểm thử:
+- **POST `/api/orders`**: Đặt đơn hàng ấn phẩm. Thực hiện token hóa thẻ, gọi database RPC kiểm tra kho, trừ điểm thưởng, tạo đơn hàng và trả về kết quả.
+- **POST `/api/print-jobs`**: Khởi tạo lệnh in từ xa. Tính toán chi phí dựa trên số trang/màu sắc/gia công và kích hoạt simulator chạy ngầm.
+- **GET `/api/products`**: Truy vấn danh sách ấn phẩm kèm số lượng tồn kho và thông tin chi tiết từ bảng `products`.
+- **POST `/api/chat`**: Endpoint truyền phát luồng (streaming) phản hồi chat từ Gemini AI, lưu trữ lịch sử hội thoại thời gian thực.
+- **POST `/api/sandbox/payment/tokenize`**: Token hóa thẻ tín dụng giả lập (không lưu số thẻ thô để đạt chuẩn PCI-DSS).
+- **POST `/api/sandbox/payment/charge`**: Thực hiện thanh toán giả lập với bộ lọc mã lỗi thẻ ảo (`4001` - hết hạn, `4002` - bị từ chối, `4003` - timeout trì hoãn 10 giây).
+
+---
+
+## 4. Kiến trúc Tính năng AI (AI Feature Architecture)
+
+PlatPrint tích hợp trợ lý AI thông minh đóng vai trò hỗ trợ viên chăm sóc khách hàng trực tuyến:
+
+- **Dịch vụ AI:** Sử dụng **Gemini 2.5 Flash** thông qua **Vercel AI SDK v4** để tạo trải nghiệm truyền phát phản hồi (streamText) tức thì.
+- **Hệ thống System Prompt:** Định hình AI là Trợ lý hỗ trợ kỹ thuật PlatPrint, tự động nhận diện ngôn ngữ người dùng, chỉ trả lời trong phạm vi in ấn, thanh toán, điểm thưởng.
+- **Cơ chế Fallback & Chuyển tiếp (Human Handoff):** Khi người dùng yêu cầu gặp nhân viên hoặc AI gặp câu hỏi ngoài tầm xử lý, AI sẽ tự động chèn từ khoá ẩn `[FORWARD_TO_HUMAN]`. Backend phát hiện từ khoá này sẽ cập nhật trạng thái session chat sang `waiting_support` trong database và hiển thị giao diện cảnh báo chờ nhân viên trên frontend.
+- **Tối ưu thời gian chờ đợi (Perceived Latency):** Phản hồi được truyền phát dưới dạng luồng dữ liệu (streaming) thời gian thực ngay khi các từ đầu tiên được tạo ra, giúp giảm thiểu tối đa cảm giác chờ đợi phản hồi của người dùng.
+
+---
+
+## 5. Đánh đổi Đã Cân nhắc (Trade-offs Considered)
+
+- **Nhất quán vs. Tốc độ ghi (Pessimistic Locking vs. High Throughput):** Việc sử dụng khoá bi quan (`FOR UPDATE`) trên dòng sản phẩm làm tăng thời gian chờ của các giao dịch mua hàng cùng một sản phẩm khi tải cực lớn. Tuy nhiên, đối với nghiệp vụ thương mại điện tử, việc bán vượt quá tồn kho (Over-selling) gây hậu quả nghiêm trọng hơn rất nhiều so với độ trễ giao dịch nhỏ, vì vậy tính nhất quán được ưu tiên tuyệt đối.
+- **Bảo mật RLS vs. Tốc độ Simulator:** Simulator chạy nền cập nhật trạng thái in bằng cách truyền Access Token JWT của chính người dùng đã đăng nhập thay vì dùng Service Role Key bypass. Điều này đảm bảo chính sách Row Level Security (RLS) của cơ sở dữ liệu được tôn trọng tuyệt đối ở mọi tầng, mặc dù tốn thêm tài nguyên giải mã JWT ở phía Supabase.
+
+---
+
+## 6. Chiến lược Kiểm thử (Testing Approach)
+
+Dự án áp dụng quy trình kiểm thử hai lớp chặt chẽ:
+
+### 1. Kiểm thử tải (Load Testing)
+
+Endpoint API `/api/products` được chạy kiểm thử tải nặng bằng công cụ `autocannon` giả lập **100 kết nối đồng thời trong 5 giây** liên tục truy vấn trực tiếp vào Supabase Cloud:
 
 ```bash
 npx autocannon http://localhost:3000/api/products -c 100 -d 5
 ```
 
-_(Chạy thử nghiệm với 100 kết nối đồng thời trong 5 giây)_
+**Kết quả thực tế:**
 
-### Kết quả đo lường thực tế:
-
+- **Tốc độ xử lý:** 113.2 req/s.
 - **Tổng số Request xử lý thành công:** 666 requests.
-- **Thời gian kiểm thử:** 5.06 giây.
-- **Tốc độ xử lý trung bình (Avg Req/Sec):** 113.2 req/s.
-- **Băng thông trung bình:** 173 kB/s (Đọc tổng cộng 863 kB).
-- **Phân phối độ trễ (Latency Distribution):**
-  - **Trễ trung bình (Avg Latency):** 842.39 ms.
-  - **Trễ trung vị (50%):** 728 ms.
-  - **Độ lệch chuẩn (Stdev):** 270.82 ms.
-  - **Trễ lớn nhất (Max):** 1974 ms.
-  - **Tỉ lệ lỗi (Error Rate):** 0% (Tất cả 666 yêu cầu đều trả về HTTP 200).
+- **Tỉ lệ lỗi (Error Rate):** **0%** (Tất cả yêu cầu đều trả về HTTP 200).
+- **Độ trễ trung bình:** 842ms.
 
-### Đánh giá hiệu năng:
+### 2. Kiểm thử kịch bản cổng thanh toán (Payment Exception Mocking)
 
-Hệ thống xử lý tải đồng thời cực kỳ ổn định. Thời gian phản hồi trung bình dưới 850ms đối với cơ sở dữ liệu cloud đặt tại khu vực Đông Nam Á là con số tối ưu cho môi trường Node.js Next.js dev server, đảm bảo khả năng phục vụ liên tục mà không phát sinh bất kỳ lỗi nghẽn cổ chai (bottleneck) hay lỗi sập kết nối nào.
+Thực hiện nhập các thẻ ảo có đuôi đặc biệt để xác minh luồng rollback kho nguyên tử:
+
+- Thẻ đuôi `4001`: Trả lỗi thẻ hết hạn ➔ Frontend hiện thông báo lỗi.
+- Thẻ đuôi `4002`: Trả lỗi giao dịch bị từ chối ➔ Kho và điểm thưởng tự động hồi phục qua Procedure `rollback_failed_order`.
+- Thẻ đuôi `4003`: Trì hoãn phản hồi 10 giây ➔ Frontend hiển thị trạng thái chờ thanh toán xử lý lâu.
 
 ---
 
-## 4. Tuyên Bố Đóng Góp Của Trợ Lý Trí Tuệ Nhân Tạo (AI Agent)
+## 7. Hướng dẫn Chạy Dự án (How to Run)
 
-Toàn bộ dự án PlatPrint (bao gồm cấu trúc API, hệ thống bảo mật Row Level Security, kiến trúc giao dịch chống Race Condition trên PostgreSQL, giao diện người dùng Tailwind CSS và luồng đếm trang PDF bất đồng bộ) được lập trình và tối ưu hóa dưới sự trợ giúp đắc lực của **Antigravity AI Coding Assistant (Google DeepMind Team)**.
+### Bước 1: Clone và cài đặt thư viện
 
-### Các phần việc AI đã đóng góp cụ thể:
+```bash
+npm install
+```
 
-1. **Thiết kế Cơ sở dữ liệu:** Viết trigger đồng bộ tài khoản, tối ưu hóa các chỉ mục hiệu năng cao và các stored procedure giao dịch an toàn.
-2. **Khắc phục lỗi TypeScript & ESLint:** Thiết lập cơ chế ánh xạ kiểu dữ liệu động `SafeDatabase` giải quyết triệt để lỗi kiểu liên kết `Relationships` bị thiếu trong SDK Supabase, đảm bảo dự án biên dịch sạch sẽ không có lỗi/cảnh báo.
-3. **Mô phỏng máy in:** Xây dựng cơ chế truyền Token JWT của user vào tiến trình chạy ngầm giúp chạy simulator trực tiếp mà không cần cấu hình service key.
-4. **Văn bản hóa tiến độ:** Lập kế hoạch chi tiết từng bước, kiểm thử lỗi và viết tài liệu bàn giao dự án.
+### Bước 2: Thiết lập tệp môi trường (`.env.local`)
+
+Tạo file `.env.local` ở thư mục gốc:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://ctojzeltocscuifphiiq.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_anon_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### Bước 3: Khởi tạo database trên Supabase Cloud
+
+1. Truy cập Supabase Dashboard ➔ SQL Editor.
+2. Dán nội dung file [supabase_schema.sql](./supabase_schema.sql) và nhấn **Run**.
+3. Bật Realtime cho bảng in bằng cách chạy:
+   ```sql
+   alter publication supabase_realtime add table public.print_jobs;
+   ```
+4. Tại mục **Storage**, tạo một bucket tên là `print-files` ở chế độ **Public**.
+
+### Bước 4: Chạy dự án
+
+```bash
+npm run dev
+```
+
+Truy cập [http://localhost:3000](http://localhost:3000) để trải nghiệm ứng dụng.
 
 ---
 
-_Dự án hoàn thành phục vụ Tuyển dụng Kỹ sư Phần mềm - Vòng 2. Chúc Ban Giám Khảo có những trải nghiệm đánh giá tốt nhất!_
+## 8. Công cụ AI Hỗ trợ (AI Tool Usage Disclosure)
+
+Dự án được tối ưu hóa cấu trúc và giải quyết các lỗi phức tạp với sự hỗ trợ của trợ lý lập trình **Antigravity AI (Google DeepMind)**:
+
+- **Thiết kế hạ tầng & RLS:** Tự động tạo hệ thống policies an toàn chống tấn công IDOR trên Supabase.
+- **Tái cấu trúc (Refactoring):** Thực hiện phân rã hoàn toàn mã nguồn lớn của 5 trang chính thành cấu trúc **Feature-based components** cục bộ giúp clean code 100%.
+- **Sửa lỗi TypeScript:** Định nghĩa wrapper `SafeDatabase` giải quyết lỗi không tương thích kiểu của quan hệ (relationships) trong Supabase SDK.
+
+---
+
+## 9. Giới hạn & Hướng Phát triển Tiếp theo (Known Limitations & Future Improvements)
+
+- **Giới hạn hiện tại:** Cổng thanh toán Sandbox mới chỉ ở mức giả lập mô phỏng theo số đuôi thẻ, chưa kết nối Webhook ngân hàng thực tế. Bản xem trước in ấn (Preview) mới chỉ vẽ được trang đầu tiên của file PDF.
+- **Hướng phát triển:** Tích hợp cổng thanh toán PayOS/Momo chính thức qua Webhook bảo mật, nâng cấp Canvas cho phép lật trang xem trước toàn bộ file PDF và tối ưu kích thước bundle để tải trang nhanh hơn nữa.
+
+---
+
+_Dự án hoàn thành phục vụ Tuyển dụng Kỹ sư Phần mềm - Vòng 2._

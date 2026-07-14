@@ -2,6 +2,9 @@
 
 Tài liệu này định nghĩa toàn bộ quy chuẩn lập trình, lệnh thực thi, cấu trúc và quy tắc bảo mật của dự án **PlatPrint** nhằm bảo đảm tính dễ bảo trì (maintainability), dễ mở rộng (scalability) và chuẩn Senior Coder.
 
+> [!NOTE]
+> Chi tiết sơ đồ kiến trúc, mô hình dữ liệu và các luồng nghiệp vụ cụ thể xem tại **[ARCHITECTURE.md](file:///d:/se/NguyenDinhBao_Round2_Submission-/ARCHITECTURE.md)**.
+
 ---
 
 ## 1. HƯỚNG DẪN LỆNH THỰC THI (COMMAND REFERENCE)
