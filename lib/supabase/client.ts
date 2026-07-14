@@ -5,7 +5,12 @@ import { SafeDatabase } from '@/types/database.types';
  * Supabase client for use in Client Components (client-side).
  * Generic Database parameter enforces type safety.
  */
-export const supabase = createBrowserClient<SafeDatabase>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+
+/**
+ * Supabase client for use in Client Components (client-side).
+ * Generic Database parameter enforces type safety.
+ * Uses placeholder fallbacks during static build-time compilation.
+ */
+export const supabase = createBrowserClient<SafeDatabase>(supabaseUrl, supabaseAnonKey);
