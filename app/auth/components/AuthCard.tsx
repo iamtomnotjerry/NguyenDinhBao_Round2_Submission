@@ -3,6 +3,7 @@
 import { Mail, Lock, UserPlus, LogIn } from 'lucide-react';
 import React from 'react';
 import { btnInteractive, cn } from '@/lib/utils';
+import { useLocale } from '@/lib/i18n/context';
 
 interface AuthCardProps {
   email: string;
@@ -29,6 +30,8 @@ export default function AuthCard({
   setMessage,
   handleAuth,
 }: AuthCardProps) {
+  const { t } = useLocale();
+
   return (
     <div className="w-full max-w-md z-10">
       <div className="glass-bezel-outer relative">
@@ -38,12 +41,10 @@ export default function AuthCard({
               {isSignUp ? <UserPlus className="w-8 h-8" /> : <LogIn className="w-8 h-8" />}
             </div>
             <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">
-              {isSignUp ? 'Tạo tài khoản mới' : 'Chào mừng trở lại'}
+              {isSignUp ? t.auth.createAccount : t.auth.welcomeBack}
             </h2>
             <p className="text-zinc-500 text-sm mt-2 text-center font-medium">
-              {isSignUp
-                ? 'Đăng ký để gửi lệnh in từ xa và sử dụng điểm thưởng.'
-                : 'Đăng nhập vào tài khoản PlatPrint của bạn.'}
+              {isSignUp ? t.auth.signUpHint : t.auth.signInHint}
             </p>
           </div>
 
@@ -62,7 +63,7 @@ export default function AuthCard({
           <form onSubmit={handleAuth} className="space-y-5">
             <div className="space-y-2">
               <label className="text-xs font-semibold text-zinc-400 tracking-wider uppercase">
-                Email
+                {t.auth.email}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-550" />
@@ -79,7 +80,7 @@ export default function AuthCard({
 
             <div className="space-y-2">
               <label className="text-xs font-semibold text-zinc-400 tracking-wider uppercase">
-                Mật khẩu
+                {t.auth.password}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-550" />
@@ -98,7 +99,7 @@ export default function AuthCard({
               type="submit"
               disabled={loading}
               className={cn(
-                'w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/10 hover:scale-[1.01] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 mt-4',
+                'w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/10 hover:scale-[1.01] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 mt-4 text-white',
                 btnInteractive,
               )}
             >
@@ -106,20 +107,18 @@ export default function AuthCard({
                 <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : isSignUp ? (
                 <>
-                  <UserPlus className="w-4 h-4" /> Đăng ký
+                  <UserPlus className="w-4 h-4" /> {t.auth.signUp}
                 </>
               ) : (
                 <>
-                  <LogIn className="w-4 h-4" /> Đăng nhập
+                  <LogIn className="w-4 h-4" /> {t.auth.signIn}
                 </>
               )}
             </button>
           </form>
 
           <div className="mt-8 pt-6 border-t border-zinc-900 text-center text-sm">
-            <span className="text-zinc-500">
-              {isSignUp ? 'Đã có tài khoản?' : 'Chưa có tài khoản?'}
-            </span>{' '}
+            <span className="text-zinc-500">{isSignUp ? t.auth.hasAccount : t.auth.noAccount}</span>{' '}
             <button
               onClick={() => {
                 setIsSignUp(!isSignUp);
@@ -130,7 +129,7 @@ export default function AuthCard({
                 btnInteractive,
               )}
             >
-              {isSignUp ? 'Đăng nhập ngay' : 'Đăng ký tài khoản mới'}
+              {isSignUp ? t.auth.signInNow : t.auth.signUpNow}
             </button>
           </div>
         </div>

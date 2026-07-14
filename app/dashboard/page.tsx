@@ -11,12 +11,14 @@ import { btnInteractive, cn } from '@/lib/utils';
 import DashboardOverview from './components/DashboardOverview';
 import DashboardPrintJobs from './components/DashboardPrintJobs';
 import DashboardOrders from './components/DashboardOrders';
+import { useLocale } from '@/lib/i18n/context';
 
 type PrintJob = SafeDatabase['public']['Tables']['print_jobs']['Row'];
 type Order = SafeDatabase['public']['Tables']['orders']['Row'];
 type PointHistory = SafeDatabase['public']['Tables']['reward_points_history']['Row'];
 
 export default function DashboardPage() {
+  const { t } = useLocale();
   const router = useRouter();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [rewardPoints, setRewardPoints] = useState<number>(0);
@@ -124,7 +126,7 @@ export default function DashboardPage() {
             btnInteractive,
           )}
         >
-          <LogOut className="w-4 h-4" /> Đăng xuất
+          <LogOut className="w-4 h-4" /> {t.dashboard.signOut}
         </button>
       </Header>
 
@@ -148,13 +150,13 @@ export default function DashboardPage() {
                     {user?.email}
                   </h3>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 font-bold uppercase tracking-wider mt-1.5 inline-block">
-                    Thành viên Plat
+                    {t.dashboard.member}
                   </span>
                 </div>
                 <div className="border-t border-zinc-900 pt-4 flex justify-around">
                   <div className="text-center">
                     <span className="text-xs text-zinc-500 font-semibold block uppercase">
-                      Điểm khả dụng
+                      {t.dashboard.pointsAvailable}
                     </span>
                     <span className="text-lg font-black text-emerald-400 mt-0.5 block">
                       {rewardPoints}
@@ -177,7 +179,7 @@ export default function DashboardPage() {
                       : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30',
                   )}
                 >
-                  <Gift className="w-4 h-4" /> Tổng quan & Điểm
+                  <Gift className="w-4 h-4" /> {t.dashboard.overview}
                 </button>
                 <button
                   onClick={() => setActiveTab('print')}
@@ -189,7 +191,7 @@ export default function DashboardPage() {
                       : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30',
                   )}
                 >
-                  <Printer className="w-4 h-4" /> Lịch sử in ấn ({printJobs.length})
+                  <Printer className="w-4 h-4" /> {t.dashboard.printHistory} ({printJobs.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('orders')}
@@ -201,7 +203,7 @@ export default function DashboardPage() {
                       : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30',
                   )}
                 >
-                  <ShoppingBag className="w-4 h-4" /> Đơn hàng cửa hàng ({orders.length})
+                  <ShoppingBag className="w-4 h-4" /> {t.dashboard.orderHistory} ({orders.length})
                 </button>
               </div>
             </div>
@@ -233,7 +235,7 @@ export default function DashboardPage() {
 
       {/* Footer */}
       <footer className="border-t border-zinc-900 py-8 bg-zinc-950 text-center text-xs text-zinc-500 mt-20">
-        &copy; 2026 PlatPrint. Tuyển dụng Kỹ sư Phần mềm - Vòng 2.
+        {t.common.footer}
       </footer>
     </div>
   );

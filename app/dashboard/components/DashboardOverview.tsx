@@ -2,6 +2,7 @@
 
 import { SafeDatabase } from '@/types/database.types';
 import { Gift, TrendingUp, Clock, Calendar } from 'lucide-react';
+import { useLocale } from '@/lib/i18n/context';
 
 type RewardPoint = SafeDatabase['public']['Tables']['reward_points_history']['Row'];
 
@@ -16,10 +17,12 @@ export default function DashboardOverview({
   spendPointsCount,
   pointsHistory,
 }: DashboardOverviewProps) {
+  const { t } = useLocale();
+  const usedPct = earnPointsCount > 0 ? Math.round((spendPointsCount / earnPointsCount) * 100) : 0;
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Stats block 1 */}
         <div className="glass-bezel-outer">
           <div className="glass-bezel-inner p-5 flex items-center gap-4 h-full">
             <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
@@ -27,7 +30,7 @@ export default function DashboardOverview({
             </div>
             <div>
               <span className="text-[10px] text-zinc-500 font-bold block uppercase tracking-wider">
-                Tổng điểm đã tích lũy
+                {t.dashboard.totalEarned}
               </span>
               <span className="text-lg font-black text-white mt-0.5 block">
                 +{earnPointsCount} pts
@@ -35,7 +38,6 @@ export default function DashboardOverview({
             </div>
           </div>
         </div>
-        {/* Stats block 2 */}
         <div className="glass-bezel-outer">
           <div className="glass-bezel-inner p-5 flex items-center gap-4 h-full">
             <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl">
@@ -43,7 +45,7 @@ export default function DashboardOverview({
             </div>
             <div>
               <span className="text-[10px] text-zinc-500 font-bold block uppercase tracking-wider">
-                Điểm thưởng đã tiêu dùng
+                {t.dashboard.totalSpent}
               </span>
               <span className="text-lg font-black text-white mt-0.5 block">
                 -{spendPointsCount} pts
@@ -51,7 +53,6 @@ export default function DashboardOverview({
             </div>
           </div>
         </div>
-        {/* Stats block 3 */}
         <div className="glass-bezel-outer">
           <div className="glass-bezel-inner p-5 flex items-center gap-4 h-full">
             <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
@@ -59,24 +60,24 @@ export default function DashboardOverview({
             </div>
             <div>
               <span className="text-[10px] text-zinc-500 font-bold block uppercase tracking-wider">
-                Mức độ hoạt động
+                {t.dashboard.activityLevel}
               </span>
-              <span className="text-lg font-black text-white mt-0.5 block">Thường xuyên</span>
+              <span className="text-lg font-black text-white mt-0.5 block">
+                {t.dashboard.activityFrequent}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Points Analysis Breakdown */}
       <div className="glass-bezel-outer">
         <div className="glass-bezel-inner p-6 space-y-4">
           <div className="flex justify-between items-center">
             <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-              Phân tích sử dụng điểm thưởng
+              {t.dashboard.pointsAnalysis}
             </h4>
             <span className="text-xs font-bold text-emerald-400">
-              {earnPointsCount > 0 ? Math.round((spendPointsCount / earnPointsCount) * 100) : 0}% đã
-              dùng
+              {usedPct}% {t.dashboard.percentUsed}
             </span>
           </div>
           <div className="w-full bg-zinc-950 h-3 rounded-full overflow-hidden border border-zinc-900 p-0.5">
@@ -88,22 +89,23 @@ export default function DashboardOverview({
             />
           </div>
           <div className="flex justify-between text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-            <span>Đã tiêu dùng ({spendPointsCount} pts)</span>
-            <span>Tổng tích luỹ ({earnPointsCount} pts)</span>
+            <span>
+              {t.dashboard.spentLabel} ({spendPointsCount} pts)
+            </span>
+            <span>
+              {t.dashboard.earnedLabel} ({earnPointsCount} pts)
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Points History Lists */}
       <div className="glass-bezel-outer">
         <div className="glass-bezel-inner p-6 space-y-4">
           <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-            Lịch sử giao dịch điểm thưởng
+            {t.dashboard.pointsHistory}
           </h3>
           {pointsHistory.length === 0 ? (
-            <p className="text-zinc-500 text-xs text-center py-6">
-              Bạn chưa có giao dịch điểm thưởng nào.
-            </p>
+            <p className="text-zinc-500 text-xs text-center py-6">{t.dashboard.noPointsHistory}</p>
           ) : (
             <div className="space-y-3">
               {pointsHistory.map((history) => (

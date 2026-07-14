@@ -4,6 +4,7 @@ import { UIMessage } from '@ai-sdk/react';
 import { HelpCircle, User, Sparkles, AlertCircle, Send, Clock } from 'lucide-react';
 import React, { RefObject } from 'react';
 import { btnInteractive, cn } from '@/lib/utils';
+import { useLocale } from '@/lib/i18n/context';
 
 interface ChatBoxProps {
   messages: UIMessage[];
@@ -26,6 +27,8 @@ export default function ChatBox({
   handleSubmitForm,
   messagesEndRef,
 }: ChatBoxProps) {
+  const { t } = useLocale();
+
   return (
     <div className="flex-1 glass-bezel-outer flex flex-col min-h-0 h-full">
       <div className="glass-bezel-inner !p-0 flex flex-col overflow-hidden bg-zinc-950/40 relative flex-1 min-h-0 h-full">
@@ -34,15 +37,15 @@ export default function ChatBox({
           <div className="flex items-center gap-3">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <div>
-              <h3 className="text-sm font-bold text-white">Trợ lý hỗ trợ PlatPrint</h3>
+              <h3 className="text-sm font-bold text-white">{t.chat.title}</h3>
               <p className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">
-                {isForwarded ? 'Đã kết nối với hỗ trợ viên (Human)' : 'Trả lời tự động bằng AI'}
+                {isForwarded ? t.chat.humanMode : t.chat.aiMode}
               </p>
             </div>
           </div>
           {isForwarded && (
             <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-400 text-xs font-bold">
-              <Clock className="w-3.5 h-3.5" /> Chờ kết nối...
+              <Clock className="w-3.5 h-3.5" /> {t.chat.waiting}
             </div>
           )}
         </div>
@@ -55,50 +58,43 @@ export default function ChatBox({
                 <Sparkles className="w-8 h-8" />
               </div>
               <div className="space-y-2">
-                <h4 className="font-bold text-white text-base">Bắt đầu trò chuyện với AI</h4>
-                <p className="text-xs text-zinc-400 leading-relaxed">
-                  Tôi có thể giúp bạn giải đáp các vấn đề về in ấn từ xa, tính giá tiền, lỗi thẻ
-                  sandbox, hoặc kết nối tới hỗ trợ viên thực tế khi cần.
-                </p>
+                <h4 className="font-bold text-white text-base">{t.chat.emptyTitle}</h4>
+                <p className="text-xs text-zinc-400 leading-relaxed">{t.chat.emptyDesc}</p>
               </div>
 
               <div className="w-full space-y-2.5 pt-4">
                 <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider text-left pl-1">
-                  Gợi ý câu hỏi hỗ trợ
+                  {t.chat.suggestions}
                 </p>
                 <button
-                  onClick={() => handleQuickQuestion('Làm thế nào để in tài liệu đen trắng?')}
+                  onClick={() => handleQuickQuestion(t.chat.q1)}
                   className={cn(
                     'w-full text-left p-3.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 hover:border-emerald-500/30 hover:pl-5 text-xs rounded-xl text-zinc-300 hover:text-white flex items-center gap-2 border-l-2 border-l-emerald-500',
                     btnInteractive,
                   )}
                 >
                   <HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="font-semibold">Làm thế nào để in tài liệu đen trắng?</span>
+                  <span className="font-semibold">{t.chat.q1}</span>
                 </button>
                 <button
-                  onClick={() =>
-                    handleQuickQuestion('Tôi bị lỗi thanh toán thẻ sandbox thì làm sao?')
-                  }
+                  onClick={() => handleQuickQuestion(t.chat.q2)}
                   className={cn(
                     'w-full text-left p-3.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 hover:border-emerald-500/30 hover:pl-5 text-xs rounded-xl text-zinc-300 hover:text-white flex items-center gap-2 border-l-2 border-l-emerald-500',
                     btnInteractive,
                   )}
                 >
                   <HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="font-semibold">
-                    Tôi bị lỗi thanh toán thẻ sandbox thì làm sao?
-                  </span>
+                  <span className="font-semibold">{t.chat.q2}</span>
                 </button>
                 <button
-                  onClick={() => handleQuickQuestion('Hãy chuyển tôi gặp hỗ trợ viên thực tế')}
+                  onClick={() => handleQuickQuestion(t.chat.q3)}
                   className={cn(
                     'w-full text-left p-3.5 bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 hover:border-emerald-500/30 hover:pl-5 text-xs rounded-xl text-zinc-300 hover:text-white flex items-center gap-2 border-l-2 border-l-emerald-500',
                     btnInteractive,
                   )}
                 >
                   <HelpCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="font-semibold">Hãy chuyển tôi gặp hỗ trợ viên thực tế</span>
+                  <span className="font-semibold">{t.chat.q3}</span>
                 </button>
               </div>
             </div>
@@ -223,7 +219,11 @@ export default function ChatBox({
                       )}
                     </div>
                     <span className="text-[10px] text-zinc-600 block pl-2">
-                      {m.role === 'user' ? 'Bạn' : isForwarded ? 'Hỗ trợ viên' : 'AI Assistant'}
+                      {m.role === 'user'
+                        ? t.chat.you
+                        : isForwarded
+                          ? t.chat.support
+                          : t.chat.assistant}
                     </span>
                   </div>
                 </div>
@@ -253,8 +253,7 @@ export default function ChatBox({
           <div className="bg-amber-500/10 border-y border-amber-500/20 p-3 px-6 text-xs text-amber-400 flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 animate-pulse" />
             <span>
-              <strong>Yêu cầu chuyển tiếp:</strong> AI đã kích hoạt chuyển cuộc gọi này tới hỗ trợ
-              viên con người. Hỗ trợ viên sẽ sớm phản hồi trong chatbox này.
+              <strong>{t.chat.forwardTitle}</strong> {t.chat.forwardDesc}
             </span>
           </div>
         )}
@@ -269,7 +268,7 @@ export default function ChatBox({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="flex-1 bg-zinc-950 border border-zinc-800 focus:border-emerald-500 py-3 px-4 rounded-xl text-sm focus:outline-none transition-all text-white placeholder-zinc-500"
-            placeholder="Nhập nội dung tin nhắn cần hỗ trợ..."
+            placeholder={t.chat.placeholder}
             disabled={isLoading}
           />
           <button

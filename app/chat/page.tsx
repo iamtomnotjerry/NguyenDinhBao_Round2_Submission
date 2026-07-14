@@ -11,10 +11,12 @@ import { MessageSquare, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { btnInteractive, cn } from '@/lib/utils';
 import ChatBox from './components/ChatBox';
+import { useLocale } from '@/lib/i18n/context';
 
 type ChatMessageRow = SafeDatabase['public']['Tables']['chat_messages']['Row'];
 
 export default function ChatPage() {
+  const { t } = useLocale();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -152,19 +154,16 @@ export default function ChatPage() {
                 <div className="p-4 bg-emerald-500/10 rounded-full text-emerald-400 border border-emerald-500/20">
                   <MessageSquare className="w-12 h-12" />
                 </div>
-                <h2 className="text-2xl font-bold">Vui lòng đăng nhập để sử dụng chat hỗ trợ</h2>
-                <p className="text-zinc-400 max-w-md">
-                  Để được hỗ trợ giải đáp các thắc mắc về in ấn từ xa, lỗi thanh toán thẻ hoặc kiểm
-                  tra điểm thưởng, bạn cần đăng nhập tài khoản.
-                </p>
+                <h2 className="text-2xl font-bold">{t.chat.loginTitle}</h2>
+                <p className="text-zinc-400 max-w-md">{t.chat.loginDesc}</p>
                 <Link
                   href="/auth"
                   className={cn(
-                    'px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl font-bold text-sm hover:scale-[1.02]',
+                    'px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl font-bold text-sm hover:scale-[1.02] text-white',
                     btnInteractive,
                   )}
                 >
-                  Đăng nhập / Đăng ký
+                  {t.chat.loginCta}
                 </Link>
               </div>
             </div>
@@ -189,7 +188,7 @@ export default function ChatPage() {
 
       {/* Footer */}
       <footer className="border-t border-zinc-900 py-4 bg-zinc-950 text-center text-xs text-zinc-650 shrink-0">
-        &copy; 2026 PlatPrint. Tuyển dụng Kỹ sư Phần mềm - Vòng 2.
+        {t.common.footer}
       </footer>
     </div>
   );

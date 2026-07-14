@@ -3,6 +3,7 @@
 import { FileText, UploadCloud, Settings, MapPin, Printer, RefreshCw } from 'lucide-react';
 import { RefObject } from 'react';
 import { btnInteractive, cn } from '@/lib/utils';
+import { useLocale } from '@/lib/i18n/context';
 
 interface PrintConfigFormProps {
   file: File | null;
@@ -49,12 +50,14 @@ export default function PrintConfigForm({
   fileInputRef,
   handleFileChange,
 }: PrintConfigFormProps) {
+  const { t } = useLocale();
+
   return (
     <div className="lg:col-span-7 space-y-8">
       <div className="glass-bezel-outer">
         <div className="glass-bezel-inner p-8 space-y-6">
           <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent flex items-center gap-2">
-            <Printer className="w-6 h-6 text-emerald-400" /> Gửi lệnh in từ xa
+            <Printer className="w-6 h-6 text-emerald-400" /> {t.print.title}
           </h2>
 
           {/* File Upload Slot */}
@@ -76,7 +79,7 @@ export default function PrintConfigForm({
             {isUploading ? (
               <div className="flex flex-col items-center space-y-2">
                 <RefreshCw className="w-10 h-10 text-emerald-400 animate-spin" />
-                <p className="text-zinc-400 text-sm font-semibold">Đang quét tài liệu...</p>
+                <p className="text-zinc-400 text-sm font-semibold">{t.print.scanning}</p>
               </div>
             ) : file ? (
               <div className="flex flex-col items-center space-y-2">
@@ -94,16 +97,14 @@ export default function PrintConfigForm({
                     btnInteractive,
                   )}
                 >
-                  Chọn tệp khác
+                  {t.print.chooseOther}
                 </button>
               </div>
             ) : (
               <div className="flex flex-col items-center space-y-2">
                 <UploadCloud className="w-10 h-10 text-zinc-550 group-hover:text-emerald-400 transition-colors" />
-                <p className="text-zinc-300 text-sm font-bold">
-                  Kéo thả hoặc click để upload tài liệu
-                </p>
-                <p className="text-zinc-500 text-xs font-semibold">Hỗ trợ PDF hoặc Hình ảnh</p>
+                <p className="text-zinc-300 text-sm font-bold">{t.print.uploadHint}</p>
+                <p className="text-zinc-500 text-xs font-semibold">{t.print.uploadSupport}</p>
               </div>
             )}
           </div>
@@ -111,7 +112,7 @@ export default function PrintConfigForm({
           {/* Configurations Panel */}
           <div className="space-y-5 pt-4 border-t border-zinc-900">
             <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
-              <Settings className="w-4 h-4 text-zinc-500" /> Cấu hình bản in
+              <Settings className="w-4 h-4 text-zinc-500" /> {t.print.configTitle}
             </h3>
 
             {/* Config Color/BW */}
@@ -128,7 +129,7 @@ export default function PrintConfigForm({
                 )}
               >
                 <span className="bg-gradient-to-r from-red-500 via-green-500 to-blue-500 w-4 h-4 rounded-full" />
-                In màu ($0.5/trang)
+                {t.print.color}
               </button>
               <button
                 type="button"
@@ -142,7 +143,7 @@ export default function PrintConfigForm({
                 )}
               >
                 <span className="bg-zinc-500 w-4 h-4 rounded-full" />
-                Đen trắng ($0.1/trang)
+                {t.print.bw}
               </button>
             </div>
 
@@ -150,7 +151,7 @@ export default function PrintConfigForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                  Số lượng bản in
+                  {t.print.copies}
                 </label>
                 <input
                   type="number"
@@ -162,7 +163,7 @@ export default function PrintConfigForm({
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                  Khổ giấy
+                  {t.print.paperSize}
                 </label>
                 <select
                   value={configPaperSize}
@@ -179,7 +180,7 @@ export default function PrintConfigForm({
             {/* Config Binding Options */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                Gia công đóng gáy
+                {t.print.binding}
               </label>
               <div className="grid grid-cols-3 gap-3">
                 {(['none', 'stapled', 'spiral'] as const).map((b) => (
@@ -195,9 +196,9 @@ export default function PrintConfigForm({
                         : 'border-zinc-800 hover:border-zinc-700 text-zinc-400',
                     )}
                   >
-                    {b === 'none' && 'Không đóng gáy'}
-                    {b === 'stapled' && 'Dập ghim (+ $0.5)'}
-                    {b === 'spiral' && 'Gáy lò xo (+ $2)'}
+                    {b === 'none' && t.print.bindNone}
+                    {b === 'stapled' && t.print.bindStapled}
+                    {b === 'spiral' && t.print.bindSpiral}
                   </button>
                 ))}
               </div>
@@ -206,7 +207,7 @@ export default function PrintConfigForm({
             {/* Select Location */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                Địa điểm máy in nhận tài liệu
+                {t.print.location}
               </label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
@@ -232,7 +233,7 @@ export default function PrintConfigForm({
           {/* Cost Summary & Start print button */}
           <div className="pt-4 border-t border-zinc-900 space-y-4">
             <div className="flex justify-between items-center text-sm font-semibold">
-              <span className="text-zinc-400">Ước tính giá lệnh in:</span>
+              <span className="text-zinc-400">{t.print.estimate}</span>
               <span className="text-xl font-bold text-white">${calculateCost().toFixed(2)}</span>
             </div>
 
@@ -240,17 +241,17 @@ export default function PrintConfigForm({
               onClick={handlePrintSubmit}
               disabled={!file || submitting || isUploading}
               className={cn(
-                'w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:pointer-events-none rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 hover:scale-[1.01]',
+                'w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:pointer-events-none rounded-xl font-bold text-sm shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 hover:scale-[1.01] text-white',
                 btnInteractive,
               )}
             >
               {submitting ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" /> Đang xử lý thanh toán...
+                  <RefreshCw className="w-4 h-4 animate-spin" /> {t.print.processing}
                 </>
               ) : (
                 <>
-                  <Printer className="w-4 h-4" /> Bắt đầu in ấn ($
+                  <Printer className="w-4 h-4" /> {t.print.startPrint} ($
                   {calculateCost().toFixed(2)})
                 </>
               )}

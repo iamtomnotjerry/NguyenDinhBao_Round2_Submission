@@ -7,6 +7,7 @@ import { btnInteractive, cn } from '@/lib/utils';
 import CartList, { type CartItem } from './CartList';
 import CheckoutForm from './CheckoutForm';
 import OrderResultBanner from './OrderResultBanner';
+import { useLocale } from '@/lib/i18n/context';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -75,6 +76,7 @@ export default function CartDrawer({
   pointsEarned,
   handleCheckoutSubmit,
 }: CartDrawerProps) {
+  const { t } = useLocale();
   if (!isOpen) return null;
 
   return (
@@ -83,14 +85,14 @@ export default function CartDrawer({
         <div className="glass-bezel-inner p-6 space-y-6">
           <div className="flex justify-between items-center border-b border-zinc-900 pb-4">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5 text-emerald-400" /> Giỏ hàng ({cart.length})
+              <ShoppingCart className="w-5 h-5 text-emerald-400" /> {t.store.cart} ({cart.length})
             </h3>
             <button
               type="button"
               onClick={onClose}
               className={cn('text-xs text-zinc-500 hover:text-zinc-300 font-bold', btnInteractive)}
             >
-              Đóng lại
+              {t.store.closeCart}
             </button>
           </div>
 
@@ -107,7 +109,7 @@ export default function CartDrawer({
               <div className="mt-8 pt-6 border-t border-zinc-900 space-y-6">
                 {!user ? (
                   <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl text-center text-sm">
-                    <p className="text-zinc-400 mb-3">Vui lòng đăng nhập để thanh toán đơn hàng.</p>
+                    <p className="text-zinc-400 mb-3">{t.store.loginToPay}</p>
                     <Link
                       href="/auth"
                       className={cn(
@@ -115,7 +117,7 @@ export default function CartDrawer({
                         btnInteractive,
                       )}
                     >
-                      Đăng nhập ngay
+                      {t.store.loginNow}
                     </Link>
                   </div>
                 ) : orderResult ? (

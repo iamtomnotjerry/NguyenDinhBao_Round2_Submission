@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { btnInteractive, cn } from '@/lib/utils';
 import ProductCard from './components/ProductCard';
 import CartDrawer from './components/CartDrawer';
+import { useLocale } from '@/lib/i18n/context';
 
 type Product = SafeDatabase['public']['Tables']['products']['Row'];
 
@@ -19,6 +20,7 @@ interface CartItem {
 }
 
 export default function StorePage() {
+  const { t } = useLocale();
   const router = useRouter();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [rewardPoints, setRewardPoints] = useState<number>(0);
@@ -207,13 +209,12 @@ export default function StorePage() {
       const checkoutData = await checkoutRes.json();
 
       if (!checkoutRes.ok) {
-        throw new Error(checkoutData.error || 'Đặt hàng thanh toán thất bại');
+        throw new Error(checkoutData.error || t.store.checkoutFailApi);
       }
 
       setOrderResult({
         success: true,
-        message:
-          'Thanh toán thành công! Đơn hàng của bạn đã được khởi tạo thành công. Bạn đang được chuyển hướng đến trang quản lý đơn hàng...',
+        message: t.store.checkoutSuccessMsg,
         orderId: checkoutData.order?.id || checkoutData.order_id,
       });
 
@@ -241,10 +242,7 @@ export default function StorePage() {
     } catch (err) {
       setOrderResult({
         success: false,
-        message:
-          err instanceof Error
-            ? err.message
-            : 'Đặt hàng thất bại. Vui lòng kiểm tra lại số dư hoặc tồn kho.',
+        message: err instanceof Error ? err.message : t.store.checkoutFailGeneric,
       });
     } finally {
       setSubmitting(false);
@@ -340,7 +338,7 @@ export default function StorePage() {
 
       {/* Footer */}
       <footer className="border-t border-zinc-900 py-8 bg-zinc-950 text-center text-xs text-zinc-500 mt-20">
-        &copy; 2026 PlatPrint. Tuyển dụng Kỹ sư Phần mềm - Vòng 2.
+        {t.common.footer}
       </footer>
     </div>
   );

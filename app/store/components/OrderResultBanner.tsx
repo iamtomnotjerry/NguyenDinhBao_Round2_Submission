@@ -2,6 +2,7 @@
 
 import { CheckCircle, AlertTriangle } from 'lucide-react';
 import { btnInteractive, cn } from '@/lib/utils';
+import { useLocale } from '@/lib/i18n/context';
 
 interface OrderResultBannerProps {
   orderResult: { success: boolean; message: string; orderId?: string };
@@ -9,6 +10,8 @@ interface OrderResultBannerProps {
 }
 
 export default function OrderResultBanner({ orderResult, onDismiss }: OrderResultBannerProps) {
+  const { t } = useLocale();
+
   return (
     <div
       className={`p-5 rounded-2xl border text-center space-y-3 ${
@@ -20,7 +23,7 @@ export default function OrderResultBanner({ orderResult, onDismiss }: OrderResul
       {orderResult.success ? (
         <>
           <CheckCircle className="w-8 h-8 mx-auto text-emerald-400" />
-          <h4 className="font-bold text-emerald-400">Đặt hàng thành công!</h4>
+          <h4 className="font-bold text-emerald-400">{t.store.orderSuccess}</h4>
           <p className="text-xs text-zinc-400">{orderResult.message}</p>
           {orderResult.orderId && (
             <p className="text-[10px] font-mono bg-zinc-950 py-1 rounded text-zinc-500">
@@ -31,7 +34,7 @@ export default function OrderResultBanner({ orderResult, onDismiss }: OrderResul
       ) : (
         <>
           <AlertTriangle className="w-8 h-8 mx-auto text-red-400" />
-          <h4 className="font-bold text-red-400">Giao dịch thất bại!</h4>
+          <h4 className="font-bold text-red-400">{t.store.orderFailed}</h4>
           <p className="text-xs text-zinc-400">{orderResult.message}</p>
         </>
       )}
@@ -43,7 +46,7 @@ export default function OrderResultBanner({ orderResult, onDismiss }: OrderResul
           btnInteractive,
         )}
       >
-        Quay lại giỏ hàng
+        {t.store.backToCart}
       </button>
     </div>
   );

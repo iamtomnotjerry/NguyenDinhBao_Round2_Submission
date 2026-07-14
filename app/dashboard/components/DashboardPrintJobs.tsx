@@ -2,6 +2,7 @@
 
 import { SafeDatabase } from '@/types/database.types';
 import { FileText } from 'lucide-react';
+import { useLocale } from '@/lib/i18n/context';
 
 type PrintJob = SafeDatabase['public']['Tables']['print_jobs']['Row'];
 
@@ -10,12 +11,16 @@ interface DashboardPrintJobsProps {
 }
 
 export default function DashboardPrintJobs({ printJobs }: DashboardPrintJobsProps) {
+  const { t } = useLocale();
+
   return (
     <div className="glass-bezel-outer animate-fade-in">
       <div className="glass-bezel-inner p-6 space-y-4">
-        <h3 className="text-sm font-bold text-white uppercase tracking-wider">Hồ sơ in ấn từ xa</h3>
+        <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+          {t.dashboard.printJobsTitle}
+        </h3>
         {printJobs.length === 0 ? (
-          <p className="text-zinc-500 text-xs text-center py-6">Bạn chưa gửi lệnh in ấn nào.</p>
+          <p className="text-zinc-500 text-xs text-center py-6">{t.dashboard.noPrintJobs}</p>
         ) : (
           <div className="space-y-4">
             {printJobs.map((job) => (
@@ -42,25 +47,26 @@ export default function DashboardPrintJobs({ printJobs }: DashboardPrintJobsProp
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-semibold text-zinc-500">
                   <div>
-                    <span>Khổ giấy / Đóng gáy:</span>
+                    <span>{t.dashboard.paperBinding}:</span>
                     <p className="text-zinc-300 mt-0.5 capitalize">
                       {job.config_paper_size} • {job.config_binding}
                     </p>
                   </div>
                   <div>
-                    <span>Trang / Bản in:</span>
+                    <span>{t.dashboard.pagesCopies}:</span>
                     <p className="text-zinc-300 mt-0.5">
-                      {job.total_pages} trang • {job.config_copies || 1} bản
+                      {job.total_pages} {t.dashboard.pagesUnit} • {job.config_copies || 1}{' '}
+                      {t.dashboard.copiesUnit}
                     </p>
                   </div>
                   <div>
-                    <span>Giá trị in:</span>
+                    <span>{t.dashboard.printCost}:</span>
                     <p className="text-zinc-300 mt-0.5 text-white font-bold">
                       ${Number(job.cost).toFixed(2)}
                     </p>
                   </div>
                   <div>
-                    <span>Thời gian in:</span>
+                    <span>{t.dashboard.printTime}:</span>
                     <p className="text-zinc-300 mt-0.5">
                       {new Date(job.created_at).toLocaleDateString()}
                     </p>

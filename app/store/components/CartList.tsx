@@ -2,7 +2,8 @@
 
 import { SafeDatabase } from '@/types/database.types';
 import { ShoppingCart, Minus, Plus, Trash2 } from 'lucide-react';
-import { btnInteractive, btnInteractiveSm, cn } from '@/lib/utils';
+import { btnInteractiveSm, cn } from '@/lib/utils';
+import { useLocale } from '@/lib/i18n/context';
 
 type Product = SafeDatabase['public']['Tables']['products']['Row'];
 
@@ -18,11 +19,12 @@ interface CartListProps {
 }
 
 export default function CartList({ cart, updateQuantity, removeFromCart }: CartListProps) {
+  const { t } = useLocale();
   if (cart.length === 0) {
     return (
       <div className="py-12 text-center text-zinc-500 space-y-3">
         <ShoppingCart className="w-12 h-12 text-zinc-800 mx-auto" />
-        <p className="text-sm font-semibold">Giỏ hàng của bạn đang trống.</p>
+        <p className="text-sm font-semibold">{t.store.cartEmpty}</p>
       </div>
     );
   }

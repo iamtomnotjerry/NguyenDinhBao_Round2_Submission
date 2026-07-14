@@ -8,15 +8,17 @@ import Header from '@/components/Header';
 import { Printer, RefreshCw, ArrowRight, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { calculatePrintCost, btnInteractive, cn } from '@/lib/utils';
-import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PrintPreview from './components/PrintPreview';
 import PrintProgressView from './components/PrintProgressView';
 import PrintConfigForm from './components/PrintConfigForm';
+import { useLocale } from '@/lib/i18n/context';
 
 type PrintJob = SafeDatabase['public']['Tables']['print_jobs']['Row'];
 type PdfjsModule = typeof import('pdfjs-dist');
 
 export default function PrintPage() {
+  const { t } = useLocale();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,8 +55,6 @@ export default function PrintPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const previewImgRef = useRef<HTMLImageElement>(null);
 
   // Check auth state
   useEffect(() => {
@@ -68,55 +68,6 @@ export default function PrintPage() {
     checkUser();
   }, []);
 
-  // Handle PDF rendering inside Canvas on config change
-  useEffect(() => {
-    if (!file || file.type !== 'application/pdf' || !pdfDoc || !canvasRef.current) return;
-
-    let isCurrent = true;
-    let activeRenderTask: RenderTask | null = null;
-
-    const renderPage = async () => {
-      try {
-        const page = await pdfDoc.getPage(1);
-        if (!isCurrent) return;
-
-        const canvas = canvasRef.current!;
-        const context = canvas.getContext('2d')!;
-
-        // Adjust scale based on paper size A3/A4/A5
-        let scale = 1.0;
-        if (configPaperSize === 'a3') scale = 1.3;
-        if (configPaperSize === 'a5') scale = 0.7;
-
-        const viewport = page.getViewport({ scale });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-
-        activeRenderTask = page.render({
-          canvasContext: context,
-          viewport: viewport,
-        });
-
-        await activeRenderTask.promise;
-      } catch (err) {
-        if (err instanceof Error && err.name === 'RenderingCancelledException') {
-          // Safe to ignore on component cleanup / config change
-        } else {
-          console.error('Error rendering PDF page:', err);
-        }
-      }
-    };
-
-    renderPage();
-
-    return () => {
-      isCurrent = false;
-      if (activeRenderTask) {
-        activeRenderTask.cancel();
-      }
-    };
-  }, [file, pdfDoc, configPaperSize]);
-
   // Handle File Selection
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -128,7 +79,7 @@ export default function PrintPage() {
     setTotalPages(1);
     setSubmitError(null);
 
-    // If PDF, count pages and render preview
+    // If PDF, count pages and load document for multi-page preview
     if (selectedFile.type === 'application/pdf' && pdfjsLib) {
       setIsUploading(true);
       try {
@@ -152,7 +103,6 @@ export default function PrintPage() {
         setIsUploading(false);
       }
     } else if (selectedFile.type.startsWith('image/')) {
-      // If Image, generate object URL for preview
       const url = URL.createObjectURL(selectedFile);
       setFileUrl(url);
     }
@@ -261,19 +211,16 @@ export default function PrintPage() {
                 <div className="p-4 bg-emerald-500/10 rounded-full text-emerald-400 border border-emerald-500/20">
                   <Printer className="w-12 h-12" />
                 </div>
-                <h2 className="text-2xl font-bold">Vui lòng đăng nhập để bắt đầu in ấn</h2>
-                <p className="text-zinc-400 max-w-md">
-                  Để upload tài liệu PDF, cấu hình in, theo dõi tiến độ in realtime và tích lũy điểm
-                  thưởng, bạn cần có tài khoản PlatPrint.
-                </p>
+                <h2 className="text-2xl font-bold">{t.print.loginTitle}</h2>
+                <p className="text-zinc-400 max-w-md">{t.print.loginDesc}</p>
                 <Link
                   href="/auth"
                   className={cn(
-                    'px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl font-bold hover:scale-[1.02] flex items-center gap-2',
+                    'px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl font-bold hover:scale-[1.02] flex items-center gap-2 text-white',
                     btnInteractive,
                   )}
                 >
-                  Đăng nhập / Đăng ký ngay <ArrowRight className="w-4 h-4" />
+                  {t.print.loginCta} <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             </div>
@@ -294,7 +241,7 @@ export default function PrintPage() {
                 <div className="lg:col-span-12 p-4 rounded-2xl border bg-red-500/10 border-red-500/20 text-red-400 flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
                   <div className="flex-1 space-y-1">
-                    <h4 className="font-bold text-sm">Không thể khởi tạo lệnh in</h4>
+                    <h4 className="font-bold text-sm">{t.print.submitErrorTitle}</h4>
                     <p className="text-xs text-zinc-400">{submitError}</p>
                   </div>
                   <button
@@ -305,7 +252,7 @@ export default function PrintPage() {
                       btnInteractive,
                     )}
                   >
-                    Đóng
+                    {t.common.close}
                   </button>
                 </div>
               )}
@@ -333,12 +280,14 @@ export default function PrintPage() {
               />
               <div className="lg:col-span-5 space-y-6">
                 <PrintPreview
+                  key={file ? `${file.name}-${file.size}-${file.lastModified}` : 'empty'}
                   file={file}
                   fileUrl={fileUrl}
+                  pdfDoc={pdfDoc}
+                  totalPages={totalPages}
                   configColor={configColor}
                   configBinding={configBinding}
-                  canvasRef={canvasRef}
-                  previewImgRef={previewImgRef}
+                  configPaperSize={configPaperSize}
                 />
               </div>
             </>
@@ -352,7 +301,7 @@ export default function PrintPage() {
 
       {/* Footer */}
       <footer className="border-t border-zinc-900 py-8 bg-zinc-950 text-center text-xs text-zinc-500 mt-20">
-        &copy; 2026 PlatPrint. Tuyển dụng Kỹ sư Phần mềm - Vòng 2.
+        {t.common.footer}
       </footer>
     </div>
   );

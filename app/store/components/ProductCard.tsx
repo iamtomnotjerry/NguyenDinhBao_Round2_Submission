@@ -3,6 +3,7 @@
 import { SafeDatabase } from '@/types/database.types';
 import { ShoppingBag } from 'lucide-react';
 import { btnInteractive, cn } from '@/lib/utils';
+import { useLocale } from '@/lib/i18n/context';
 
 type Product = SafeDatabase['public']['Tables']['products']['Row'];
 
@@ -100,6 +101,7 @@ const renderProductThumbnail = (name: string, stock: number) => {
 };
 
 export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
+  const { t } = useLocale();
   const isOutOfStock = product.stock === 0;
 
   return (
@@ -109,7 +111,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
           <div className="relative">
             {renderProductThumbnail(product.name, product.stock)}
             <div className="absolute bottom-2 left-2 bg-zinc-950/90 border border-zinc-800/80 px-2.5 py-0.5 rounded text-[10px] font-mono font-bold text-zinc-400">
-              Tồn kho: {product.stock}
+              {t.store.stock}: {product.stock}
             </div>
           </div>
           <div>
@@ -133,7 +135,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
               btnInteractive,
             )}
           >
-            {isOutOfStock ? 'Hết hàng' : 'Thêm giỏ hàng'}
+            {isOutOfStock ? t.store.outOfStock : t.store.addToCart}
           </button>
         </div>
       </div>
