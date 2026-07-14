@@ -65,7 +65,9 @@ NguyenDinhBao_Round2_Submission-/
 ├── types/                         # TypeScript definitions
 │   ├── database.types.ts          # Định nghĩa kiểu DB tự sinh & SafeDatabase
 │   └── pdfjs-dist.d.ts            # Type declarations cho PDFjs
-└── supabase_schema.sql            # Schema SQL, Indices, Policies & Procedures
+└── supabase/                      # Database SQL
+    ├── schema.sql                 # Schema đầy đủ: bảng, indices, RLS, procedures
+    └── migrations/                # Migrations tăng dần v3 → v9
 ```
 
 ---

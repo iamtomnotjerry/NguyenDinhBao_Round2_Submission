@@ -131,15 +131,15 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 **Lần đầu (database trống):**
 
 1. Truy cập Supabase Dashboard ➔ SQL Editor.
-2. Dán nội dung file [supabase_schema.sql](./supabase_schema.sql) và nhấn **Run**.
+2. Dán nội dung file [supabase/schema.sql](./supabase/schema.sql) và nhấn **Run**.
 
-**Đã có schema v3:** chạy lần lượt `v4` → `v4_1` → [`supabase_migration_v5.sql`](./supabase_migration_v5.sql) → [`supabase_migration_v6.sql`](./supabase_migration_v6.sql) → [`supabase_migration_v7.sql`](./supabase_migration_v7.sql) → [`supabase_migration_v8.sql`](./supabase_migration_v8.sql) → [`supabase_migration_v9.sql`](./supabase_migration_v9.sql)  
+**Đã có schema v3:** chạy lần lượt các file trong [supabase/migrations/](./supabase/migrations/): [`v4.sql`](./supabase/migrations/v4.sql) → [`v4_1.sql`](./supabase/migrations/v4_1.sql) → [`v5.sql`](./supabase/migrations/v5.sql) → [`v6.sql`](./supabase/migrations/v6.sql) → [`v7.sql`](./supabase/migrations/v7.sql) → [`v8.sql`](./supabase/migrations/v8.sql) → [`v9.sql`](./supabase/migrations/v9.sql)  
 (v6: REVOKE money RPC + INSERT status; v7: DROP Storage SELECT orphan IDOR + settle idempotent + revoke `handle_new_user` RPC; v8: `delivery_address` / `recipient_name` cho orders; v9: idempotency scoped theo user + clamp điểm khi rollback + search_path `handle_new_user`).
 
 **Đã có schema cũ (báo lỗi `relation "profiles" already exists`):**
 
-1. **Không** chạy lại `supabase_schema.sql`.
-2. Chạy [supabase_migration_v3.sql](./supabase_migration_v3.sql) → v4 → v4_1 → **v5** → **v6** → **v7** → **v8** → **v9**.
+1. **Không** chạy lại `supabase/schema.sql`.
+2. Chạy [supabase/migrations/v3.sql](./supabase/migrations/v3.sql) → v4 → v4_1 → **v5** → **v6** → **v7** → **v8** → **v9**.
    - Đổi cột `file_url` → `file_path`
    - Gỡ quyền UPDATE client trên `print_jobs`
    - Cập nhật `rollback_failed_order` + Storage RLS (v7 đóng IDOR SELECT toàn bucket)

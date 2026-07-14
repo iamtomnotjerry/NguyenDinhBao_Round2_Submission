@@ -4,7 +4,7 @@
 --
 -- CHỈ dùng cho database MỚI / trống.
 -- Nếu đã có bảng (lỗi "relation profiles already exists") → chạy
--- supabase_migration_v3.sql thay vì file này.
+-- supabase/migrations/v3.sql thay vì file này.
 -- =========================================================================
 
 -- Kích hoạt extension UUID

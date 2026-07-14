@@ -6,5 +6,5 @@ build
 dist
 package-lock.json
 
-# Ignore Supabase SQL file
-supabase_schema.sql
+# Ignore Supabase SQL (large DDL files)
+supabase/

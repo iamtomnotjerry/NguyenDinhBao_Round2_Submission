@@ -1,7 +1,7 @@
 -- =========================================================================
 -- PLATPRINT MIGRATION v3.0
 -- Chạy file này trên database ĐÃ CÓ SCHEMA cũ (đã có bảng profiles, ...).
--- KHÔNG chạy lại supabase_schema.sql nếu bảng đã tồn tại.
+-- KHÔNG chạy lại supabase/schema.sql nếu bảng đã tồn tại.
 -- =========================================================================
 
 -- -------------------------------------------------------------------------

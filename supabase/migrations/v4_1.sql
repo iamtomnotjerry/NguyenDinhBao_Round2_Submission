@@ -1,6 +1,6 @@
 -- =========================================================================
 -- PLATPRINT MIGRATION v4.1 — Security & integrity fixes
--- Chạy SAU supabase_migration_v4.sql
+-- Chạy SAU supabase/migrations/v4.sql
 -- =========================================================================
 
 -- RPC settle/rollback: chỉ cho phép user sửa điểm của CHÍNH mình
