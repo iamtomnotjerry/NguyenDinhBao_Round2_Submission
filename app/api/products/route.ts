@@ -1,25 +1,23 @@
 import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { ApiErrorCode, apiError } from '@/lib/api/errors';
 
 export async function GET() {
   try {
     const supabase = await createClient();
-    
-    // Retrieve products
+
     const { data, error } = await supabase
       .from('products')
       .select('*')
       .order('price', { ascending: true });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return apiError(ApiErrorCode.INTERNAL, 400, { details: error.message });
     }
 
-    return NextResponse.json(data);
+    return Response.json(data);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal Server Error', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
-    );
+    return apiError(ApiErrorCode.INTERNAL, 500, {
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 }

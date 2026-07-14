@@ -1,11 +1,21 @@
 export type CardBrand = 'visa' | 'mastercard' | 'amex' | 'discover' | 'unknown';
 
+/** Stable codes — map to i18n at the UI boundary via `localizeCardErrors`. */
+export type CardErrorCode =
+  'too_short' | 'expected_len' | 'luhn' | 'expiry_format' | 'expired' | 'cvv_len' | 'cvv_range';
+
 export interface CardValidationResult {
   valid: boolean;
   errors: {
-    number?: string;
-    expiry?: string;
-    cvv?: string;
+    number?: CardErrorCode;
+    expiry?: CardErrorCode;
+    cvv?: CardErrorCode;
+  };
+  /** Extra params for message interpolation (e.g. expected digit count). */
+  errorParams?: {
+    expectedLen?: number;
+    brand?: string;
+    cvvLen?: number;
   };
   brand: CardBrand;
   digits: string;
@@ -81,33 +91,38 @@ export function validateCardInput(input: {
   const digits = stripCardDigits(input.cardNumber);
   const brand = detectCardBrand(digits);
   const errors: CardValidationResult['errors'] = {};
+  const errorParams: NonNullable<CardValidationResult['errorParams']> = {};
 
   const expectedLen =
     brand === 'amex' ? 15 : brand === 'visa' || brand === 'mastercard' ? 16 : null;
   if (digits.length < 12) {
-    errors.number = 'Card number is too short';
+    errors.number = 'too_short';
   } else if (expectedLen && digits.length !== expectedLen) {
-    errors.number = `Expected ${expectedLen} digits for ${brand}`;
+    errors.number = 'expected_len';
+    errorParams.expectedLen = expectedLen;
+    errorParams.brand = brand;
   } else if (!luhnCheck(digits)) {
-    errors.number = 'Card number failed Luhn check (invalid Visa/Mastercard number)';
+    errors.number = 'luhn';
   }
 
   const exp = parseExpiry(input.expiry);
   if (!exp) {
-    errors.expiry = 'Use MM/YY format';
+    errors.expiry = 'expiry_format';
   } else if (!isExpiryValid(exp.month, exp.year)) {
-    errors.expiry = 'Card is expired';
+    errors.expiry = 'expired';
   }
 
   const cvvDigits = stripCardDigits(input.cvv);
   const cvvLen = brand === 'amex' ? 4 : 3;
   if (cvvDigits.length !== cvvLen) {
-    errors.cvv = `CVV must be ${cvvLen} digits`;
+    errors.cvv = 'cvv_len';
+    errorParams.cvvLen = cvvLen;
   }
 
   return {
     valid: Object.keys(errors).length === 0,
     errors,
+    errorParams: Object.keys(errorParams).length ? errorParams : undefined,
     brand,
     digits,
     last4: digits.slice(-4),
@@ -165,16 +180,15 @@ export function validateCardForSandbox(input: {
     last4 === '9999' ||
     last4 === '1111';
 
-  // Sandbox sim PANs: enforce shape only (length / expiry / CVV), skip Luhn & brand length quirks
   if (isChargeSim && digits.length >= 15) {
     const errors: CardValidationResult['errors'] = {};
     const exp = parseExpiry(input.expiry);
-    if (!exp) errors.expiry = 'Use MM/YY format';
-    else if (!isExpiryValid(exp.month, exp.year)) errors.expiry = 'Card is expired';
+    if (!exp) errors.expiry = 'expiry_format';
+    else if (!isExpiryValid(exp.month, exp.year)) errors.expiry = 'expired';
 
     const cvvDigits = stripCardDigits(input.cvv);
     if (cvvDigits.length < 3 || cvvDigits.length > 4) {
-      errors.cvv = 'CVV must be 3–4 digits';
+      errors.cvv = 'cvv_range';
     }
 
     return {
@@ -189,4 +203,39 @@ export function validateCardForSandbox(input: {
   }
 
   return validateCardInput(input);
+}
+
+type CardErrorDict = {
+  tooShort: string;
+  expectedLen: string;
+  luhn: string;
+  expiryFormat: string;
+  expired: string;
+  cvvLen: string;
+  cvvRange: string;
+};
+
+/** Localize coded validation errors for UI display. */
+export function localizeCardErrors(
+  result: CardValidationResult,
+  dict: CardErrorDict,
+): { number?: string; expiry?: string; cvv?: string } {
+  const out: { number?: string; expiry?: string; cvv?: string } = {};
+  const p = result.errorParams;
+
+  if (result.errors.number === 'too_short') out.number = dict.tooShort;
+  else if (result.errors.number === 'expected_len') {
+    out.number = dict.expectedLen
+      .replace('{n}', String(p?.expectedLen ?? ''))
+      .replace('{brand}', p?.brand ?? '');
+  } else if (result.errors.number === 'luhn') out.number = dict.luhn;
+
+  if (result.errors.expiry === 'expiry_format') out.expiry = dict.expiryFormat;
+  else if (result.errors.expiry === 'expired') out.expiry = dict.expired;
+
+  if (result.errors.cvv === 'cvv_len') {
+    out.cvv = dict.cvvLen.replace('{n}', String(p?.cvvLen ?? 3));
+  } else if (result.errors.cvv === 'cvv_range') out.cvv = dict.cvvRange;
+
+  return out;
 }

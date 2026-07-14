@@ -67,7 +67,7 @@ export const DEFAULT_PRINT_CONFIG: PrintConfig = {
   pageMode: 'all',
   customPages: '',
   deliveryType: 'pickup',
-  printerLocation: 'Cửa hàng A - Quận 1, TPHCM',
+  printerLocation: 'store_a',
   deliveryAddress: '',
 };
 

@@ -1,4 +1,8 @@
-import { parseColorPages, resolveSelectedPages } from './page-selection';
+import {
+  parseColorPages,
+  resolveSelectedPages,
+  type PageSelectionErrorCode,
+} from './page-selection';
 import {
   PAPER_SIZE_MULTIPLIER,
   type BindingType,
@@ -27,7 +31,8 @@ export interface PrintQuote {
   tax: number;
   total: number;
   lines: PriceLine[];
-  error: string | null;
+  error: PageSelectionErrorCode | 'page_none_selected' | null;
+  errorParams?: Record<string, string | number>;
 }
 
 const RATE = {
@@ -81,19 +86,19 @@ export function buildPrintQuote(
   });
 
   if (selection.error) {
-    return emptyQuote(selection.error);
+    return emptyQuote(selection.error, selection.errorParams);
   }
 
   const selectedPages = selection.pages;
   const selectedPageCount = selectedPages.length;
-  if (selectedPageCount === 0) return emptyQuote('No pages selected');
+  if (selectedPageCount === 0) return emptyQuote('page_none_selected');
 
   let colorSet = new Set<number>();
   if (config.colorMode === 'color') {
     colorSet = new Set(selectedPages);
   } else if (config.colorMode === 'mixed') {
     const parsed = parseColorPages(config.colorPagesInput, totalPages);
-    if (parsed.error) return emptyQuote(parsed.error);
+    if (parsed.error) return emptyQuote(parsed.error, parsed.errorParams);
     colorSet = new Set(parsed.pages.filter((p) => selectedPages.includes(p)));
   }
 
@@ -208,11 +213,14 @@ export function calculatePrintCost(
 }
 
 export function estimateDeliveryLabel(deliveryType: DeliveryType): string {
-  if (deliveryType === 'pickup') return 'Ready for pickup in ~2–4 hours';
-  return 'Home delivery in 1–2 business days';
+  if (deliveryType === 'pickup') return 'pickup_eta';
+  return 'delivery_eta';
 }
 
-function emptyQuote(error: string): PrintQuote {
+function emptyQuote(
+  error: PageSelectionErrorCode | 'page_none_selected',
+  errorParams?: Record<string, string | number>,
+): PrintQuote {
   return {
     selectedPages: [],
     selectedPageCount: 0,
@@ -226,6 +234,7 @@ function emptyQuote(error: string): PrintQuote {
     total: 0,
     lines: [],
     error,
+    errorParams,
   };
 }
 

@@ -2,19 +2,20 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { SafeDatabase } from '@/types/database.types';
 
+const PROTECTED_PREFIXES = ['/dashboard', '/chat', '/print'];
+
 /**
- * Middleware to refresh the Supabase Auth session.
- * Essential for Server Components to read the correct auth state
- * and for PostgreSQL Row Level Security (RLS) to enforce access policies correctly.
+ * Refresh Supabase session for RSC/RLS and gate protected routes.
  */
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
-  // Skip session refresh if Supabase keys are not set up yet (prevents runtime crashes)
+
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return supabaseResponse;
   }
+
   const supabase = createServerClient<SafeDatabase, 'public'>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -36,21 +37,29 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // Refresh session if expired (crucial for Auth and RLS)
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const path = request.nextUrl.pathname;
+  const needsAuth = PROTECTED_PREFIXES.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+  );
+
+  if (needsAuth && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/auth';
+    url.searchParams.set('next', path);
+    const redirect = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((c) => {
+      redirect.cookies.set(c.name, c.value);
+    });
+    return redirect;
+  }
 
   return supabaseResponse;
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - images, icons, or SVGs
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };

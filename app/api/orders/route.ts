@@ -2,20 +2,14 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { SafeDatabase } from '@/types/database.types';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
+import { ApiErrorCode, apiError, passThroughChargeError } from '@/lib/api/errors';
 
 export async function POST(request: Request) {
   try {
     const supabase: SupabaseClient<SafeDatabase> = await createClient();
     const admin = createAdminClient();
     if (!admin) {
-      return NextResponse.json(
-        {
-          error:
-            'Thiếu SUPABASE_SERVICE_ROLE_KEY — không thể hoàn tất thanh toán đơn hàng (fail-closed).',
-        },
-        { status: 500 },
-      );
+      return apiError(ApiErrorCode.MISSING_SERVICE_ROLE, 500);
     }
 
     const {
@@ -23,11 +17,20 @@ export async function POST(request: Request) {
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Chưa đăng nhập (Unauthorized)' }, { status: 401 });
+      return apiError(ApiErrorCode.UNAUTHORIZED, 401);
     }
 
     const body = await request.json();
-    const { items, delivery_type, idempotency_key, card_token, use_points, points_used } = body;
+    const {
+      items,
+      delivery_type,
+      delivery_address,
+      recipient_name,
+      idempotency_key,
+      card_token,
+      use_points,
+      points_used,
+    } = body;
 
     if (
       !items ||
@@ -37,7 +40,14 @@ export async function POST(request: Request) {
       !idempotency_key ||
       !card_token
     ) {
-      return NextResponse.json({ error: 'Thiếu thông tin đặt hàng' }, { status: 400 });
+      return apiError(ApiErrorCode.MISSING_ORDER_FIELDS, 400);
+    }
+
+    const trimmedAddress = typeof delivery_address === 'string' ? delivery_address.trim() : '';
+    const trimmedName = typeof recipient_name === 'string' ? recipient_name.trim() : '';
+
+    if (delivery_type === 'delivery' && !trimmedAddress) {
+      return apiError(ApiErrorCode.MISSING_DELIVERY_ADDRESS, 400);
     }
 
     // Normalize items — RPC recomputes prices; strip forged price fields
@@ -51,7 +61,7 @@ export async function POST(request: Request) {
         (i: { product_id?: string; quantity: number }) => !i.product_id || i.quantity < 1,
       )
     ) {
-      return NextResponse.json({ error: 'Giỏ hàng không hợp lệ' }, { status: 400 });
+      return apiError(ApiErrorCode.INVALID_CART, 400);
     }
 
     // Requested redeem intent only (server caps against balance + subtotal)
@@ -67,13 +77,7 @@ export async function POST(request: Request) {
 
     if (existingOrder) {
       if (existingOrder.status === 'failed') {
-        return NextResponse.json(
-          {
-            error:
-              'Yêu cầu thanh toán trước đó đã thất bại. Vui lòng sử dụng khoá giao dịch (idempotency key) mới.',
-          },
-          { status: 400 },
-        );
+        return apiError(ApiErrorCode.IDEMPOTENCY_FAILED, 400);
       }
       if (existingOrder.status === 'pending') {
         const createdAt = new Date(existingOrder.created_at);
@@ -82,20 +86,15 @@ export async function POST(request: Request) {
         if (createdAt < fifteenMinutesAgo) {
           await admin.rpc('rollback_failed_order', { p_order_id: existingOrder.id });
         } else {
-          return NextResponse.json(
-            {
-              error:
-                'Giao dịch trước đó của đơn hàng này vẫn đang xử lý. Vui lòng không thực hiện lại thao tác.',
-              status: 'pending',
-              order_id: existingOrder.id,
-            },
-            { status: 202 },
-          );
+          return apiError(ApiErrorCode.IDEMPOTENCY_PENDING, 202, {
+            status: 'pending',
+            order_id: existingOrder.id,
+          });
         }
       } else {
-        return NextResponse.json({
+        return Response.json({
           success: true,
-          message: 'Đơn hàng đã tồn tại (Idempotency return)',
+          message: 'IDEMPOTENT_REPLAY',
           order: existingOrder,
         });
       }
@@ -114,10 +113,22 @@ export async function POST(request: Request) {
     });
 
     if (rpcError || !orderId) {
-      return NextResponse.json(
-        { error: rpcError?.message || 'Không thể tạo đơn hàng' },
-        { status: 400 },
-      );
+      return apiError(ApiErrorCode.ORDER_CREATE_FAILED, 400, {
+        details: rpcError?.message,
+      });
+    }
+
+    // Persist fulfillment fields (RPC does not accept these yet)
+    const { error: fulfillErr } = await admin
+      .from('orders')
+      .update({
+        delivery_address: delivery_type === 'delivery' ? trimmedAddress : null,
+        recipient_name: trimmedName || null,
+      })
+      .eq('id', orderId);
+
+    if (fulfillErr) {
+      console.error('Failed to persist order fulfillment fields:', fulfillErr.message);
     }
 
     // Charge the SERVER-computed total from the order row
@@ -129,10 +140,9 @@ export async function POST(request: Request) {
 
     if (fetchPendingErr || !pendingOrder) {
       await admin.rpc('rollback_failed_order', { p_order_id: orderId });
-      return NextResponse.json(
-        { error: fetchPendingErr?.message || 'Không đọc được đơn hàng sau khi tạo' },
-        { status: 400 },
-      );
+      return apiError(ApiErrorCode.ORDER_FETCH_FAILED, 400, {
+        details: fetchPendingErr?.message,
+      });
     }
 
     const chargeAmount = Number(pendingOrder.total_amount);
@@ -154,14 +164,10 @@ export async function POST(request: Request) {
         p_order_id: orderId,
       });
 
-      return NextResponse.json(
-        {
-          success: false,
-          error: chargeResult.error || 'Thanh toán không thành công',
-          order_id: orderId,
-        },
-        { status: 400 },
-      );
+      return apiError(passThroughChargeError(chargeResult.error || chargeResult.code), 400, {
+        success: false,
+        order_id: orderId,
+      });
     }
 
     const { error: updateError } = await admin.rpc('mark_order_as_paid', {
@@ -171,17 +177,12 @@ export async function POST(request: Request) {
     if (updateError) {
       // Charge succeeded but mark failed — rollback inventory/points; surface charged flag
       await admin.rpc('rollback_failed_order', { p_order_id: orderId });
-      return NextResponse.json(
-        {
-          error:
-            'Thanh toán đã diễn ra nhưng không cập nhật được trạng thái đơn. Đã rollback kho/điểm. Liên hệ hỗ trợ kèm transaction_id.',
-          charged: true,
-          transaction_id: chargeResult.transaction_id,
-          order_id: orderId,
-          details: updateError.message,
-        },
-        { status: 500 },
-      );
+      return apiError(ApiErrorCode.PAYMENT_MARK_FAILED, 500, {
+        charged: true,
+        transaction_id: chargeResult.transaction_id,
+        order_id: orderId,
+        details: updateError.message,
+      });
     }
 
     const { data: updatedOrder, error: fetchError } = await supabase
@@ -191,22 +192,18 @@ export async function POST(request: Request) {
       .single();
 
     if (fetchError) {
-      return NextResponse.json({ error: fetchError.message }, { status: 400 });
+      return apiError(ApiErrorCode.ORDER_FETCH_FAILED, 400, { details: fetchError.message });
     }
 
-    return NextResponse.json({
+    return Response.json({
       success: true,
-      message: 'Thanh toán và tạo đơn hàng thành công',
+      message: 'ORDER_PAID',
       order: updatedOrder,
       transaction_id: chargeResult.transaction_id,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 },
-    );
+    return apiError(ApiErrorCode.INTERNAL, 500, {
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 }

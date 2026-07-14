@@ -2,9 +2,12 @@
 
 import { SafeDatabase } from '@/types/database.types';
 import { Printer, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { TransitionLink } from '@/components/TransitionLink';
+import PrinterPulse from '@/components/PrinterPulse';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { btnInteractive, cn } from '@/lib/utils';
 import { useLocale } from '@/lib/i18n/context';
+import { easeOutExpo, springSoft } from '@/lib/motion';
 
 type PrintJob = SafeDatabase['public']['Tables']['print_jobs']['Row'];
 
@@ -65,46 +68,79 @@ export default function PrintProgressView({
   })();
 
   const done = activeJob.status === 'completed' || activeJob.status === 'ready_for_pickup';
+  const failed = activeJob.status === 'failed';
+  const inProgress = !done && !failed;
+  const reduce = useReducedMotion();
 
   return (
-    <div className="glass-bezel-outer w-full max-w-4xl mx-auto">
+    <motion.div
+      className="glass-bezel-outer w-full max-w-4xl mx-auto"
+      initial={reduce ? false : { opacity: 0, scale: 0.97, y: 16 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: easeOutExpo }}
+    >
       <div className="glass-bezel-inner p-8 flex flex-col items-center justify-center min-h-[500px] text-center space-y-8">
-        <div className="relative">
-          <div
-            className={`w-24 h-24 rounded-full border-4 transition-all duration-700 ${
-              done
-                ? 'border-emerald-500/20 border-t-emerald-500'
-                : activeJob.status === 'failed'
-                  ? 'border-red-500/20 border-t-red-500'
-                  : 'border-emerald-500/10 border-t-emerald-500 animate-spin'
-            }`}
-          />
-          <Printer
-            className={`w-8 h-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${
-              activeJob.status === 'failed' ? 'text-red-400' : 'text-emerald-400'
-            }`}
-          />
-        </div>
-
-        <div className="space-y-3">
-          <h2 className="text-2xl font-bold text-white">{statusTitle}</h2>
-          <p className="text-zinc-500 text-sm">
-            {t.print.jobId} <span className="font-mono text-zinc-300">{activeJob.id}</span>
-          </p>
-          {activeJob.estimated_ready && (
-            <p className="text-xs text-emerald-400/90">{activeJob.estimated_ready}</p>
+        <div className="relative flex items-center justify-center w-24 h-24">
+          {inProgress ? (
+            <>
+              <PrinterPulse className="absolute inset-0 w-full h-full" />
+              <Printer className="w-8 h-8 relative z-10 text-emerald-400" />
+            </>
+          ) : (
+            <>
+              <div
+                className={cn(
+                  'w-24 h-24 rounded-full border-4 transition-all duration-700',
+                  done
+                    ? 'border-emerald-500/20 border-t-emerald-500'
+                    : 'border-red-500/20 border-t-red-500',
+                )}
+              />
+              <Printer
+                className={cn(
+                  'w-8 h-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
+                  failed ? 'text-red-400' : 'text-emerald-400',
+                )}
+              />
+            </>
           )}
         </div>
 
+        <motion.div
+          className="space-y-3"
+          key={activeJob.status}
+          initial={reduce ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: easeOutExpo }}
+        >
+          <h2 className="text-2xl font-bold text-fg">{statusTitle}</h2>
+          <p className="text-muted-fg text-sm">
+            {t.print.jobId} <span className="font-mono text-secondary-strong">{activeJob.id}</span>
+          </p>
+          {activeJob.estimated_ready && (
+            <p className="text-xs text-emerald-400/90">
+              {activeJob.estimated_ready === 'pickup_eta'
+                ? t.print.pickupEta
+                : activeJob.estimated_ready === 'delivery_eta'
+                  ? t.print.deliveryEta
+                  : activeJob.estimated_ready}
+            </p>
+          )}
+        </motion.div>
+
         <div className="w-full max-w-lg space-y-2">
-          <div className="w-full bg-zinc-900 h-3 rounded-full overflow-hidden border border-zinc-800">
-            <div
-              className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
-              style={{ width: `${printProgress}%` }}
+          <div className="w-full bg-muted h-3 rounded-full overflow-hidden border border-edge">
+            <motion.div
+              className="h-full bg-emerald-500 rounded-full"
+              initial={false}
+              animate={{ width: `${printProgress}%` }}
+              transition={{ duration: 0.55, ease: easeOutExpo }}
             />
           </div>
-          <div className="flex justify-between text-xs text-zinc-500 font-semibold uppercase tracking-wider">
-            <span>{printProgress}%</span>
+          <div className="flex justify-between text-xs text-muted-fg font-semibold uppercase tracking-wider">
+            <motion.span key={printProgress} initial={{ opacity: 0.4 }} animate={{ opacity: 1 }}>
+              {printProgress}%
+            </motion.span>
             <span>
               {t.print.statusLabel}{' '}
               {(t.dashboard.status as Record<string, string>)[activeJob.status] ||
@@ -123,24 +159,27 @@ export default function PrintProgressView({
             );
             const active = cur >= idx || activeJob.status === 'completed';
             return (
-              <span
+              <motion.span
                 key={step}
+                layout
                 className={cn(
                   'text-[9px] px-1.5 py-0.5 rounded border font-bold',
                   active
                     ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10'
-                    : 'border-zinc-800 text-zinc-600',
+                    : 'border-edge text-faint',
                 )}
+                animate={active && !reduce ? { scale: cur === idx ? [1, 1.06, 1] : 1 } : undefined}
+                transition={springSoft}
               >
                 {(t.dashboard.status as Record<string, string>)[step] || step.replace(/_/g, ' ')}
-              </span>
+              </motion.span>
             );
           })}
         </div>
 
-        <div className="w-full max-w-md p-4 bg-zinc-950/50 border border-zinc-900 rounded-2xl text-left space-y-3 text-sm text-zinc-400">
-          <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
-            <span className="font-semibold text-white">{t.print.eventLog}</span>
+        <div className="w-full max-w-md p-4 bg-elevated/50 border border-line rounded-2xl text-left space-y-3 text-sm text-secondary">
+          <div className="flex items-center justify-between border-b border-line pb-2">
+            <span className="font-semibold text-fg">{t.print.eventLog}</span>
             <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/10">
               Realtime
             </span>
@@ -153,54 +192,80 @@ export default function PrintProgressView({
                 {activeJob.card_last4 ? ` · ••${activeJob.card_last4}` : ''}
               </span>
             </div>
-            {printProgress >= 35 && (
-              <div className="flex items-start gap-2">
-                <span className="text-emerald-400">[✓]</span>
-                <span>
-                  {t.print.logRendered} ({activeJob.selected_page_count || activeJob.total_pages}{' '}
-                  {t.print.pagesUnit})
-                </span>
-              </div>
-            )}
-            {printProgress >= 55 && (
-              <div className="flex items-start gap-2">
-                <span className="text-emerald-400">[⚙]</span>
-                <span>
-                  {t.print.logPrinting} ({activeJob.config_color} / {activeJob.duplex || 'simplex'})
-                </span>
-              </div>
-            )}
-            {(printProgress >= 100 ||
-              activeJob.status === 'ready_for_pickup' ||
-              activeJob.status === 'completed') && (
-              <div className="flex items-start gap-2 text-emerald-400 font-semibold">
-                <span>[✓]</span>
-                <span>
-                  {t.print.logDone} {activeJob.printer_location}
-                  {activeJob.delivery_type === 'delivery' && activeJob.delivery_address
-                    ? ` → ${activeJob.delivery_address}`
-                    : ''}
-                  .
-                </span>
-              </div>
-            )}
+            <AnimatePresence>
+              {printProgress >= 35 && (
+                <motion.div
+                  key="rendered"
+                  className="flex items-start gap-2"
+                  initial={reduce ? false : { opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <span className="text-emerald-400">[✓]</span>
+                  <span>
+                    {t.print.logRendered} ({activeJob.selected_page_count || activeJob.total_pages}{' '}
+                    {t.print.pagesUnit})
+                  </span>
+                </motion.div>
+              )}
+              {printProgress >= 55 && (
+                <motion.div
+                  key="printing"
+                  className="flex items-start gap-2"
+                  initial={reduce ? false : { opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <span className="text-emerald-400">[⚙]</span>
+                  <span>
+                    {t.print.logPrinting} ({activeJob.config_color} /{' '}
+                    {activeJob.duplex || 'simplex'})
+                  </span>
+                </motion.div>
+              )}
+              {(printProgress >= 100 ||
+                activeJob.status === 'ready_for_pickup' ||
+                activeJob.status === 'completed') && (
+                <motion.div
+                  key="done"
+                  className="flex items-start gap-2 text-emerald-400 font-semibold"
+                  initial={reduce ? false : { opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <span>[✓]</span>
+                  <span>
+                    {t.print.logDone} {activeJob.printer_location}
+                    {activeJob.delivery_type === 'delivery' && activeJob.delivery_address
+                      ? ` → ${activeJob.delivery_address}`
+                      : ''}
+                    .
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
         {(activeJob.status === 'completed' ||
           activeJob.status === 'ready_for_pickup' ||
           activeJob.status === 'failed') && (
-          <div className="flex flex-wrap gap-4 justify-center">
+          <motion.div
+            className="flex flex-wrap gap-4 justify-center"
+            initial={reduce ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.4, ease: easeOutExpo }}
+          >
             <button
               onClick={onPrintNew}
               className={cn(
-                'px-6 py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 font-bold rounded-xl flex items-center gap-2 text-sm text-white',
+                'px-6 py-3 bg-muted hover:bg-subtle border border-edge font-bold rounded-xl flex items-center gap-2 text-sm text-fg',
                 btnInteractive,
               )}
             >
               {t.print.printNew} <ArrowRight className="w-4 h-4 text-emerald-400" />
             </button>
-            <Link
+            <TransitionLink
               href="/dashboard?tab=print"
               className={cn(
                 'px-6 py-3 bg-emerald-500 hover:bg-emerald-600 font-bold rounded-xl flex items-center gap-2 text-sm text-black',
@@ -208,10 +273,10 @@ export default function PrintProgressView({
               )}
             >
               {t.print.viewHistory}
-            </Link>
-          </div>
+            </TransitionLink>
+          </motion.div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

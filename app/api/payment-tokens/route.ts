@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { SafeDatabase } from '@/types/database.types';
 import { NextResponse } from 'next/server';
+import { ApiErrorCode, apiError } from '@/lib/api/errors';
 
 /** List saved payment tokens for the authenticated user */
 export async function GET() {
@@ -11,7 +12,7 @@ export async function GET() {
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError(ApiErrorCode.UNAUTHORIZED, 401);
     }
 
     const { data, error } = await supabase
@@ -22,18 +23,14 @@ export async function GET() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return apiError(ApiErrorCode.INTERNAL, 400, { details: error.message });
     }
 
     return NextResponse.json(data ?? []);
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 },
-    );
+    return apiError(ApiErrorCode.INTERNAL, 500, {
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
@@ -46,7 +43,7 @@ export async function POST(request: Request) {
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiError(ApiErrorCode.UNAUTHORIZED, 401);
     }
 
     const body = await request.json();
@@ -60,7 +57,7 @@ export async function POST(request: Request) {
     };
 
     if (!card_token || !last4 || !exp_month || !exp_year) {
-      return NextResponse.json({ error: 'Missing card token fields' }, { status: 400 });
+      return apiError(ApiErrorCode.TOKEN_FIELDS_MISSING, 400);
     }
 
     if (is_default) {
@@ -91,7 +88,7 @@ export async function POST(request: Request) {
         .eq('id', existing.id)
         .select()
         .single();
-      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      if (error) return apiError(ApiErrorCode.INTERNAL, 400, { details: error.message });
       row = data;
     } else {
       const { data, error } = await supabase
@@ -107,18 +104,14 @@ export async function POST(request: Request) {
         })
         .select()
         .single();
-      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      if (error) return apiError(ApiErrorCode.INTERNAL, 400, { details: error.message });
       row = data;
     }
 
     return NextResponse.json({ success: true, token: row });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 },
-    );
+    return apiError(ApiErrorCode.INTERNAL, 500, {
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { validateCardForSandbox, detectCardBrand } from '@/lib/payment/validate-card';
+import { ApiErrorCode, apiError } from '@/lib/api/errors';
 
 export async function POST(request: Request) {
   try {
@@ -10,14 +11,15 @@ export async function POST(request: Request) {
 
     const validation = validateCardForSandbox({ cardNumber, expiry, cvv });
     if (!validation.valid) {
-      const message =
+      const code =
         validation.errors.number ||
         validation.errors.expiry ||
         validation.errors.cvv ||
-        'Visa information is invalid.';
+        'CARD_INVALID';
       return NextResponse.json(
         {
-          error: message,
+          error: 'CARD_INVALID',
+          error_code: code,
           errors: validation.errors,
           code: 'CARD_INVALID',
         },
@@ -43,12 +45,8 @@ export async function POST(request: Request) {
       brand_detected: detectCardBrand(validation.digits),
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 },
-    );
+    return apiError(ApiErrorCode.INTERNAL, 500, {
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 }

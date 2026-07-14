@@ -61,6 +61,8 @@ export interface Database {
           points_used: number;
           points_earned: number;
           delivery_type: 'pickup' | 'delivery';
+          delivery_address: string | null;
+          recipient_name: string | null;
           status: 'pending' | 'paid' | 'failed' | 'completed';
           idempotency_key: string | null;
           created_at: string;
@@ -73,6 +75,8 @@ export interface Database {
           points_used?: number;
           points_earned?: number;
           delivery_type: 'pickup' | 'delivery';
+          delivery_address?: string | null;
+          recipient_name?: string | null;
           status?: 'pending' | 'paid' | 'failed' | 'completed';
           idempotency_key?: string | null;
           created_at?: string;
@@ -85,6 +89,8 @@ export interface Database {
           points_used?: number;
           points_earned?: number;
           delivery_type?: 'pickup' | 'delivery';
+          delivery_address?: string | null;
+          recipient_name?: string | null;
           status?: 'pending' | 'paid' | 'failed' | 'completed';
           idempotency_key?: string | null;
           created_at?: string;

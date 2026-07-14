@@ -49,15 +49,25 @@ function getServerSnapshot(): Locale {
   return 'vi';
 }
 
+function writeLocaleCookie(locale: Locale) {
+  try {
+    document.cookie = `${STORAGE_KEY}=${locale};path=/;max-age=31536000;SameSite=Lax`;
+  } catch {
+    /* ignore */
+  }
+}
+
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const locale = useSyncExternalStore(subscribe, readStoredLocale, getServerSnapshot);
 
   useEffect(() => {
     document.documentElement.lang = locale;
+    writeLocaleCookie(locale);
   }, [locale]);
 
   const setLocale = useCallback((next: Locale) => {
     window.localStorage.setItem(STORAGE_KEY, next);
+    writeLocaleCookie(next);
     document.documentElement.lang = next;
     window.dispatchEvent(new Event(EVENT));
   }, []);

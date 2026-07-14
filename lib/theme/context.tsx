@@ -13,6 +13,8 @@ import type { ThemeMode } from '@/lib/i18n/types';
 
 const STORAGE_KEY = 'platprint_theme';
 const EVENT = 'platprint-theme';
+/** Single source of truth — matches layout FOUC script + SSR html. */
+export const DEFAULT_THEME: ThemeMode = 'dark';
 
 type ThemeContextValue = {
   theme: ThemeMode;
@@ -29,12 +31,12 @@ function applyTheme(theme: ThemeMode) {
 }
 
 function readStoredTheme(): ThemeMode {
-  if (typeof window === 'undefined') return 'light';
+  if (typeof window === 'undefined') return DEFAULT_THEME;
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    return stored === 'light' || stored === 'dark' ? stored : 'light';
+    return stored === 'light' || stored === 'dark' ? stored : DEFAULT_THEME;
   } catch {
-    return 'light';
+    return DEFAULT_THEME;
   }
 }
 
@@ -48,7 +50,7 @@ function subscribe(onStoreChange: () => void) {
 }
 
 function getServerSnapshot(): ThemeMode {
-  return 'light';
+  return DEFAULT_THEME;
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

@@ -18,6 +18,27 @@
 
   --card-bg: #09090b; /* Zinc 950 */
   --card-border: #18181b; /* Zinc 900 */
+
+  /* Semantic surfaces / edges / text (design system) */
+  --elevated: #09090b;
+  --muted-surface: #18181b;
+  --subtle-surface: #27272a;
+  --edge: #27272a;
+  --edge-strong: #3f3f46;
+  --line: #18181b;
+  --text-secondary: #a1a1aa;
+  --text-secondary-strong: #d4d4d8;
+  --text-muted-fg: #71717a;
+  --text-faint: #52525b;
+  --on-brand: #ffffff;
+
+  /* Physical paper mock (stays light in both themes) */
+  --paper: #ffffff;
+  --paper-ink: #18181b;
+  --paper-muted: #52525b;
+  --paper-rule: #e4e4e7;
+  --paper-spine: #a1a1aa;
+  --paper-soft: #f4f4f5;
 }
 
 @theme {
@@ -39,6 +60,25 @@
   --color-dark-900: var(--card-bg);
   --color-dark-800: var(--card-border);
   --color-dark-700: #3f3f46; /* Zinc 700 */
+
+  /* Design-system semantic colors (opacity modifiers work: bg-elevated/80) */
+  --color-elevated: var(--elevated);
+  --color-muted: var(--muted-surface);
+  --color-subtle: var(--subtle-surface);
+  --color-edge: var(--edge);
+  --color-edge-strong: var(--edge-strong);
+  --color-line: var(--line);
+  --color-secondary: var(--text-secondary);
+  --color-secondary-strong: var(--text-secondary-strong);
+  --color-muted-fg: var(--text-muted-fg);
+  --color-faint: var(--text-faint);
+  --color-on-brand: var(--on-brand);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
+  --color-paper-muted: var(--paper-muted);
+  --color-paper-rule: var(--paper-rule);
+  --color-paper-spine: var(--paper-spine);
+  --color-paper-soft: var(--paper-soft);
 
   /* Typography mappings */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
@@ -131,8 +171,21 @@
   }
 }
 
+@utility bg-surface {
+  background-color: var(--background);
+}
+
+@utility text-fg {
+  color: var(--foreground);
+}
+
 @utility text-gradient {
-  background-image: linear-gradient(to right, #ffffff, #d4d4d8, #a1a1aa);
+  background-image: linear-gradient(
+    to right,
+    var(--foreground),
+    var(--text-secondary-strong),
+    var(--text-muted-fg)
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -217,11 +270,30 @@ html[data-theme='light'] {
   --foreground: #18181b;
   --card-bg: #ffffff;
   --card-border: #e4e4e7;
+
+  --elevated: #ffffff;
+  --muted-surface: #f4f4f5;
+  --subtle-surface: #e4e4e7;
+  --edge: #d4d4d8;
+  --edge-strong: #a1a1aa;
+  --line: #e4e4e7;
+  --text-secondary: #52525b;
+  --text-secondary-strong: #3f3f46;
+  --text-muted-fg: #71717a;
+  --text-faint: #a1a1aa;
+  --on-brand: #ffffff;
 }
 
-html[data-theme='light'] body {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
+html[data-theme='light'] * {
+  scrollbar-color: rgba(24, 24, 27, 0.28) transparent !important;
+}
+
+html[data-theme='light'] *::-webkit-scrollbar-thumb {
+  background-color: rgba(24, 24, 27, 0.22) !important;
+}
+
+html[data-theme='light'] *::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(16, 185, 129, 0.5) !important;
 }
 
 html[data-theme='light'] .premium-bg::before {
@@ -325,6 +397,12 @@ html[data-theme='light'] .border-zinc-700,
 html[data-theme='light'] .hover\:border-zinc-700:hover,
 html[data-theme='light'] .hover\:border-zinc-800:hover {
   border-color: #d4d4d8 !important;
+}
+
+html[data-theme='light'] .border-white\/10,
+html[data-theme='light'] .border-white\/20,
+html[data-theme='light'] .border-white\/5 {
+  border-color: rgba(24, 24, 27, 0.12) !important;
 }
 
 /* ----- Body / title text ----- */
@@ -476,4 +554,36 @@ html[data-theme='light'] .print-sheet {
     0 30px 50px -20px rgba(24, 24, 27, 0.28),
     0 10px 20px -8px rgba(24, 24, 27, 0.16),
     0 0 0 1px rgba(24, 24, 27, 0.08);
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+.animate-accordion-down {
+  animation: accordion-down 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-accordion-up {
+  animation: accordion-up 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
 }

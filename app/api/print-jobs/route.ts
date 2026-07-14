@@ -6,6 +6,7 @@ import { buildPrintQuote, estimateDeliveryLabel } from '@/lib/print/pricing';
 import { resolvePrintPageCount } from '@/lib/print/resolve-page-count';
 import type { PrintConfig, PaperSize, BindingType, ColorMode, DuplexMode } from '@/lib/print/types';
 import { DEFAULT_PRINT_CONFIG } from '@/lib/print/types';
+import { ApiErrorCode, apiError, passThroughChargeError } from '@/lib/api/errors';
 
 type PrintJobStatus = SafeDatabase['public']['Tables']['print_jobs']['Row']['status'];
 type PrintJobRow = SafeDatabase['public']['Tables']['print_jobs']['Row'];
@@ -70,7 +71,7 @@ export async function GET() {
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Chưa đăng nhập (Unauthorized)' }, { status: 401 });
+      return apiError(ApiErrorCode.UNAUTHORIZED, 401);
     }
 
     const { data, error } = await supabase
@@ -80,18 +81,14 @@ export async function GET() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return apiError(ApiErrorCode.INTERNAL, 400, { details: error.message });
     }
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 },
-    );
+    return apiError(ApiErrorCode.INTERNAL, 500, {
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
@@ -100,12 +97,7 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     const admin = createAdminClient();
     if (!admin) {
-      return NextResponse.json(
-        {
-          error: 'Thiếu SUPABASE_SERVICE_ROLE_KEY — không thể thanh toán lệnh in (fail-closed).',
-        },
-        { status: 500 },
-      );
+      return apiError(ApiErrorCode.MISSING_SERVICE_ROLE, 500);
     }
 
     const {
@@ -113,7 +105,7 @@ export async function POST(request: Request) {
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Chưa đăng nhập (Unauthorized)' }, { status: 401 });
+      return apiError(ApiErrorCode.UNAUTHORIZED, 401);
     }
 
     const body = await request.json();
@@ -132,10 +124,7 @@ export async function POST(request: Request) {
     } = body;
 
     if (!file_name || !file_path || !total_pages || !card_token || !idempotency_key) {
-      return NextResponse.json(
-        { error: 'Thiếu thông tin cấu hình in ấn hoặc thanh toán (card_token, idempotency_key)' },
-        { status: 400 },
-      );
+      return apiError(ApiErrorCode.PRINT_MISSING_FIELDS, 400);
     }
 
     // Idempotency
@@ -147,15 +136,7 @@ export async function POST(request: Request) {
 
     if (existing) {
       if (existing.status === 'failed' || existing.status === 'awaiting_payment') {
-        return NextResponse.json(
-          {
-            error:
-              existing.status === 'failed'
-                ? 'Giao dịch trước đã thất bại. Dùng idempotency_key mới.'
-                : 'Giao dịch trước chưa hoàn tất thanh toán. Dùng idempotency_key mới.',
-          },
-          { status: 400 },
-        );
+        return apiError(ApiErrorCode.PRINT_IDEMPOTENCY_FAILED, 400);
       }
       // paid / queued / … / completed → safe replay
       return NextResponse.json({ success: true, job: existing, idempotent: true }, { status: 200 });
@@ -163,7 +144,7 @@ export async function POST(request: Request) {
 
     const config = mapBodyToConfig(body);
     if (config.deliveryType === 'delivery' && !config.deliveryAddress.trim()) {
-      return NextResponse.json({ error: 'Vui lòng nhập địa chỉ giao hàng' }, { status: 400 });
+      return apiError(ApiErrorCode.MISSING_DELIVERY_ADDRESS, 400);
     }
 
     const pageResolution = await resolvePrintPageCount({
@@ -174,7 +155,10 @@ export async function POST(request: Request) {
 
     const quote = buildPrintQuote(config, effectivePages, Number(current_page || 1));
     if (quote.error) {
-      return NextResponse.json({ error: quote.error }, { status: 400 });
+      return apiError(ApiErrorCode.PRINT_MISSING_FIELDS, 400, {
+        details: quote.error,
+        error_params: quote.errorParams,
+      });
     }
 
     const { data: profile } = await supabase
@@ -248,14 +232,7 @@ export async function POST(request: Request) {
         });
       }
 
-      return NextResponse.json(
-        {
-          error:
-            insertError?.message ||
-            'Không tạo được lệnh in. Hãy chạy supabase_migration_v4.sql (+ v4_1 + v6).',
-        },
-        { status: 400 },
-      );
+      return apiError(ApiErrorCode.PRINT_CREATE_FAILED, 400, { details: insertError?.message });
     }
 
     if (pointsUsed > 0) {
@@ -289,14 +266,10 @@ export async function POST(request: Request) {
         });
       }
       await setJobStatus(job.id, 'failed');
-      return NextResponse.json(
-        {
-          success: false,
-          error: chargeResult.error || 'Thanh toán không thành công',
-          job_id: job.id,
-        },
-        { status: 400 },
-      );
+      return apiError(passThroughChargeError(chargeResult.error || chargeResult.code), 400, {
+        success: false,
+        job_id: job.id,
+      });
     }
 
     // Mark paid before earn settle (RPC requires paid+ pipeline status)
@@ -312,16 +285,11 @@ export async function POST(request: Request) {
       }
       // Fail-closed durable state: never leave charged job in awaiting_payment
       await setJobStatus(job.id, 'failed');
-      return NextResponse.json(
-        {
-          error:
-            'Thanh toán thành công nhưng không cập nhật được trạng thái lệnh in. Đã đánh dấu failed — liên hệ hỗ trợ kèm transaction_id.',
-          job_id: job.id,
-          charged: true,
-          transaction_id: chargeResult.transaction_id,
-        },
-        { status: 500 },
-      );
+      return apiError(ApiErrorCode.PAYMENT_MARK_FAILED, 500, {
+        job_id: job.id,
+        charged: true,
+        transaction_id: chargeResult.transaction_id,
+      });
     }
 
     let pointsWarning: string | undefined;
@@ -334,7 +302,7 @@ export async function POST(request: Request) {
       });
       if (earnErr) {
         console.error('Earn points failed after charge:', earnErr.message);
-        pointsWarning = `Thanh toán OK nhưng cộng điểm thất bại: ${earnErr.message}`;
+        pointsWarning = `POINTS_EARN_FAILED: ${earnErr.message}`;
       }
     }
 
@@ -393,13 +361,9 @@ export async function POST(request: Request) {
       { status: 201 },
     );
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 },
-    );
+    return apiError(ApiErrorCode.INTERNAL, 500, {
+      details: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
@@ -452,12 +416,7 @@ async function handleLegacyPrintJob(args: {
     .single();
 
   if (legacyErr || !legacyJob) {
-    return NextResponse.json(
-      {
-        error: legacyErr?.message || 'Không tạo được lệnh in. Hãy chạy supabase_migration_v4.sql.',
-      },
-      { status: 400 },
-    );
+    return apiError(ApiErrorCode.PRINT_CREATE_FAILED, 400, { details: legacyErr?.message });
   }
 
   const origin = new URL(request.url).origin;
@@ -469,27 +428,19 @@ async function handleLegacyPrintJob(args: {
   const chargeResult = await chargeRes.json();
   if (!chargeRes.ok) {
     await setJobStatus(legacyJob.id, 'failed');
-    return NextResponse.json(
-      { error: chargeResult.error || 'Thanh toán thất bại' },
-      { status: 400 },
-    );
+    return apiError(passThroughChargeError(chargeResult.error || chargeResult.code), 400);
   }
 
   // Fail-closed: same as main path — do not return success if status cannot update
   const markedPaid = await setJobStatus(legacyJob.id, 'paid');
   if (!markedPaid) {
     await setJobStatus(legacyJob.id, 'failed');
-    return NextResponse.json(
-      {
-        error:
-          'Thanh toán thành công nhưng thiếu SUPABASE_SERVICE_ROLE_KEY — không thể cập nhật trạng thái. Đã đánh dấu failed. Hãy chạy supabase_migration_v4.sql (+ v6/v7) và cấu hình service role key.',
-        job_id: legacyJob.id,
-        charged: true,
-        transaction_id: chargeResult.transaction_id,
-        legacy: true,
-      },
-      { status: 500 },
-    );
+    return apiError(ApiErrorCode.PAYMENT_MARK_FAILED, 500, {
+      job_id: legacyJob.id,
+      charged: true,
+      transaction_id: chargeResult.transaction_id,
+      legacy: true,
+    });
   }
 
   startSimulator(legacyJob.id, 'pickup');

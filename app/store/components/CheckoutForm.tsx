@@ -1,7 +1,10 @@
 'use client';
 
 import { CreditCard, Truck, Sparkles, RefreshCw, Printer } from 'lucide-react';
-import { btnInteractive, btnInteractiveSm, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { SegmentOption, SegmentGroup } from '@/components/ui/SegmentOption';
 import type { CartItem } from './CartList';
 import { useLocale } from '@/lib/i18n/context';
 
@@ -72,29 +75,29 @@ export default function CheckoutForm({
 
   return (
     <form onSubmit={handleCheckoutSubmit} className="space-y-4">
-      <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+      <h4 className="text-xs font-bold text-muted-fg uppercase tracking-wider flex items-center gap-2">
         <CreditCard className="w-4 h-4 text-emerald-400" /> {t.store.checkoutTitle}
       </h4>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5 flex flex-col items-start w-full">
-          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider pl-1">
+          <label className="text-[10px] font-bold text-muted-fg uppercase tracking-wider pl-1">
             {t.store.recipientName}
           </label>
-          <input
+          <Input
             type="text"
             required
             placeholder={t.store.recipientPlaceholder}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500/40 py-2.5 px-3 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all duration-300 text-white font-medium"
+            className="text-xs font-medium"
           />
         </div>
         <div className="space-y-1.5 flex flex-col items-start w-full">
-          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider pl-1">
+          <label className="text-[10px] font-bold text-muted-fg uppercase tracking-wider pl-1">
             {deliveryType === 'delivery' ? t.store.addressLabel : t.store.pickupLabel}
           </label>
-          <input
+          <Input
             type="text"
             required={deliveryType === 'delivery'}
             placeholder={
@@ -103,42 +106,41 @@ export default function CheckoutForm({
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             disabled={deliveryType === 'pickup'}
-            className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500/40 py-2.5 px-3 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all duration-300 text-white disabled:opacity-50 disabled:pointer-events-none font-medium"
+            className="text-xs font-medium"
           />
         </div>
       </div>
 
-      <div className="flex gap-2 bg-zinc-950/80 p-1 rounded-lg border border-zinc-900">
-        <button
-          type="button"
+      <SegmentGroup
+        label={t.store.checkoutTitle}
+        className="flex gap-2 bg-elevated/80 p-1 rounded-lg border border-line"
+      >
+        <SegmentOption
+          radio
+          selected={deliveryType === 'pickup'}
           onClick={() => {
             setDeliveryType('pickup');
             setAddress('');
           }}
           className={cn(
-            'flex-1 py-1.5 rounded-md text-xs font-bold flex items-center justify-center gap-1.5',
-            btnInteractive,
-            deliveryType === 'pickup'
-              ? 'bg-emerald-600 text-white shadow'
-              : 'text-zinc-500 hover:text-zinc-300',
+            'flex-1 py-1.5 rounded-md flex items-center justify-center gap-1.5',
+            deliveryType === 'pickup' && 'border-transparent bg-emerald-600 text-on-brand',
           )}
         >
           <Printer className="w-3.5 h-3.5" /> {t.store.pickup}
-        </button>
-        <button
-          type="button"
+        </SegmentOption>
+        <SegmentOption
+          radio
+          selected={deliveryType === 'delivery'}
           onClick={() => setDeliveryType('delivery')}
           className={cn(
-            'flex-1 py-1.5 rounded-md text-xs font-bold flex items-center justify-center gap-1.5',
-            btnInteractive,
-            deliveryType === 'delivery'
-              ? 'bg-emerald-600 text-white shadow'
-              : 'text-zinc-500 hover:text-zinc-300',
+            'flex-1 py-1.5 rounded-md flex items-center justify-center gap-1.5',
+            deliveryType === 'delivery' && 'border-transparent bg-emerald-600 text-on-brand',
           )}
         >
           <Truck className="w-3.5 h-3.5" /> {t.store.delivery}
-        </button>
-      </div>
+        </SegmentOption>
+      </SegmentGroup>
 
       {rewardPoints > 0 && (
         <div className="p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl flex items-center justify-between">
@@ -152,7 +154,7 @@ export default function CheckoutForm({
             />
             <label
               htmlFor="use-points"
-              className="text-xs font-semibold text-zinc-300 cursor-pointer select-none"
+              className="text-xs font-semibold text-secondary-strong cursor-pointer select-none"
             >
               {t.store.usePoints}
             </label>
@@ -165,55 +167,50 @@ export default function CheckoutForm({
 
       <div className="space-y-3.5">
         {savedCards.length > 0 && setSelectedTokenId && (
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
+          <SegmentGroup label={t.store.newCard} className="flex flex-wrap gap-1.5">
+            <SegmentOption
+              dense
+              radio
+              selected={!selectedTokenId}
               onClick={() => setSelectedTokenId(null)}
-              className={cn(
-                'px-2 py-1 rounded-lg border text-[10px] font-bold',
-                btnInteractive,
-                !selectedTokenId
-                  ? 'border-emerald-500/40 text-emerald-300'
-                  : 'border-zinc-800 text-zinc-500',
-              )}
+              className={!selectedTokenId ? 'border-emerald-500/40 text-emerald-300' : undefined}
             >
               {t.store.newCard}
-            </button>
+            </SegmentOption>
             {savedCards.map((c) => (
-              <button
+              <SegmentOption
                 key={c.id}
-                type="button"
+                dense
+                radio
+                selected={selectedTokenId === c.id}
                 onClick={() => setSelectedTokenId(c.id)}
-                className={cn(
-                  'px-2 py-1 rounded-lg border text-[10px] font-bold',
-                  btnInteractive,
-                  selectedTokenId === c.id
-                    ? 'border-emerald-500/40 text-emerald-300'
-                    : 'border-zinc-800 text-zinc-500',
-                )}
+                className={
+                  selectedTokenId === c.id ? 'border-emerald-500/40 text-emerald-300' : undefined
+                }
               >
                 {c.card_brand} ••{c.last4}
-              </button>
+              </SegmentOption>
             ))}
-          </div>
+          </SegmentGroup>
         )}
 
         {!selectedTokenId && (
           <>
             <div className="space-y-1.5 flex flex-col items-start w-full">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider pl-1">
+              <label className="text-[10px] font-bold text-muted-fg uppercase tracking-wider pl-1">
                 {t.store.cardNumber}
               </label>
               <div className="relative w-full">
-                <input
+                <Input
                   type="text"
                   required={!selectedTokenId}
                   placeholder="4111 1111 1111 1111"
                   value={cardNumber}
                   onChange={(e) => setCardNumber(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500/40 py-2.5 px-3 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all duration-300 text-white font-mono"
+                  mono
+                  className="text-xs pr-24"
                 />
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[9px] text-zinc-500 bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[9px] text-muted-fg bg-muted border border-edge px-2 py-0.5 rounded font-bold uppercase tracking-wider">
                   Visa / Master
                 </div>
               </div>
@@ -221,35 +218,37 @@ export default function CheckoutForm({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5 flex flex-col items-start w-full">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider pl-1">
+                <label className="text-[10px] font-bold text-muted-fg uppercase tracking-wider pl-1">
                   {t.store.expiry}
                 </label>
-                <input
+                <Input
                   type="text"
                   required={!selectedTokenId}
                   placeholder="MM/YY"
                   value={expiry}
                   onChange={(e) => setExpiry(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500/40 py-2.5 px-3 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all duration-300 text-white text-center font-mono"
+                  mono
+                  className="text-xs text-center"
                 />
               </div>
               <div className="space-y-1.5 flex flex-col items-start w-full">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider pl-1">
+                <label className="text-[10px] font-bold text-muted-fg uppercase tracking-wider pl-1">
                   {t.store.cvv}
                 </label>
-                <input
+                <Input
                   type="password"
                   required={!selectedTokenId}
                   maxLength={4}
                   placeholder="123"
                   value={cvv}
                   onChange={(e) => setCvv(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500/40 py-2.5 px-3 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all duration-300 text-white text-center font-mono"
+                  mono
+                  className="text-xs text-center"
                 />
               </div>
             </div>
             {setSaveCard && (
-              <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
+              <label className="flex items-center gap-2 text-xs text-secondary cursor-pointer">
                 <input
                   type="checkbox"
                   checked={saveCard}
@@ -263,8 +262,8 @@ export default function CheckoutForm({
         )}
       </div>
 
-      <div className="p-3 bg-zinc-950/60 border border-zinc-900 rounded-xl space-y-2">
-        <div className="flex justify-between items-center text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+      <div className="p-3 bg-elevated/60 border border-line rounded-xl space-y-2">
+        <div className="flex justify-between items-center text-[10px] text-muted-fg font-bold uppercase tracking-wider">
           <span>{t.store.sandboxTitle}</span>
           <span className="px-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 rounded font-semibold scale-90">
             {t.store.simulate}
@@ -273,32 +272,28 @@ export default function CheckoutForm({
         <div className="flex flex-wrap gap-1.5">
           {(
             [
-              { key: '4001', label: t.store.simExpired, hover: 'hover:border-red-500/30' },
-              { key: '4002', label: t.store.simDecline, hover: 'hover:border-red-500/30' },
-              { key: '4003', label: t.store.simTimeout, hover: 'hover:border-orange-500/30' },
-              { key: '9999', label: t.store.simSuccess, hover: 'hover:border-emerald-500/30' },
+              { key: '4001', label: t.store.simExpired },
+              { key: '4002', label: t.store.simDecline },
+              { key: '4003', label: t.store.simTimeout },
+              { key: '9999', label: t.store.simSuccess },
             ] as const
           ).map((sim) => (
-            <button
+            <SegmentOption
               key={sim.key}
-              type="button"
+              dense
               onClick={() => handleSelectSimCard(sim.key)}
-              className={cn(
-                'px-2 py-1 bg-zinc-900 border border-zinc-800 hover:text-white text-[9px] rounded text-zinc-400 font-bold',
-                sim.hover,
-                btnInteractiveSm,
-              )}
+              className="bg-muted text-[9px]"
             >
               {sim.label}
-            </button>
+            </SegmentOption>
           ))}
         </div>
       </div>
 
-      <div className="bg-zinc-950/60 p-4 border border-zinc-900 rounded-xl space-y-2 text-xs font-semibold">
+      <div className="bg-elevated/60 p-4 border border-line rounded-xl space-y-2 text-xs font-semibold">
         <div className="flex justify-between">
-          <span className="text-zinc-500">{t.store.subtotal}</span>
-          <span className="text-white">${subtotal.toFixed(2)}</span>
+          <span className="text-muted-fg">{t.store.subtotal}</span>
+          <span className="text-fg">${subtotal.toFixed(2)}</span>
         </div>
         {usePoints && (
           <div className="flex justify-between text-emerald-400">
@@ -308,23 +303,22 @@ export default function CheckoutForm({
             <span>-${discount.toFixed(2)}</span>
           </div>
         )}
-        <div className="flex justify-between border-t border-zinc-900/60 pt-2 text-sm font-bold">
-          <span className="text-zinc-400">{t.store.totalPay}</span>
-          <span className="text-white">${total.toFixed(2)}</span>
+        <div className="flex justify-between border-t border-line/60 pt-2 text-sm font-bold">
+          <span className="text-secondary">{t.store.totalPay}</span>
+          <span className="text-fg">${total.toFixed(2)}</span>
         </div>
-        <div className="text-[10px] text-emerald-400 flex items-center gap-1.5 pt-1.5 border-t border-dashed border-zinc-900">
+        <div className="text-[10px] text-emerald-400 flex items-center gap-1.5 pt-1.5 border-t border-dashed border-line">
           <Sparkles className="w-3.5 h-3.5 animate-pulse" />{' '}
           {t.store.earnPoints.replace('{n}', String(pointsEarned))}
         </div>
       </div>
 
-      <button
+      <Button
         type="submit"
+        variant="primary"
+        size="lg"
         disabled={submitting || cart.length === 0}
-        className={cn(
-          'w-full py-3.5 bg-gradient-to-tr from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:pointer-events-none rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/10 flex items-center justify-center gap-2 hover:scale-[1.01] text-white',
-          btnInteractive,
-        )}
+        className="w-full hover:scale-[1.01]"
       >
         {submitting ? (
           <>
@@ -335,7 +329,7 @@ export default function CheckoutForm({
             <CreditCard className="w-4 h-4" /> {t.store.payNow} (${total.toFixed(2)})
           </>
         )}
-      </button>
+      </Button>
     </form>
   );
 }

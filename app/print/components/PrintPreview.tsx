@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
+import { easeOutExpo } from '@/lib/motion';
 import {
   FileText,
   ChevronLeft,
@@ -45,6 +47,7 @@ export default function PrintPreview({
   colorPages = [],
 }: PrintPreviewProps) {
   const { t } = useLocale();
+  const reduce = useReducedMotion();
   const [isRendering, setIsRendering] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [fitMode, setFitMode] = useState<FitMode>('page');
@@ -151,33 +154,43 @@ export default function PrintPreview({
       btnInteractive,
       active
         ? 'border-emerald-500/45 bg-emerald-500/15 text-emerald-300'
-        : 'border-white/8 bg-zinc-950/60 text-zinc-400 hover:text-zinc-200 hover:border-white/15',
+        : 'border-white/8 bg-elevated/60 text-secondary hover:text-secondary-strong hover:border-white/15',
     );
 
   return (
-    <div className="glass-bezel-outer overflow-hidden">
+    <motion.div
+      className="glass-bezel-outer overflow-hidden"
+      initial={reduce ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.45, ease: easeOutExpo }}
+    >
       <div className="glass-bezel-inner flex flex-col min-h-[420px] lg:min-h-[calc(100vh-6.5rem)] lg:max-h-[calc(100vh-5.5rem)]">
         {/* Chrome bar */}
-        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 px-4 md:px-5 py-3 border-b border-white/6 bg-zinc-950/40">
+        <motion.div
+          className="shrink-0 flex flex-wrap items-center justify-between gap-3 px-4 md:px-5 py-3 border-b border-white/6 bg-elevated/40"
+          initial={reduce ? false : { opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: easeOutExpo, delay: 0.06 }}
+        >
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/12 border border-emerald-500/25 text-emerald-400 shrink-0">
               <ScanLine className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-fg">
                 {t.print.preview}
               </p>
-              <p className="text-sm font-semibold text-zinc-100 truncate">
+              <p className="text-sm font-semibold text-fg truncate">
                 {file ? file.name : t.print.previewEmpty.split('.')[0]}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-zinc-900/80 border border-white/8 text-zinc-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/80 border border-white/8 text-secondary">
               {PAPER_SIZE_LABELS[configPaperSize]}
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-zinc-900/80 border border-white/8 text-zinc-400">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/80 border border-white/8 text-secondary">
               {pageIsColor ? t.print.labelColor : t.print.labelBw}
             </span>
             {configBinding !== 'none' && (
@@ -186,18 +199,33 @@ export default function PrintPreview({
               </span>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {/* Toolbar */}
         {file && isPdf && (
-          <div className="shrink-0 flex items-center gap-1.5 px-4 md:px-5 py-2.5 border-b border-white/5 bg-zinc-950/25 overflow-x-auto">
-            <button type="button" onClick={zoomOut} className={toolBtn()} aria-label="Zoom out">
+          <motion.div
+            className="shrink-0 flex items-center gap-1.5 px-4 md:px-5 py-2.5 border-b border-white/5 bg-elevated/25 overflow-x-auto"
+            initial={reduce ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.35, ease: easeOutExpo, delay: 0.1 }}
+          >
+            <button
+              type="button"
+              onClick={zoomOut}
+              className={toolBtn()}
+              aria-label={t.print.zoomOut}
+            >
               <ZoomOut className="w-4 h-4" />
             </button>
-            <button type="button" onClick={zoomIn} className={toolBtn()} aria-label="Zoom in">
+            <button
+              type="button"
+              onClick={zoomIn}
+              className={toolBtn()}
+              aria-label={t.print.zoomIn}
+            >
               <ZoomIn className="w-4 h-4" />
             </button>
-            <div className="w-px h-5 bg-white/10 mx-0.5" />
+            <div className="w-px h-5 bg-fg/10 mx-0.5" />
             <button
               type="button"
               onClick={() => setFitMode('width')}
@@ -212,11 +240,11 @@ export default function PrintPreview({
             >
               {t.print.fitPage}
             </button>
-            <span className="ml-auto text-[11px] font-mono text-zinc-500 flex items-center gap-1.5 tabular-nums">
+            <span className="ml-auto text-[11px] font-mono text-muted-fg flex items-center gap-1.5 tabular-nums">
               <Maximize2 className="w-3.5 h-3.5" />
               {fitMode === 'custom' ? `${Math.round(zoom * 100)}%` : fitMode}
             </span>
-          </div>
+          </motion.div>
         )}
 
         {/* Light table / desk */}
@@ -232,19 +260,21 @@ export default function PrintPreview({
                   aria-hidden
                   className="pointer-events-none absolute -inset-x-6 -bottom-8 top-[40%] rounded-[40%] bg-black/45 blur-2xl opacity-70"
                 />
-                <div
+                <motion.div
                   className={cn(
-                    'print-sheet relative bg-white overflow-hidden',
+                    'print-sheet relative bg-paper overflow-hidden',
                     !pageIsColor && 'grayscale',
-                    isRendering && 'opacity-90',
                   )}
+                  animate={{ opacity: isRendering ? 0.88 : 1 }}
+                  transition={{ duration: 0.22, ease: easeOutExpo }}
                 >
                   {isPdf && <canvas ref={canvasRef} className="block max-w-none" />}
                   {isImage && (
+                    // Blob / object URLs — next/image requires unoptimized
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={fileUrl}
-                      alt="preview"
+                      alt={t.print.preview}
                       className="block max-w-[min(100%,720px)] max-h-[min(70vh,720px)] object-contain"
                       style={{
                         transform: `scale(${fitMode === 'custom' ? zoom : 1})`,
@@ -253,9 +283,9 @@ export default function PrintPreview({
                     />
                   )}
                   {!isPdf && !isImage && (
-                    <div className="flex flex-col items-center justify-center gap-3 px-14 py-20 text-center text-zinc-500">
-                      <Rows3 className="w-10 h-10 text-zinc-400" />
-                      <p className="text-sm font-medium max-w-sm text-zinc-600">
+                    <div className="flex flex-col items-center justify-center gap-3 px-14 py-20 text-center text-muted-fg">
+                      <Rows3 className="w-10 h-10 text-secondary" />
+                      <p className="text-sm font-medium max-w-sm text-faint">
                         {t.print.officePreviewHint}
                       </p>
                     </div>
@@ -266,18 +296,18 @@ export default function PrintPreview({
                       {Array.from({ length: 18 }).map((_, idx) => (
                         <div
                           key={idx}
-                          className="w-4 h-1.5 bg-zinc-400/90 rounded-full -ml-2 border border-zinc-600/30 shadow-sm"
+                          className="w-4 h-1.5 bg-paper-spine/90 rounded-full -ml-2 border border-paper-muted/30 shadow-sm"
                         />
                       ))}
                     </div>
                   )}
                   {(configBinding === 'stapled' || configBinding === 'glue') && (
                     <div className="absolute top-3 left-3 flex flex-col gap-2.5 pointer-events-none z-10">
-                      <div className="w-5 h-0.5 bg-zinc-400 rounded border border-zinc-500/50 rotate-[38deg] shadow-sm" />
-                      <div className="w-5 h-0.5 bg-zinc-400 rounded border border-zinc-500/50 rotate-[38deg] shadow-sm" />
+                      <div className="w-5 h-0.5 bg-paper-spine rounded border border-paper-muted/50 rotate-[38deg] shadow-sm" />
+                      <div className="w-5 h-0.5 bg-paper-spine rounded border border-paper-muted/50 rotate-[38deg] shadow-sm" />
                     </div>
                   )}
-                </div>
+                </motion.div>
 
                 {isRendering && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -286,16 +316,21 @@ export default function PrintPreview({
                 )}
               </div>
             ) : (
-              <div className="w-full max-w-3xl mx-auto">
+              <motion.div
+                className="w-full max-w-3xl mx-auto"
+                initial={reduce ? false : { opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: easeOutExpo, delay: 0.08 }}
+              >
                 <div className="relative mx-auto aspect-[3/2] max-h-[min(52vh,520px)] w-full">
-                  <div className="absolute inset-[8%] rounded-sm border border-dashed border-zinc-500/35 bg-white/[0.03]" />
-                  <div className="absolute inset-[14%] rounded-sm bg-white shadow-[0_24px_60px_-20px_rgba(0,0,0,0.75)] border border-zinc-200/90 flex flex-col items-center justify-center gap-4 px-8 text-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-500">
+                  <div className="absolute inset-[8%] rounded-sm border border-dashed border-paper-spine/35 bg-paper/[0.03]" />
+                  <div className="absolute inset-[14%] rounded-sm bg-paper shadow-[0_24px_60px_-20px_rgba(0,0,0,0.75)] border border-paper-rule/90 flex flex-col items-center justify-center gap-4 px-8 text-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-paper-soft text-muted-fg">
                       <FileText className="w-7 h-7" />
                     </div>
                     <div className="space-y-1.5 max-w-md">
-                      <p className="text-base font-semibold text-zinc-800">{t.print.preview}</p>
-                      <p className="text-sm text-zinc-500 leading-relaxed">
+                      <p className="text-base font-semibold text-paper-ink">{t.print.preview}</p>
+                      <p className="text-sm text-muted-fg leading-relaxed">
                         {t.print.previewEmpty}
                       </p>
                     </div>
@@ -310,21 +345,21 @@ export default function PrintPreview({
                     className="absolute top-[8%] bottom-[8%] left-1/2 w-px bg-emerald-500/20"
                   />
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
         </div>
 
         {/* Filmstrip / pager */}
         {file && (
-          <div className="shrink-0 border-t border-white/6 bg-zinc-950/55 px-4 md:px-5 py-3 space-y-2.5">
+          <div className="shrink-0 border-t border-white/6 bg-elevated/55 px-4 md:px-5 py-3 space-y-2.5">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-[11px] text-zinc-500 font-medium truncate">{file.name}</p>
-              <p className="text-[12px] font-mono font-bold text-zinc-400 shrink-0 tabular-nums">
+              <p className="text-[11px] text-muted-fg font-medium truncate">{file.name}</p>
+              <p className="text-[12px] font-mono font-bold text-secondary shrink-0 tabular-nums">
                 {isPdf ? (
                   <>
                     {t.print.pageOf} <span className="text-emerald-400">{activePage}</span>
-                    <span className="text-zinc-600"> / {totalPages}</span>
+                    <span className="text-faint"> / {totalPages}</span>
                   </>
                 ) : (
                   <span className="text-emerald-400">{t.print.imagePage}</span>
@@ -339,7 +374,7 @@ export default function PrintPreview({
                   onClick={goPrev}
                   disabled={activePage <= 1 || isRendering}
                   className={cn(
-                    'h-9 w-9 rounded-lg bg-zinc-900 border border-white/8 text-zinc-300 disabled:opacity-35',
+                    'h-9 w-9 rounded-lg bg-muted border border-white/8 text-secondary-strong disabled:opacity-35',
                     btnInteractive,
                   )}
                 >
@@ -353,14 +388,14 @@ export default function PrintPreview({
                   onChange={(e) =>
                     setCurrentPage(Math.min(totalPages, Math.max(1, Number(e.target.value) || 1)))
                   }
-                  className="w-14 text-center bg-zinc-950 border border-white/8 rounded-lg text-xs py-2 text-white font-mono"
+                  className="w-14 text-center bg-elevated border border-white/8 rounded-lg text-xs py-2 text-fg font-mono"
                 />
                 <button
                   type="button"
                   onClick={goNext}
                   disabled={activePage >= totalPages || isRendering}
                   className={cn(
-                    'h-9 w-9 rounded-lg bg-zinc-900 border border-white/8 text-zinc-300 disabled:opacity-35',
+                    'h-9 w-9 rounded-lg bg-muted border border-white/8 text-secondary-strong disabled:opacity-35',
                     btnInteractive,
                   )}
                 >
@@ -377,16 +412,14 @@ export default function PrintPreview({
                         btnInteractive,
                         page === activePage
                           ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300'
-                          : 'bg-zinc-950 border-white/8 text-zinc-500 hover:text-zinc-300',
+                          : 'bg-elevated border-white/8 text-muted-fg hover:text-secondary-strong',
                       )}
                     >
                       {page}
                     </button>
                   ))}
                   {totalPages > 16 && (
-                    <span className="text-[11px] text-zinc-600 self-center px-1">
-                      …{totalPages}
-                    </span>
+                    <span className="text-[11px] text-faint self-center px-1">…{totalPages}</span>
                   )}
                 </div>
               </div>
@@ -394,6 +427,6 @@ export default function PrintPreview({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }

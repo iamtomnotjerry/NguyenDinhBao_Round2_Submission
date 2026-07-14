@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { ViewTransitions } from 'next-view-transitions';
 import AppProviders from '@/components/AppProviders';
 import './globals.css';
 
@@ -14,8 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'PlatPrint - Dịch Vụ In Ấn Từ Xa & Cửa Hàng Ấn Phẩm',
-  description: 'Nền tảng in ấn từ xa và gian hàng ấn phẩm tích hợp trợ lý ảo AI đa ngôn ngữ.',
+  title: 'PlatPrint — Remote Printing & Print Store',
+  description:
+    'Remote printing and print-shop platform with multilingual AI support. Nền tảng in ấn từ xa & gian hàng ấn phẩm tích hợp AI.',
 };
 
 const themeInitScript = `
@@ -38,18 +40,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="vi"
-      suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
-      data-theme="dark"
-    >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
-      <body className="min-h-full flex flex-col premium-bg bg-[#050505] text-white selection:bg-emerald-500 selection:text-black pb-20 md:pb-0">
-        <AppProviders>{children}</AppProviders>
-      </body>
-    </html>
+    <ViewTransitions>
+      <html
+        lang="vi"
+        suppressHydrationWarning
+        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
+        data-theme="dark"
+      >
+        <head>
+          <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        </head>
+        <body className="min-h-full flex flex-col premium-bg bg-[var(--background)] text-[var(--foreground)] selection:bg-emerald-500 selection:text-black pb-20 md:pb-0">
+          <AppProviders>{children}</AppProviders>
+        </body>
+      </html>
+    </ViewTransitions>
   );
 }
