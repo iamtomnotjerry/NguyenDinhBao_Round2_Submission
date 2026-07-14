@@ -232,9 +232,11 @@ html[data-theme='light'] .premium-bg::before {
 
 html[data-theme='light'] .glass-panel,
 html[data-theme='light'] .glass-panel-interactive {
-  background-color: rgba(255, 255, 255, 0.72);
-  border-color: rgba(24, 24, 27, 0.08);
-  box-shadow: 0 8px 30px rgba(24, 24, 27, 0.08);
+  background-color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(24, 24, 27, 0.12);
+  box-shadow:
+    0 12px 40px rgba(24, 24, 27, 0.1),
+    0 0 0 1px rgba(24, 24, 27, 0.04);
 }
 
 html[data-theme='light'] .glass-bezel-outer {
@@ -251,69 +253,93 @@ html[data-theme='light'] .glass-bezel-outer.interactive:hover {
 }
 
 html[data-theme='light'] .glass-bezel-inner {
-  background-color: rgba(255, 255, 255, 0.92);
+  background-color: rgba(255, 255, 255, 0.94);
   border-color: rgba(24, 24, 27, 0.1);
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8);
   color: #18181b;
 }
 
-/* Page shells frequently use these */
+/* ----- Background shells ----- */
 html[data-theme='light'] .bg-zinc-950,
 html[data-theme='light'] .bg-\[\#050505\] {
   background-color: #f3f6f4 !important;
 }
 
 html[data-theme='light'] .bg-zinc-950\/40,
+html[data-theme='light'] .bg-zinc-950\/50,
 html[data-theme='light'] .bg-zinc-950\/55,
 html[data-theme='light'] .bg-zinc-950\/60,
 html[data-theme='light'] .bg-zinc-950\/80 {
-  background-color: rgba(255, 255, 255, 0.72) !important;
+  background-color: rgba(255, 255, 255, 0.78) !important;
+}
+
+html[data-theme='light'] .bg-zinc-950\/90,
+html[data-theme='light'] .bg-zinc-950\/95 {
+  background-color: #ffffff !important;
+  box-shadow:
+    0 10px 28px rgba(24, 24, 27, 0.12),
+    0 0 0 1px rgba(24, 24, 27, 0.06) !important;
 }
 
 html[data-theme='light'] .bg-zinc-900,
 html[data-theme='light'] .bg-zinc-900\/30,
 html[data-theme='light'] .bg-zinc-900\/35,
+html[data-theme='light'] .bg-zinc-900\/40,
 html[data-theme='light'] .bg-zinc-900\/50,
-html[data-theme='light'] .bg-zinc-900\/80 {
+html[data-theme='light'] .bg-zinc-900\/80,
+html[data-theme='light'] .hover\:bg-zinc-900:hover,
+html[data-theme='light'] .hover\:bg-zinc-800:hover {
   background-color: #eceef0 !important;
 }
 
+html[data-theme='light'] .bg-zinc-800 {
+  background-color: #e4e4e7 !important;
+}
+
+/* Nested inset surfaces (inputs / product thumbs) slightly off-white */
+html[data-theme='light'] .glass-bezel-inner .bg-zinc-950,
+html[data-theme='light'] .glass-panel .bg-zinc-950,
+html[data-theme='light'] input.bg-zinc-950,
+html[data-theme='light'] select.bg-zinc-950,
+html[data-theme='light'] textarea.bg-zinc-950 {
+  background-color: #ffffff !important;
+}
+
+html[data-theme='light'] .glass-bezel-inner .bg-zinc-900,
+html[data-theme='light'] .glass-panel .bg-zinc-900 {
+  background-color: #f4f4f5 !important;
+}
+
+/* ----- Borders ----- */
 html[data-theme='light'] .border-zinc-900,
 html[data-theme='light'] .border-zinc-900\/60,
 html[data-theme='light'] .border-zinc-900\/80,
 html[data-theme='light'] .border-zinc-850,
-html[data-theme='light'] .border-zinc-800 {
-  border-color: #e4e4e7 !important;
+html[data-theme='light'] .border-zinc-850\/80,
+html[data-theme='light'] .border-zinc-800,
+html[data-theme='light'] .border-zinc-800\/80,
+html[data-theme='light'] .border-zinc-700,
+html[data-theme='light'] .hover\:border-zinc-700:hover,
+html[data-theme='light'] .hover\:border-zinc-800:hover {
+  border-color: #d4d4d8 !important;
 }
 
+/* ----- Body / title text ----- */
 html[data-theme='light'] .text-white {
   color: #18181b !important;
 }
 
-/* Keep brand / CTA contrast */
-html[data-theme='light'] .bg-emerald-600,
-html[data-theme='light'] .bg-emerald-500,
-html[data-theme='light'] .from-emerald-500,
-html[data-theme='light'] .to-teal-500,
-html[data-theme='light'] [class*='from-emerald-'],
-html[data-theme='light'] [class*='to-teal-'] {
-  /* let gradient buttons keep light text via exception below */
+html[data-theme='light'] .from-white.bg-clip-text {
+  background-image: linear-gradient(to right, #18181b, #52525b) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
 }
 
-html[data-theme='light'] a.bg-emerald-600,
-html[data-theme='light'] button.bg-emerald-600,
-html[data-theme='light'] a[class*='from-emerald-'],
-html[data-theme='light'] button[class*='from-emerald-'],
-html[data-theme='light'] .bg-gradient-to-r,
-html[data-theme='light'] .bg-gradient-to-tr {
-  color: #fff !important;
-}
-
-html[data-theme='light'] .bg-gradient-to-r *,
-html[data-theme='light'] .bg-gradient-to-tr *,
-html[data-theme='light'] a.bg-emerald-600 *,
-html[data-theme='light'] button.bg-emerald-600 * {
-  color: inherit !important;
+html[data-theme='light'] .from-white.bg-clip-text svg {
+  color: #059669 !important;
+  -webkit-text-fill-color: currentColor !important;
 }
 
 html[data-theme='light'] .text-zinc-100,
@@ -323,9 +349,77 @@ html[data-theme='light'] .text-zinc-300 {
 }
 
 html[data-theme='light'] .text-zinc-400,
-html[data-theme='light'] .text-zinc-500,
-html[data-theme='light'] .text-zinc-600 {
+html[data-theme='light'] .text-zinc-550 {
   color: #71717a !important;
+}
+
+html[data-theme='light'] .text-zinc-500,
+html[data-theme='light'] .text-zinc-650 {
+  color: #52525b !important;
+}
+
+html[data-theme='light'] .text-zinc-600 {
+  color: #3f3f46 !important;
+}
+
+html[data-theme='light'] .text-zinc-800,
+html[data-theme='light'] .text-zinc-850 {
+  color: #27272a !important;
+}
+
+html[data-theme='light'] .hover\:text-white:hover,
+html[data-theme='light'] .hover\:text-zinc-300:hover {
+  color: #18181b !important;
+}
+
+/*
+  Emerald / teal filled surfaces (CTA, chat user bubble, avatar, logo badge)
+  keep light foreground. Exclude bg-clip-text accent headlines.
+*/
+html[data-theme='light']
+  :is(.bg-emerald-500, .bg-emerald-600, .hover\:bg-emerald-500:hover, .hover\:bg-emerald-600:hover),
+html[data-theme='light'] [class*='bg-gradient'][class*='from-emerald-']:not(.bg-clip-text),
+html[data-theme='light'] [class*='bg-gradient'][class*='from-teal-']:not(.bg-clip-text) {
+  color: #ffffff !important;
+}
+
+html[data-theme='light']
+  :is(.bg-emerald-500, .bg-emerald-600, .hover\:bg-emerald-500:hover, .hover\:bg-emerald-600:hover)
+  :is(.text-white, svg, span, p, strong),
+html[data-theme='light']
+  [class*='bg-gradient'][class*='from-emerald-']:not(.bg-clip-text)
+  :is(.text-white, svg, span, p, strong),
+html[data-theme='light']
+  [class*='bg-gradient'][class*='from-teal-']:not(.bg-clip-text)
+  :is(.text-white, svg, span, p, strong) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Soft emerald chips stay tinted (not forced white text) */
+html[data-theme='light'] .bg-emerald-500\/10,
+html[data-theme='light'] .bg-emerald-500\/5 {
+  color: inherit;
+}
+
+html[data-theme='light'] .bg-emerald-500\/10.text-white,
+html[data-theme='light'] .bg-emerald-500\/5.text-white,
+html[data-theme='light'] .bg-emerald-500\/10 .text-white,
+html[data-theme='light'] .bg-emerald-500\/5 .text-white {
+  color: #18181b !important;
+}
+
+/* Form fields */
+html[data-theme='light'] input,
+html[data-theme='light'] textarea,
+html[data-theme='light'] select {
+  color: #18181b !important;
+  background-color: #ffffff;
+}
+
+html[data-theme='light'] input::placeholder,
+html[data-theme='light'] textarea::placeholder {
+  color: #a1a1aa !important;
 }
 
 html[data-theme='light'] .shadow-black\/50,
@@ -341,7 +435,8 @@ html[data-theme='light'] * {
   scrollbar-color: rgba(24, 24, 27, 0.18) transparent !important;
 }
 
-html[data-theme='light'] header .bg-clip-text {
-  background-image: linear-gradient(to right, #18181b, #52525b) !important;
-  color: transparent !important;
+/* Keep selection readable */
+html[data-theme='light'] ::selection {
+  background-color: rgba(16, 185, 129, 0.25);
+  color: #18181b;
 }

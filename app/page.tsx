@@ -104,7 +104,7 @@ export default function Home() {
 
               <div className="absolute bottom-4 right-4 bg-zinc-950/95 border border-zinc-800 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 animate-pulse-slow">
                 <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-xs font-bold text-zinc-300">{t.home.printerOnline}</span>
+                <span className="text-xs font-bold text-zinc-200">{t.home.printerOnline}</span>
               </div>
             </div>
           </div>
