@@ -41,7 +41,8 @@ function progressForStatus(status: string): number {
     quality_check: 80,
     packing: 88,
     shipping: 94,
-    ready_for_pickup: 96,
+    // Pickup terminal for the customer — pipeline may stay here until staff marks completed
+    ready_for_pickup: 100,
     completed: 100,
     failed: 0,
   };

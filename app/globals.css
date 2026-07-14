@@ -265,6 +265,8 @@ html[data-theme='light'] .bg-\[\#050505\] {
   background-color: #f3f6f4 !important;
 }
 
+html[data-theme='light'] .bg-zinc-950\/20,
+html[data-theme='light'] .bg-zinc-950\/30,
 html[data-theme='light'] .bg-zinc-950\/40,
 html[data-theme='light'] .bg-zinc-950\/50,
 html[data-theme='light'] .bg-zinc-950\/55,
@@ -282,6 +284,7 @@ html[data-theme='light'] .bg-zinc-950\/95 {
 }
 
 html[data-theme='light'] .bg-zinc-900,
+html[data-theme='light'] .bg-zinc-900\/20,
 html[data-theme='light'] .bg-zinc-900\/30,
 html[data-theme='light'] .bg-zinc-900\/35,
 html[data-theme='light'] .bg-zinc-900\/40,
@@ -289,7 +292,7 @@ html[data-theme='light'] .bg-zinc-900\/50,
 html[data-theme='light'] .bg-zinc-900\/80,
 html[data-theme='light'] .hover\:bg-zinc-900:hover,
 html[data-theme='light'] .hover\:bg-zinc-800:hover {
-  background-color: #eceef0 !important;
+  background-color: #f4f4f5 !important;
 }
 
 html[data-theme='light'] .bg-zinc-800 {

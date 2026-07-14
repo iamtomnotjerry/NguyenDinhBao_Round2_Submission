@@ -99,12 +99,12 @@ function AccordionSection({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/30 overflow-hidden">
+    <div className="rounded-xl border border-zinc-800/80 overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className={cn(
-          'w-full flex items-center justify-between gap-2 px-3.5 py-3 text-left',
+          'w-full flex items-center justify-between gap-2 px-3.5 py-3 text-left bg-zinc-900/30',
           btnInteractive,
         )}
       >
@@ -119,7 +119,11 @@ function AccordionSection({
           )}
         />
       </button>
-      {open && <div className="px-3.5 pb-4 space-y-4 border-t border-zinc-900/80">{children}</div>}
+      {open && (
+        <div className="px-3.5 pt-3 pb-4 space-y-4 border-t border-zinc-900/80 bg-transparent">
+          {children}
+        </div>
+      )}
     </div>
   );
 }

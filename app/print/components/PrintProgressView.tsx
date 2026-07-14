@@ -170,7 +170,9 @@ export default function PrintProgressView({
                 </span>
               </div>
             )}
-            {printProgress >= 96 && (
+            {(printProgress >= 100 ||
+              activeJob.status === 'ready_for_pickup' ||
+              activeJob.status === 'completed') && (
               <div className="flex items-start gap-2 text-emerald-400 font-semibold">
                 <span>[✓]</span>
                 <span>
