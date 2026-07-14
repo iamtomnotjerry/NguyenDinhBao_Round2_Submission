@@ -1,9 +1,21 @@
 import { NextResponse } from 'next/server';
 import { validateCardForSandbox, detectCardBrand } from '@/lib/payment/validate-card';
 import { ApiErrorCode, apiError } from '@/lib/api/errors';
+import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit';
+
+/** Tokenize receives raw PANs — throttle per IP against brute-force probing. */
+const TOKENIZE_RATE_LIMIT = { limit: 30, windowMs: 60_000 };
 
 export async function POST(request: Request) {
   try {
+    const rateKey = getClientIp(request) ?? 'local';
+    const rate = checkRateLimit(`tokenize:${rateKey}`, TOKENIZE_RATE_LIMIT);
+    if (!rate.ok) {
+      return apiError(ApiErrorCode.RATE_LIMITED, 429, undefined, {
+        'Retry-After': String(rate.retryAfterSeconds),
+      });
+    }
+
     const body = await request.json();
     const cardNumber = body.card_number || body.cardNumber || '';
     const expiry = body.expiry || `${body.exp_month || ''}/${body.exp_year || ''}`;

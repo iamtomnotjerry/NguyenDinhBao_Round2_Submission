@@ -1,4 +1,8 @@
 import { ApiErrorCode, apiError } from '@/lib/api/errors';
+import { checkRateLimit, getClientIp } from '@/lib/api/rate-limit';
+
+/** Per caller (IP, else token) — protects the 10s timeout branch from being held open en masse. */
+const CHARGE_RATE_LIMIT = { limit: 30, windowMs: 60_000 };
 
 export async function POST(request: Request) {
   try {
@@ -7,6 +11,15 @@ export async function POST(request: Request) {
 
     if (!card_token) {
       return apiError(ApiErrorCode.MISSING_CARD_TOKEN, 400);
+    }
+
+    // Internal server-to-server calls carry no client IP — fall back to token key
+    const rateKey = getClientIp(request) ?? `tok:${card_token}`;
+    const rate = checkRateLimit(`charge:${rateKey}`, CHARGE_RATE_LIMIT);
+    if (!rate.ok) {
+      return apiError(ApiErrorCode.RATE_LIMITED, 429, undefined, {
+        'Retry-After': String(rate.retryAfterSeconds),
+      });
     }
 
     // Extract last 4 digits from token format: tok_last4_randomstring

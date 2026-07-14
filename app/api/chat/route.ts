@@ -7,6 +7,10 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { HUMAN_HANDOFF_TOKEN, markChatWaitingSupport } from '@/lib/chat/handoff';
 import { ApiErrorCode, apiError } from '@/lib/api/errors';
+import { checkRateLimit } from '@/lib/api/rate-limit';
+
+/** Chat is LLM-backed — cap per-user throughput to prevent quota abuse. */
+const CHAT_RATE_LIMIT = { limit: 10, windowMs: 60_000 };
 
 function handoffHeaders(sessionId: string, handoffOk?: boolean): HeadersInit {
   const headers: Record<string, string> = {
@@ -61,6 +65,13 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
     if (authError || !user) {
       return apiError(ApiErrorCode.UNAUTHORIZED, 401);
+    }
+
+    const rate = checkRateLimit(`chat:${user.id}`, CHAT_RATE_LIMIT);
+    if (!rate.ok) {
+      return apiError(ApiErrorCode.RATE_LIMITED, 429, undefined, {
+        'Retry-After': String(rate.retryAfterSeconds),
+      });
     }
 
     const body = await request.json();

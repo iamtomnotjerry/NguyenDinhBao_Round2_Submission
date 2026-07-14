@@ -24,6 +24,7 @@ export const ApiErrorCode = {
   CHAT_EMPTY: 'CHAT_EMPTY',
   CHAT_FORBIDDEN: 'CHAT_FORBIDDEN',
   TOKEN_FIELDS_MISSING: 'TOKEN_FIELDS_MISSING',
+  RATE_LIMITED: 'RATE_LIMITED',
 } as const;
 
 export type ApiErrorCodeValue = (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
@@ -32,8 +33,9 @@ export function apiError(
   code: ApiErrorCodeValue | string,
   status: number,
   extra?: Record<string, unknown>,
+  headers?: HeadersInit,
 ) {
-  return NextResponse.json({ error: code, code, ...extra }, { status });
+  return NextResponse.json({ error: code, code, ...extra }, { status, headers });
 }
 
 /** Prefer charge sandbox codes when nested in another API response. */

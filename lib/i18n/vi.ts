@@ -87,6 +87,7 @@ export const vi = {
     chatEmpty: 'Tin nhắn không được để trống.',
     chatForbidden: 'Bạn không có quyền với phiên chat này.',
     tokenFieldsMissing: 'Thiếu thông tin thẻ đã lưu.',
+    rateLimited: 'Bạn thao tác quá nhanh. Vui lòng đợi một lát rồi thử lại.',
     pageEmpty: 'Chưa chọn trang in.',
     pageNoDoc: 'Tài liệu không có trang.',
     pageOutOfRange: 'Trang {n} nằm ngoài phạm vi (1–{total}).',

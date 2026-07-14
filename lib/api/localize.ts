@@ -24,6 +24,7 @@ const CODE_TO_KEY: Record<string, keyof Dictionary['errors']> = {
   [ApiErrorCode.CHAT_EMPTY]: 'chatEmpty',
   [ApiErrorCode.CHAT_FORBIDDEN]: 'chatForbidden',
   [ApiErrorCode.TOKEN_FIELDS_MISSING]: 'tokenFieldsMissing',
+  [ApiErrorCode.RATE_LIMITED]: 'rateLimited',
   CARD_INVALID: 'cardInvalid',
 };
 

@@ -89,6 +89,7 @@ export const en = {
     chatEmpty: 'Message cannot be empty.',
     chatForbidden: 'You do not have access to this chat session.',
     tokenFieldsMissing: 'Missing saved card fields.',
+    rateLimited: 'Too many requests. Please wait a moment and try again.',
     pageEmpty: 'Page selection is empty.',
     pageNoDoc: 'Document has no pages.',
     pageOutOfRange: 'Page {n} is out of range (1–{total}).',
