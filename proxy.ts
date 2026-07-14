@@ -6,8 +6,9 @@ const PROTECTED_PREFIXES = ['/dashboard', '/chat', '/print'];
 
 /**
  * Refresh Supabase session for RSC/RLS and gate protected routes.
+ * (Next 16: `middleware.ts` renamed to `proxy.ts` — same runtime contract.)
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });

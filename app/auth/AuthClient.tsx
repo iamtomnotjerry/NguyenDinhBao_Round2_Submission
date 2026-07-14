@@ -9,11 +9,7 @@ import { PageShell } from '@/components/ui/Surface';
 import AppFooter from '@/components/AppFooter';
 import AuthCard from './components/AuthCard';
 import { useLocale } from '@/lib/i18n/context';
-
-function safeNextPath(raw: string | null): string {
-  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/dashboard';
-  return raw;
-}
+import { safeNextPath } from '@/lib/utils';
 
 export default function AuthClient() {
   const router = useRouter();
@@ -38,7 +34,8 @@ export default function AuthClient() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            // Preserve the intended destination through the email-confirm loop
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
           },
         });
 

@@ -2,15 +2,17 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { SafeDatabase } from '@/types/database.types';
+import { safeNextPath } from '@/lib/utils';
 
 /**
  * Auth Callback Route Handler.
  * Exchanges the authorization code from Supabase email confirmation
- * for a valid session, then redirects the user to the dashboard.
+ * for a valid session, then redirects to the sanitized `?next=` target.
  */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
+  const nextPath = safeNextPath(searchParams.get('next'));
 
   if (code) {
     const cookieStore = await cookies();
@@ -38,7 +40,7 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(`${origin}/dashboard`);
+      return NextResponse.redirect(`${origin}${nextPath}`);
     }
   }
 

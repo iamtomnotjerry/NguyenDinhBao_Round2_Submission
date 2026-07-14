@@ -217,19 +217,28 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError || !job) {
-      // Fallback: legacy schema without v4 columns
-      if (insertError?.message?.includes('column') || insertError?.code === 'PGRST204') {
-        return handleLegacyPrintJob({
-          request,
-          supabase,
-          userId: user.id,
-          file_name,
-          file_path,
-          total_pages: effectivePages,
-          config,
-          quoteTotal: quote.total,
-          card_token,
-        });
+      // Unique violation on idempotency_key — a concurrent request with the
+      // same key won the insert. Replay its job instead of surfacing an error.
+      if (insertError?.code === '23505') {
+        const { data: dupe } = await supabase
+          .from('print_jobs')
+          .select('*')
+          .eq('idempotency_key', idempotency_key)
+          .maybeSingle();
+
+        if (dupe) {
+          if (dupe.status === 'failed') {
+            return apiError(ApiErrorCode.PRINT_IDEMPOTENCY_FAILED, 400);
+          }
+          if (dupe.status === 'awaiting_payment') {
+            // Winner is still mid-payment — tell the client to wait, not retry
+            return apiError(ApiErrorCode.IDEMPOTENCY_PENDING, 202, {
+              status: 'pending',
+              job_id: dupe.id,
+            });
+          }
+          return NextResponse.json({ success: true, job: dupe, idempotent: true }, { status: 200 });
+        }
       }
 
       return apiError(ApiErrorCode.PRINT_CREATE_FAILED, 400, { details: insertError?.message });
@@ -365,101 +374,6 @@ export async function POST(request: Request) {
       details: error instanceof Error ? error.message : String(error),
     });
   }
-}
-
-async function handleLegacyPrintJob(args: {
-  request: Request;
-  supabase: Awaited<ReturnType<typeof createClient>>;
-  userId: string;
-  file_name: string;
-  file_path: string;
-  total_pages: number;
-  config: PrintConfig;
-  quoteTotal: number;
-  card_token: string;
-}) {
-  const {
-    request,
-    supabase,
-    userId,
-    file_name,
-    file_path,
-    total_pages,
-    config,
-    quoteTotal,
-    card_token,
-  } = args;
-
-  const paper = (['a4', 'a3', 'a5'].includes(config.paperSize) ? config.paperSize : 'a4') as
-    'a4' | 'a3' | 'a5';
-  const binding = (
-    ['none', 'stapled', 'spiral'].includes(config.binding) ? config.binding : 'none'
-  ) as 'none' | 'stapled' | 'spiral';
-  const color = config.colorMode === 'mixed' ? 'color' : config.colorMode === 'bw' ? 'bw' : 'color';
-
-  const { data: legacyJob, error: legacyErr } = await supabase
-    .from('print_jobs')
-    .insert({
-      user_id: userId,
-      file_name,
-      file_path,
-      config_color: color,
-      config_copies: config.copies,
-      config_paper_size: paper,
-      config_binding: binding,
-      total_pages,
-      status: 'pending',
-      cost: quoteTotal,
-      printer_location: config.printerLocation,
-    })
-    .select()
-    .single();
-
-  if (legacyErr || !legacyJob) {
-    return apiError(ApiErrorCode.PRINT_CREATE_FAILED, 400, { details: legacyErr?.message });
-  }
-
-  const origin = new URL(request.url).origin;
-  const chargeRes = await fetch(`${origin}/api/sandbox/payment/charge`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ card_token, amount: quoteTotal }),
-  });
-  const chargeResult = await chargeRes.json();
-  if (!chargeRes.ok) {
-    await setJobStatus(legacyJob.id, 'failed');
-    return apiError(passThroughChargeError(chargeResult.error || chargeResult.code), 400);
-  }
-
-  // Fail-closed: same as main path — do not return success if status cannot update
-  const markedPaid = await setJobStatus(legacyJob.id, 'paid');
-  if (!markedPaid) {
-    await setJobStatus(legacyJob.id, 'failed');
-    return apiError(ApiErrorCode.PAYMENT_MARK_FAILED, 500, {
-      job_id: legacyJob.id,
-      charged: true,
-      transaction_id: chargeResult.transaction_id,
-      legacy: true,
-    });
-  }
-
-  startSimulator(legacyJob.id, 'pickup');
-  const { data: refreshed } = await supabase
-    .from('print_jobs')
-    .select('*')
-    .eq('id', legacyJob.id)
-    .single();
-
-  return NextResponse.json(
-    {
-      success: true,
-      job: refreshed || { ...legacyJob, status: 'paid' },
-      legacy: true,
-      warning: 'Schema thiếu cột v4 — hãy chạy supabase_migration_v4.sql (+ v5 + v6).',
-      transaction_id: chargeResult.transaction_id,
-    },
-    { status: 201 },
-  );
 }
 
 function startSimulator(jobId: string, deliveryType: 'pickup' | 'delivery') {

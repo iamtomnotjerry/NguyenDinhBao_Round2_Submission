@@ -82,11 +82,12 @@ export default function AuthCard({
                 initial={reduce ? false : { opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className={`overflow-hidden rounded-xl text-sm border ${
+                className={cn(
+                  'overflow-hidden rounded-xl text-sm border',
                   message.type === 'success'
                     ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                    : 'bg-red-500/10 border-red-500/20 text-red-400'
-                }`}
+                    : 'bg-red-500/10 border-red-500/20 text-red-400',
+                )}
               >
                 <div className="p-4">{message.text}</div>
               </motion.div>
