@@ -255,7 +255,7 @@ export default function StorePage() {
       <Header>
         <button
           onClick={() => setIsCartOpen(!isCartOpen)}
-          className="relative p-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-zinc-300 hover:text-white transition-all flex items-center gap-2"
+          className="relative p-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-zinc-300 hover:text-white transition-all flex items-center gap-2 cursor-pointer active:scale-95"
         >
           <ShoppingCart className="w-4 h-4 text-emerald-400" />
           <span className="text-xs font-bold">{cart.reduce((sum, i) => sum + i.quantity, 0)}</span>
