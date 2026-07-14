@@ -298,8 +298,10 @@ BEGIN
     RAISE EXCEPTION 'Invalid delivery_type';
   END IF;
 
-  -- Idempotency
-  SELECT id INTO v_order_id FROM public.orders WHERE idempotency_key = p_idempotency_key;
+  -- Idempotency — v9: scoped theo user_id, không trả order của user khác
+  SELECT id INTO v_order_id
+  FROM public.orders
+  WHERE idempotency_key = p_idempotency_key AND user_id = p_user_id;
   IF v_order_id IS NOT NULL THEN
     RETURN v_order_id;
   END IF;
@@ -368,7 +370,13 @@ BEGIN
     )
     RETURNING id INTO v_order_id;
   EXCEPTION WHEN unique_violation THEN
-    SELECT id INTO v_order_id FROM public.orders WHERE idempotency_key = p_idempotency_key;
+    -- v9: replay chỉ khi key thuộc CHÍNH user này; key của user khác → lỗi rõ ràng
+    SELECT id INTO v_order_id
+    FROM public.orders
+    WHERE idempotency_key = p_idempotency_key AND user_id = p_user_id;
+    IF v_order_id IS NULL THEN
+      RAISE EXCEPTION 'Idempotency key conflict';
+    END IF;
     RETURN v_order_id;
   END;
 
@@ -453,8 +461,9 @@ BEGIN
     END IF;
   END LOOP;
 
+  -- v9: clamp về 0 — CHECK (reward_points >= 0) không được phá hỏng rollback kho
   UPDATE public.profiles
-  SET reward_points = reward_points + v_points_used - v_points_earned
+  SET reward_points = GREATEST(0, reward_points + v_points_used - v_points_earned)
   WHERE id = v_user_id;
 
   IF v_points_used > 0 THEN
