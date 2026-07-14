@@ -13,18 +13,15 @@ import { PageShell } from '@/components/ui/Surface';
 import ChatBox from './components/ChatBox';
 import { useLocale } from '@/lib/i18n/context';
 import { HUMAN_HANDOFF_TOKEN } from '@/lib/chat/constants';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 
 type ChatMessageRow = SafeDatabase['public']['Tables']['chat_messages']['Row'];
 type ChatSessionRow = SafeDatabase['public']['Tables']['chat_sessions']['Row'];
 
-export default function ChatClient({
-  initialUserId,
-}: {
-  initialUserId: string;
-  initialEmail: string | null;
-}) {
+export default function ChatClient() {
   const { t } = useLocale();
   const reduce = useReducedMotion();
+  const { user, loading: authLoading } = useRequireAuth('/chat');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isForwarded, setIsForwarded] = useState(false);
   const [handoffError, setHandoffError] = useState<string | null>(null);
@@ -107,11 +104,13 @@ export default function ChatClient({
   const isLoading = status === 'submitted' || status === 'streaming';
 
   useEffect(() => {
+    if (authLoading || !user) return;
+
     const initChat = async () => {
       const { data: sessions } = await supabase
         .from('chat_sessions')
         .select('*')
-        .eq('user_id', initialUserId)
+        .eq('user_id', user.id)
         .in('status', ['waiting_support', 'active'])
         .order('created_at', { ascending: false })
         .limit(10);
@@ -147,7 +146,7 @@ export default function ChatClient({
       setLoadingSession(false);
     };
     void initChat();
-  }, [initialUserId, setMessages]);
+  }, [user, authLoading, setMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -178,7 +177,7 @@ export default function ChatClient({
 
   return (
     <PageShell className="h-screen overflow-hidden selection:text-fg">
-      {loadingSession ? (
+      {authLoading || loadingSession ? (
         <LoadingSkeleton variant="chat" />
       ) : (
         <main className="flex-1 max-w-4xl mx-auto px-6 py-4 w-full flex flex-col min-h-0 relative z-10">

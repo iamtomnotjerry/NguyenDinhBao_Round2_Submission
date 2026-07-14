@@ -15,7 +15,7 @@ import { buildPrintQuote, btnInteractive, cn } from '@/lib/utils';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PrintConfigForm from './components/PrintConfigForm';
 import { useLocale } from '@/lib/i18n/context';
-import { useAuthUser } from '@/lib/auth/user-context';
+import { useRequireAuth } from '@/lib/auth/use-require-auth';
 import { DEFAULT_PRINT_CONFIG, type PrintConfig } from '@/lib/print/types';
 import { parseColorPages } from '@/lib/print/page-selection';
 import { localizeQuoteError } from '@/lib/print/quote-i18n';
@@ -70,7 +70,7 @@ function progressForStatus(status: string): number {
 export default function PrintClient() {
   const { t } = useLocale();
   const reduce = useReducedMotion();
-  const { user, loading: authLoading } = useAuthUser();
+  const { user, loading: authLoading } = useRequireAuth('/print');
   const [profileLoading, setProfileLoading] = useState(true);
   const [rewardPoints, setRewardPoints] = useState(0);
 
@@ -453,11 +453,10 @@ export default function PrintClient() {
 
   return (
     <PageShell className="selection:text-fg">
-      {authLoading || profileLoading ? (
+      {authLoading || !user || profileLoading ? (
         <LoadingSkeleton variant="page" />
       ) : (
         <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 sm:px-5 lg:px-8 py-6 md:py-8 relative z-10">
-          {/* Server component (page.tsx) already redirects anonymous users to /auth */}
           {activeJob ? (
             <PrintProgressView
               activeJob={activeJob}

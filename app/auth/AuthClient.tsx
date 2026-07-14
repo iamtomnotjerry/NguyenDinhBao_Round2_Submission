@@ -1,20 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { motion, useReducedMotion } from 'motion/react';
 import { supabase } from '@/lib/supabase/client';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { PageShell } from '@/components/ui/Surface';
 import AppFooter from '@/components/AppFooter';
 import AuthCard from './components/AuthCard';
 import { useLocale } from '@/lib/i18n/context';
 import { safeNextPath } from '@/lib/utils';
+import { useAuthUser } from '@/lib/auth/user-context';
 
 export default function AuthClient() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = safeNextPath(searchParams.get('next'));
+  const { user, loading: authLoading } = useAuthUser();
   const { t } = useLocale();
   const reduce = useReducedMotion();
   const [email, setEmail] = useState('');
@@ -22,6 +23,12 @@ export default function AuthClient() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Already signed in — bounce back to intended page (full navigation syncs cookies)
+  useEffect(() => {
+    if (authLoading || !user) return;
+    window.location.replace(nextPath);
+  }, [authLoading, user, nextPath]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,8 +60,7 @@ export default function AuthClient() {
             text: t.auth.signupSuccessRedirect,
           });
           toast.success(t.toast.signupOk);
-          router.push(nextPath);
-          router.refresh();
+          window.location.href = nextPath;
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -64,16 +70,9 @@ export default function AuthClient() {
 
         if (error) throw error;
 
-        setMessage({
-          type: 'success',
-          text: t.auth.signinSuccess,
-        });
         toast.success(t.toast.authOk);
-
-        setTimeout(() => {
-          router.push(nextPath);
-          router.refresh();
-        }, 1000);
+        // Hard navigation ensures auth cookies are on the next request (Vercel/SSR)
+        window.location.href = nextPath;
       }
     } catch (error) {
       const text = error instanceof Error ? error.message : t.auth.genericError;

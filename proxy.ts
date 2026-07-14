@@ -2,24 +2,22 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { SafeDatabase } from '@/types/database.types';
 
-const PROTECTED_PREFIXES = ['/dashboard', '/chat', '/print'];
-
 /**
- * Refresh Supabase session for RSC/RLS and gate protected routes.
- * (Next 16: `middleware.ts` renamed to `proxy.ts` — same runtime contract.)
+ * Refresh Supabase Auth session on every matched request.
+ * Route protection is handled client-side (useRequireAuth) + API getUser().
+ * Proxy must NOT redirect — server getUser() can false-negative while the
+ * browser session is valid, which caused logged-in users to land on /auth.
  */
 export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  let supabaseResponse = NextResponse.next({ request });
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return supabaseResponse;
   }
 
   const supabase = createServerClient<SafeDatabase, 'public'>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -27,9 +25,7 @@ export async function proxy(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({
-            request,
-          });
+          supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options),
           );
@@ -38,25 +34,8 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const path = request.nextUrl.pathname;
-  const needsAuth = PROTECTED_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
-  );
-
-  if (needsAuth && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/auth';
-    url.searchParams.set('next', path);
-    const redirect = NextResponse.redirect(url);
-    supabaseResponse.cookies.getAll().forEach((c) => {
-      redirect.cookies.set(c.name, c.value);
-    });
-    return redirect;
-  }
+  // Triggers token refresh + writes updated cookies to request/response
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }
