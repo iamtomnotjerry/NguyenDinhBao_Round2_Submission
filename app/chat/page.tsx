@@ -134,7 +134,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-950 text-white font-sans selection:bg-emerald-500 selection:text-white">
+    <div className="flex flex-col h-screen bg-zinc-950 text-white font-sans selection:bg-emerald-500 selection:text-white overflow-hidden">
       <Header />
 
       {loadingAuth ? (
@@ -143,11 +143,11 @@ export default function ChatPage() {
         </div>
       ) : (
         /* Main Container */
-        <main className="flex-1 max-w-4xl mx-auto px-6 py-8 w-full flex flex-col h-[calc(100vh-140px)] min-h-[500px] relative z-10">
+        <main className="flex-1 max-w-4xl mx-auto px-6 py-4 w-full flex flex-col min-h-0 relative z-10">
           {!user ? (
             /* Unauthorized display */
-            <div className="flex-1 glass-bezel-outer">
-              <div className="glass-bezel-inner flex flex-col items-center justify-center p-12 text-center space-y-6 h-full justify-center">
+            <div className="flex-1 glass-bezel-outer flex flex-col min-h-0 h-full">
+              <div className="glass-bezel-inner flex flex-col items-center justify-center p-12 text-center space-y-6 flex-1 min-h-0 h-full justify-center">
                 <div className="p-4 bg-emerald-500/10 rounded-full text-emerald-400 border border-emerald-500/20">
                   <MessageSquare className="w-12 h-12" />
                 </div>
@@ -184,7 +184,7 @@ export default function ChatPage() {
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-500/5 rounded-full blur-[120px] pointer-events-none" />
 
       {/* Footer */}
-      <footer className="border-t border-zinc-900 py-6 bg-zinc-950 text-center text-xs text-zinc-600 mt-8">
+      <footer className="border-t border-zinc-900 py-4 bg-zinc-950 text-center text-xs text-zinc-650 shrink-0">
         &copy; 2026 PlatPrint. Tuyển dụng Kỹ sư Phần mềm - Vòng 2.
       </footer>
     </div>

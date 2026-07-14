@@ -125,13 +125,14 @@ export async function POST(request: Request) {
       };
       saveMockResponse();
 
-      // Return a native JS ReadableStream simulating streaming output words
+      // Return a native JS ReadableStream simulating streaming output words in Data Stream Protocol
       const encoder = new TextEncoder();
       const stream = new ReadableStream({
         async start(controller) {
           const words = responseText.split(' ');
           for (const word of words) {
-            controller.enqueue(encoder.encode(word + ' '));
+            const formatted = `0:${JSON.stringify(word + ' ')}\n`;
+            controller.enqueue(encoder.encode(formatted));
             await new Promise((resolve) => setTimeout(resolve, 80));
           }
           controller.close();
@@ -185,24 +186,8 @@ QUY TẮC ĐẶC BIỆT: Nếu khách hàng yêu cầu gặp người thật h�
       },
     });
 
-    // We send only the AI text in the stream
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      async start(controller) {
-        const reader = result.textStream.getReader();
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          controller.enqueue(encoder.encode(value));
-        }
-        controller.close();
-      },
-    });
-
-    return new Response(stream, {
+    return result.toUIMessageStreamResponse({
       headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Transfer-Encoding': 'chunked',
         'X-Session-Id': currentSessionId,
       },
     });

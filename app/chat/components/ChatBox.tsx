@@ -26,8 +26,8 @@ export default function ChatBox({
   messagesEndRef,
 }: ChatBoxProps) {
   return (
-    <div className="flex-1 glass-bezel-outer">
-      <div className="glass-bezel-inner !p-0 flex flex-col overflow-hidden bg-zinc-950/40 relative h-full">
+    <div className="flex-1 glass-bezel-outer flex flex-col min-h-0 h-full">
+      <div className="glass-bezel-inner !p-0 flex flex-col overflow-hidden bg-zinc-950/40 relative flex-1 min-h-0 h-full">
         {/* Top Indicator bar */}
         <div className="border-b border-zinc-900 p-4 bg-zinc-950/80 backdrop-blur flex justify-between items-center z-10">
           <div className="flex items-center gap-3">
@@ -132,7 +132,85 @@ export default function ChatBox({
                           : 'bg-zinc-900/40 border border-zinc-900/80 backdrop-blur-md text-zinc-100 rounded-tl-none shadow-inner'
                       }`}
                     >
-                      {displayContent}
+                      {m.role === 'user' ? (
+                        displayContent
+                      ) : (
+                        <div className="space-y-1.5 text-zinc-200">
+                          {(() => {
+                            const lines = displayContent.split('\n');
+                            return lines.map((line, idx) => {
+                              const boldRegex = /\*\*([^*]+)\*\*/g;
+                              const formatInline = (str: string) => {
+                                const parts = [];
+                                let lastIndex = 0;
+                                let match;
+                                while ((match = boldRegex.exec(str)) !== null) {
+                                  if (match.index > lastIndex) {
+                                    parts.push(str.substring(lastIndex, match.index));
+                                  }
+                                  parts.push(
+                                    <strong key={match.index} className="font-bold text-white">
+                                      {match[1]}
+                                    </strong>,
+                                  );
+                                  lastIndex = boldRegex.lastIndex;
+                                }
+                                if (lastIndex < str.length) {
+                                  parts.push(str.substring(lastIndex));
+                                }
+                                return parts.length > 0 ? parts : str;
+                              };
+
+                              const bulletMatch = /^(\s*)[\*\-]\s+(.+)/.exec(line);
+                              const numberedMatch = /^(\s*)(\d+)\.\s+(.+)/.exec(line);
+
+                              if (bulletMatch) {
+                                const isNested = bulletMatch[1].length > 0;
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`flex items-start gap-2 my-1.5 leading-relaxed ${
+                                      isNested ? 'ml-6 pl-1.5 text-zinc-400' : 'ml-2 text-zinc-300'
+                                    }`}
+                                  >
+                                    <span className="text-emerald-400 select-none font-bold shrink-0">
+                                      •
+                                    </span>
+                                    <span className="flex-1">{formatInline(bulletMatch[2])}</span>
+                                  </div>
+                                );
+                              }
+
+                              if (numberedMatch) {
+                                const isNested = numberedMatch[1].length > 0;
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`flex items-start gap-2 my-2 leading-relaxed ${
+                                      isNested ? 'ml-6 pl-1.5 text-zinc-400' : 'ml-2 text-zinc-200'
+                                    }`}
+                                  >
+                                    <span className="text-emerald-400 select-none font-extrabold shrink-0">
+                                      {numberedMatch[2]}.
+                                    </span>
+                                    <span className="flex-1">{formatInline(numberedMatch[3])}</span>
+                                  </div>
+                                );
+                              }
+
+                              if (line.trim() === '') {
+                                return <div key={idx} className="h-2" />;
+                              }
+
+                              return (
+                                <p key={idx} className="text-zinc-250 my-1 leading-relaxed">
+                                  {formatInline(line)}
+                                </p>
+                              );
+                            });
+                          })()}
+                        </div>
+                      )}
                     </div>
                     <span className="text-[10px] text-zinc-600 block pl-2">
                       {m.role === 'user' ? 'Bạn' : isForwarded ? 'Hỗ trợ viên' : 'AI Assistant'}
