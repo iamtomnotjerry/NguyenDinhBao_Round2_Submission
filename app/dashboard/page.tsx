@@ -5,18 +5,11 @@ import { supabase } from '@/lib/supabase/client';
 import { SafeDatabase } from '@/types/database.types';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import Header from '@/components/Header';
-import {
-  Printer,
-  ShoppingBag,
-  Gift,
-  LogOut,
-  RefreshCw,
-  Clock,
-  FileText,
-  Calendar,
-  TrendingUp,
-} from 'lucide-react';
+import { Printer, ShoppingBag, Gift, LogOut, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import DashboardOverview from './components/DashboardOverview';
+import DashboardPrintJobs from './components/DashboardPrintJobs';
+import DashboardOrders from './components/DashboardOrders';
 
 type PrintJob = SafeDatabase['public']['Tables']['print_jobs']['Row'];
 type Order = SafeDatabase['public']['Tables']['orders']['Row'];
@@ -208,268 +201,18 @@ export default function DashboardPage() {
           <div className="lg:col-span-9 space-y-6">
             {/* TAB 1: OVERVIEW & POINTS GRAPH */}
             {activeTab === 'overview' && (
-              <div className="space-y-6 animate-fade-in">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Stats block 1 */}
-                  <div className="glass-bezel-outer">
-                    <div className="glass-bezel-inner p-5 flex items-center gap-4 h-full">
-                      <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
-                        <Gift className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-zinc-500 font-bold block uppercase tracking-wider">
-                          Tổng điểm đã tích lũy
-                        </span>
-                        <span className="text-lg font-black text-white mt-0.5 block">
-                          +{earnPointsCount} pts
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Stats block 2 */}
-                  <div className="glass-bezel-outer">
-                    <div className="glass-bezel-inner p-5 flex items-center gap-4 h-full">
-                      <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl">
-                        <TrendingUp className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-zinc-500 font-bold block uppercase tracking-wider">
-                          Điểm thưởng đã tiêu dùng
-                        </span>
-                        <span className="text-lg font-black text-white mt-0.5 block">
-                          -{spendPointsCount} pts
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  {/* Stats block 3 */}
-                  <div className="glass-bezel-outer">
-                    <div className="glass-bezel-inner p-5 flex items-center gap-4 h-full">
-                      <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl">
-                        <Clock className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-zinc-500 font-bold block uppercase tracking-wider">
-                          Mức độ hoạt động
-                        </span>
-                        <span className="text-lg font-black text-white mt-0.5 block">
-                          Thường xuyên
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Points Analysis Breakdown */}
-                <div className="glass-bezel-outer">
-                  <div className="glass-bezel-inner p-6 space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                        Phân tích sử dụng điểm thưởng
-                      </h4>
-                      <span className="text-xs font-bold text-emerald-400">
-                        {earnPointsCount > 0
-                          ? Math.round((spendPointsCount / earnPointsCount) * 100)
-                          : 0}
-                        % đã dùng
-                      </span>
-                    </div>
-                    <div className="w-full bg-zinc-950 h-3 rounded-full overflow-hidden border border-zinc-900 p-0.5">
-                      <div
-                        className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-1000"
-                        style={{
-                          width: `${earnPointsCount > 0 ? Math.min(100, (spendPointsCount / earnPointsCount) * 100) : 0}%`,
-                        }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                      <span>Đã tiêu dùng ({spendPointsCount} pts)</span>
-                      <span>Tổng tích luỹ ({earnPointsCount} pts)</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Points History Lists */}
-                <div className="glass-bezel-outer">
-                  <div className="glass-bezel-inner p-6 space-y-4">
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                      Lịch sử giao dịch điểm thưởng
-                    </h3>
-                    {pointsHistory.length === 0 ? (
-                      <p className="text-zinc-500 text-xs text-center py-6">
-                        Bạn chưa có giao dịch điểm thưởng nào.
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {pointsHistory.map((history) => (
-                          <div
-                            key={history.id}
-                            className="flex justify-between items-center p-3.5 bg-zinc-950/40 border border-zinc-900 rounded-xl text-xs"
-                          >
-                            <div className="space-y-1">
-                              <p className="font-bold text-zinc-200">{history.description}</p>
-                              <span className="text-[10px] text-zinc-500 flex items-center gap-1">
-                                <Calendar className="w-3.5 h-3.5" />{' '}
-                                {new Date(history.created_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <span
-                              className={`text-sm font-black ${
-                                history.type === 'earn' ? 'text-emerald-400' : 'text-zinc-400'
-                              }`}
-                            >
-                              {history.type === 'earn' ? '+' : '-'}
-                              {Math.abs(history.points)} pts
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <DashboardOverview
+                earnPointsCount={earnPointsCount}
+                spendPointsCount={spendPointsCount}
+                pointsHistory={pointsHistory}
+              />
             )}
 
             {/* TAB 2: PRINT JOBS HISTORY */}
-            {activeTab === 'print' && (
-              <div className="glass-bezel-outer animate-fade-in">
-                <div className="glass-bezel-inner p-6 space-y-4">
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                    Hồ sơ in ấn từ xa
-                  </h3>
-                  {printJobs.length === 0 ? (
-                    <p className="text-zinc-500 text-xs text-center py-6">
-                      Bạn chưa gửi lệnh in ấn nào.
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {printJobs.map((job) => (
-                        <div
-                          key={job.id}
-                          className="p-4 bg-zinc-950/40 border border-zinc-900 rounded-2xl space-y-3"
-                        >
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-zinc-900 pb-2 text-xs">
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-4 h-4 text-emerald-400" />
-                              <span className="font-bold text-white truncate max-w-xs">
-                                {job.file_name}
-                              </span>
-                            </div>
-                            <span
-                              className={`font-semibold py-0.5 px-2 rounded-full scale-90 border font-mono ${
-                                job.status === 'completed'
-                                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                  : job.status === 'failed'
-                                    ? 'bg-red-500/10 border-red-500/20 text-red-400'
-                                    : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 animate-pulse'
-                              }`}
-                            >
-                              {job.status}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-semibold text-zinc-500">
-                            <div>
-                              <span>Khổ giấy / Đóng gáy:</span>
-                              <p className="text-zinc-300 mt-0.5 capitalize">
-                                {job.config_paper_size} • {job.config_binding}
-                              </p>
-                            </div>
-                            <div>
-                              <span>Trang / Bản in:</span>
-                              <p className="text-zinc-300 mt-0.5">
-                                {job.total_pages} trang • {job.config_copies || 1} bản
-                              </p>
-                            </div>
-                            <div>
-                              <span>Giá trị in:</span>
-                              <p className="text-zinc-300 mt-0.5 text-white font-bold">
-                                ${Number(job.cost).toFixed(2)}
-                              </p>
-                            </div>
-                            <div>
-                              <span>Thời gian in:</span>
-                              <p className="text-zinc-300 mt-0.5">
-                                {new Date(job.created_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            {activeTab === 'print' && <DashboardPrintJobs printJobs={printJobs} />}
 
             {/* TAB 3: ORDERS HISTORY */}
-            {activeTab === 'orders' && (
-              <div className="glass-bezel-outer animate-fade-in">
-                <div className="glass-bezel-inner p-6 space-y-4">
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                    Đơn mua hàng gian hàng
-                  </h3>
-                  {orders.length === 0 ? (
-                    <p className="text-zinc-500 text-xs text-center py-6">
-                      Bạn chưa đặt mua đơn hàng nào.
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {orders.map((order) => (
-                        <div
-                          key={order.id}
-                          className="p-4 bg-zinc-950/40 border border-zinc-900 rounded-2xl space-y-3"
-                        >
-                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-zinc-900 pb-2 text-xs">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-zinc-400 font-mono">
-                                Đơn #{order.id.slice(0, 8)}
-                              </span>
-                            </div>
-                            <span
-                              className={`font-semibold py-0.5 px-2 rounded-full scale-90 border font-mono ${
-                                order.status === 'paid'
-                                  ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                                  : order.status === 'failed'
-                                    ? 'bg-red-500/10 border-red-500/20 text-red-400'
-                                    : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
-                              }`}
-                            >
-                              {order.status}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-semibold text-zinc-500">
-                            <div>
-                              <span>Nhận hàng / Giao:</span>
-                              <p className="text-zinc-300 mt-0.5 capitalize">
-                                {order.delivery_type}
-                              </p>
-                            </div>
-                            <div>
-                              <span>Điểm tích / Dùng:</span>
-                              <p className="text-zinc-300 mt-0.5">
-                                +{order.points_earned} earn / -{order.points_used} used
-                              </p>
-                            </div>
-                            <div>
-                              <span>Tổng thanh toán:</span>
-                              <p className="text-zinc-300 mt-0.5 text-white font-bold">
-                                ${Number(order.total_amount).toFixed(2)}
-                              </p>
-                            </div>
-                            <div>
-                              <span>Thời gian đặt:</span>
-                              <p className="text-zinc-300 mt-0.5">
-                                {new Date(order.created_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+            {activeTab === 'orders' && <DashboardOrders orders={orders} />}
           </div>
         </main>
       )}

@@ -61,6 +61,14 @@ Chúng ta đã thiết lập hạ tầng dự án (boilerplate) đạt chuẩn *
 12. **Kiểm thử tải & Hoàn thiện README.md (BƯỚC 6 - Hoàn thành):**
     - Chạy bắn tải kiểm thử bằng `autocannon` với 100 kết nối đồng thời trong 5 giây vào API `/api/products` liên kết trực tiếp Supabase Cloud, đạt 113.2 req/s với 0% lỗi.
     - Soạn thảo và hoàn thiện toàn bộ tài liệu bàn giao `README.md` kỹ thuật theo đúng biểu mẫu, khai báo chi tiết phần đóng góp lập trình của AI.
+13. **Tái cấu trúc mã nguồn Frontend thành các Component con theo tính năng (Feature-based Components - Hoàn thành):**
+    - Chia nhỏ các trang màn hình lớn thành các file component cục bộ tương ứng đặt trong thư mục `components/` của từng folder chức năng (thay vì dồn tất cả code trong file `page.tsx`), giúp tối ưu khả năng bảo trì, đọc hiểu và mở rộng mã nguồn theo mô hình chuẩn Enterprise.
+    - **Store (`app/store/`):** Tách ra [ProductCard.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/store/components/ProductCard.tsx) hiển thị thẻ sản phẩm, tồn kho và [CartDrawer.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/store/components/CartDrawer.tsx) quản lý giỏ hàng, thông tin giao nhận và mock sandbox payment.
+    - **Print (`app/print/`):** Tách ra [PrintPreview.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/print/components/PrintPreview.tsx) render canvas và hiệu ứng binding, [PrintConfigForm.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/print/components/PrintConfigForm.tsx) quản lý cấu hình và ước tính chi phí, và [PrintProgressView.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/print/components/PrintProgressView.tsx) theo dõi tiến độ in realtime.
+    - **Dashboard (`app/dashboard/`):** Tách ra [DashboardOverview.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/dashboard/components/DashboardOverview.tsx) phân tích điểm thưởng, [DashboardPrintJobs.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/dashboard/components/DashboardPrintJobs.tsx) lịch sử in ấn từ xa, và [DashboardOrders.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/dashboard/components/DashboardOrders.tsx) lịch sử đơn mua hàng.
+    - **Auth (`app/auth/`):** Tách ra [AuthCard.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/auth/components/AuthCard.tsx) quản lý thẻ form đăng ký/đăng nhập.
+    - **Chat (`app/chat/`):** Tách ra [ChatBox.tsx](file:///d:/se/NguyenDinhBao_Round2_Submission-/app/chat/components/ChatBox.tsx) hiển thị bong bóng chat realtime, gợi ý câu hỏi và cờ thông báo hỗ trợ viên.
+    - Tiến hành làm sạch các import thừa thãi, tối ưu hóa các hiệu ứng hover, cursor, active state tương tác mượt mà và chạy build biên dịch thành công 100% không phát sinh cảnh báo lint hay lỗi TypeScript.
 
 ---
 
