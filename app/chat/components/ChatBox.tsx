@@ -106,7 +106,7 @@ export default function ChatBox({
                 .map((part) => part.text)
                 .join('');
 
-              const displayContent = sanitizeText(text.replace('[FORWARD_TO_HUMAN]', '').trim());
+              const displayContent = sanitizeText(text.replace(/\[FORWARD_TO_HUMAN\]/g, '').trim());
 
               return (
                 <div

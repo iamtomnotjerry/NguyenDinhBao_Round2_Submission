@@ -20,9 +20,9 @@ graph TD
 
 Hệ thống phân chia trách nhiệm rõ ràng:
 
-- **Client (Trực quan & Tương tác)**: Đảm nhiệm render UI, đếm trang PDF client-side, quản lý Local Cart State và lắng nghe kênh Realtime DB.
-- **Next.js Server (Tầng Trung gian & AI)**: Xử lý JWT Auth server-side, bảo mật PCI-DSS mock tokens, truyền luồng (streaming) hỗ trợ AI, và kích hoạt Simulator in chạy ngầm.
-- **Supabase Cloud (Cơ sở dữ liệu & Lưu trữ)**: Lưu trữ dữ liệu quan hệ, đảm bảo an toàn truy cập thông qua RLS Policies, thực hiện các thao tác nguyên tử (atomic transactions) qua PostgreSQL Stored Procedures, và quản lý các tệp in ấn nhạy cảm.
+- **Client (Trực quan & Tương tác)**: Render UI, preview/đếm trang PDF client-side (chỉ UX), Local Cart, Realtime.
+- **Next.js Server (Tầng Trung gian & AI)**: JWT Auth, sandbox tokenize/charge, **recompute giá / verify PDF pages**, gọi money RPC bằng **service_role**, streaming AI, Simulator `after()`.
+- **Supabase Cloud (Cơ sở dữ liệu & Lưu trữ)**: RLS + RPC atomic; bucket `print-files` private + **owner-only SELECT**; money mutate RPC chỉ `service_role` (v6+).
 
 ---
 
@@ -94,7 +94,8 @@ Tất cả các bảng chứa dữ liệu cá nhân của người dùng đều 
 
 - **Nguyên tắc**: User chỉ được phép đọc/ghi dữ liệu của chính mình thông qua điều kiện check `auth.uid() = user_id` (hoặc `id` / `owner`).
 - **Profiles Protection**: Bảng `profiles` tuyệt đối **không cấp quyền UPDATE cho Client SDK**. Điểm thưởng (`reward_points`) chỉ được thay đổi trên server thông qua Stored Procedure chạy dưới quyền `SECURITY DEFINER` khi có hoá đơn thanh toán hợp lệ.
-- **Storage Protection**: Bucket `print-files` được cấu hình RLS bảo vệ. Các tệp tin in ấn PDF nhạy cảm không thể truy cập công khai mà phải dùng phương thức sinh mã có thời hạn `createSignedUrl` (hạn dùng 24h) để hiển thị/in.
+- **Storage Protection**: Bucket `print-files` **private**; DB lưu `file_path`; SELECT chỉ owner (`auth.uid() = owner`). Signed URL tạo on-demand khi cần đọc. Không có policy SELECT “authenticated trên cả bucket”.
+- **Money RPC**: `mark_order_as_paid`, `rollback_failed_order`, `settle_print_job_points`, `rollback_print_job_points` — EXECUTE chỉ `service_role` + kiểm tra role trong body hàm.
 
 ---
 
@@ -119,13 +120,17 @@ sequenceDiagram
     Server->>Card: Gửi token yêu cầu Charge tiền (charge)
     alt Thanh toán thành công
         Card-->>Server: Thanh toán thành công (200 OK)
-        Server->>DB: Gọi RPC mark_order_as_paid (Trạng thái -> paid)
-        Server-->>User: Đặt hàng thành công! Redirect về /dashboard?tab=orders
+        Note over Server: mark_order_as_paid qua service_role (không JWT user)
+        Server->>DB: RPC mark_order_as_paid (pending → paid)
+        Server-->>User: Đặt hàng thành công! Redirect /dashboard?tab=orders
     else Thanh toán thất bại (Hết hạn, Từ chối, Timeout)
-        Card-->>Server: Trả về mã lỗi thanh toán (400/504)
-        Server->>DB: Gọi RPC rollback_failed_order
-        Note over DB: Hoàn trả lại số tồn kho sản phẩm nguyên tử<br/>Hoàn lại điểm thưởng của profiles<br/>Cập nhật trạng thái đơn -> failed & hủy idempotency
-        Server-->>User: Trả lỗi thanh toán. Hiển thị banner rollback an toàn
+        Card-->>Server: Mã lỗi thanh toán (400/504)
+        Server->>DB: RPC rollback_failed_order (service_role)
+        Note over DB: Hoàn tồn kho + điểm; status → failed; clear idempotency
+        Server-->>User: Lỗi thanh toán + banner rollback
+    else Mark paid fail sau khi đã charge
+        Server->>DB: rollback_failed_order
+        Server-->>User: HTTP 500 + charged:true + transaction_id
     end
 ```
 
@@ -139,24 +144,25 @@ sequenceDiagram
     participant Storage as Supabase Storage
     participant DB as Supabase Database (Realtime)
 
-    User->>Storage: Tải tệp PDF lên bucket 'print-files'
-    Storage-->>User: Tải lên thành công
-    User->>Storage: Sinh secure URL thông qua createSignedUrl
-    Storage-->>User: Trả về Signed URL có thời hạn
-    User->>Server: Gửi yêu cầu in (Signed URL, cấu hình, chi phí)
-    Server->>DB: Ghi nhận dòng print_jobs mới (status: pending)
-    DB-->>Server: Trả về bản ghi và jobId
-    Server-->>User: Phản hồi 201 Created ngay lập tức (Chỉ 150ms!)
-    Note over Server: Kích hoạt async after() background task
-    Note over User: Subscribed vào Realtime Channel của jobId
-
-    par Background Simulator
-        Server->>DB: (Sau 2s) Update status -> rendering (Bypass cookie client)
-        DB-->>User: Truyền tín hiệu Realtime -> Cập nhật thanh tiến độ 40%
-        Server->>DB: (Sau 3s) Update status -> printing
-        DB-->>User: Truyền tín hiệu Realtime -> Cập nhật thanh tiến độ 70%
-        Server->>DB: (Sau 4s) Update status -> completed
-        DB-->>User: Truyền tín hiệu Realtime -> Cập nhật hoàn thành 100%
+    User->>Storage: Upload PDF vào bucket private print-files (file_path)
+    Storage-->>User: OK
+    User->>Server: POST cấu hình + card_token + idempotency (không tin total_price client)
+    Server->>Server: resolvePrintPageCount + buildPrintQuote
+    Server->>DB: INSERT print_jobs status awaiting_payment
+    Server->>DB: settle redeem points (service_role, nếu có)
+    Server->>Server: Sandbox charge theo quote server
+    alt Charge OK
+        Server->>DB: UPDATE status paid (service_role)
+        Server->>DB: settle earn points (service_role, idempotent)
+        Server-->>User: 201 + job paid
+        Note over Server: after() simulator service_role
+        loop Status chain
+            Server->>DB: queued→…→completed / ready_for_pickup
+            DB-->>User: Realtime progress
+        end
+    else Charge fail / mark paid fail
+        Server->>DB: rollback points + status failed
+        Server-->>User: 400/500 (+ charged:true nếu đã trừ tiền sandbox)
     end
 ```
 

@@ -144,6 +144,14 @@ CREATE INDEX idx_points_history_user_id ON public.reward_points_history(user_id)
 CREATE INDEX idx_chat_sessions_user_id ON public.chat_sessions(user_id);
 CREATE INDEX idx_chat_messages_session_id ON public.chat_messages(session_id);
 
+-- v7: race-safe idempotent print settle legs
+CREATE UNIQUE INDEX uq_rph_print_job_redeem
+  ON public.reward_points_history (description)
+  WHERE type = 'spend' AND description LIKE 'Redeemed on print job %';
+CREATE UNIQUE INDEX uq_rph_print_job_earn
+  ON public.reward_points_history (description)
+  WHERE type = 'earn' AND description LIKE 'Earned from print job %';
+
 -- =========================================================================
 -- 3. ROW LEVEL SECURITY (RLS) POLICIES FOR IDOR & DATA INJECTION PREVENTION
 -- =========================================================================
@@ -173,8 +181,9 @@ CREATE POLICY "Allow users to read their own profile"
 -- Orders & Items Policies (Restrictive IDOR defense)
 CREATE POLICY "Allow users to read their own orders" 
   ON public.orders FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Allow users to create their own orders" 
-  ON public.orders FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Allow users to create their own orders"
+  ON public.orders FOR INSERT
+  WITH CHECK (auth.uid() = user_id AND status = 'pending');
 CREATE POLICY "Allow users to read order items of their own orders" 
   ON public.order_items FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.orders WHERE orders.id = order_items.order_id AND orders.user_id = auth.uid())
@@ -189,8 +198,12 @@ CREATE POLICY "Allow users to create order items"
 -- thay đổi bởi Background Simulator qua Service Role Client (SUPABASE_SERVICE_ROLE_KEY).
 CREATE POLICY "Allow users to read their own print jobs" 
   ON public.print_jobs FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Allow users to create their own print jobs" 
-  ON public.print_jobs FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Allow users to create their own print jobs"
+  ON public.print_jobs FOR INSERT
+  WITH CHECK (
+    auth.uid() = user_id
+    AND status IN ('awaiting_payment', 'pending')
+  );
 
 -- Payment Tokens Policies
 CREATE POLICY "Allow users to manage their own payment tokens" 
@@ -238,6 +251,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Trigger-only: không cho anon/authenticated gọi qua PostgREST RPC
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
 
 -- =========================================================================
 -- 5. STORED PROCEDURES (BUSINESS LOOPS)
@@ -388,7 +404,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 -- -------------------------------------------------------------------------
--- C2: rollback_failed_order — chỉ owner (hoặc service_role)
+-- C2 / v6: rollback_failed_order — service_role only
 -- -------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.rollback_failed_order(p_order_id UUID)
 RETURNS VOID AS $$
@@ -400,6 +416,9 @@ DECLARE
   v_jwt_role TEXT;
 BEGIN
   v_jwt_role := COALESCE(auth.jwt() ->> 'role', '');
+  IF v_jwt_role IS DISTINCT FROM 'service_role' THEN
+    RAISE EXCEPTION 'Forbidden: rollback_failed_order requires service_role';
+  END IF;
 
   SELECT user_id, points_used, points_earned
   INTO v_user_id, v_points_used, v_points_earned
@@ -409,12 +428,6 @@ BEGIN
 
   IF v_user_id IS NULL THEN
     RETURN;
-  END IF;
-
-  -- Authenticated user may only rollback own order; service_role may rollback any
-  IF v_jwt_role IS DISTINCT FROM 'service_role'
-     AND auth.uid() IS DISTINCT FROM v_user_id THEN
-    RAISE EXCEPTION 'Forbidden: cannot rollback another user order';
   END IF;
 
   PERFORM 1 FROM public.profiles WHERE id = v_user_id FOR UPDATE;
@@ -456,7 +469,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 -- -------------------------------------------------------------------------
--- C2: mark_order_as_paid — chỉ owner (hoặc service_role)
+-- C2 / v6: mark_order_as_paid — service_role only
 -- -------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.mark_order_as_paid(p_order_id UUID)
 RETURNS VOID AS $$
@@ -465,6 +478,9 @@ DECLARE
   v_jwt_role TEXT;
 BEGIN
   v_jwt_role := COALESCE(auth.jwt() ->> 'role', '');
+  IF v_jwt_role IS DISTINCT FROM 'service_role' THEN
+    RAISE EXCEPTION 'Forbidden: mark_order_as_paid requires service_role';
+  END IF;
 
   SELECT user_id INTO v_user_id
   FROM public.orders
@@ -475,20 +491,13 @@ BEGIN
     RAISE EXCEPTION 'Order not found or not pending';
   END IF;
 
-  IF v_jwt_role IS DISTINCT FROM 'service_role'
-     AND auth.uid() IS DISTINCT FROM v_user_id THEN
-    RAISE EXCEPTION 'Forbidden: cannot mark another user order as paid';
-  END IF;
-
   UPDATE public.orders
   SET status = 'paid'
   WHERE id = p_order_id AND status = 'pending';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
-
-
--- Settle / rollback reward points for paid print jobs
+-- Settle / rollback reward points (v6 role + caps; v7 idempotent legs)
 CREATE OR REPLACE FUNCTION public.settle_print_job_points(
   p_user_id UUID,
   p_points_used INTEGER,
@@ -498,18 +507,51 @@ CREATE OR REPLACE FUNCTION public.settle_print_job_points(
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
+  v_jwt_role TEXT;
   v_points INTEGER;
+  v_job_user UUID;
+  v_job_cost DECIMAL(10, 2);
+  v_job_points_used INTEGER;
+  v_job_points_earned INTEGER;
+  v_job_status TEXT;
+  v_used INTEGER;
+  v_earn INTEGER;
+  v_max_earn INTEGER;
+  v_redeem_desc TEXT;
+  v_earn_desc TEXT;
 BEGIN
+  v_jwt_role := COALESCE(auth.jwt() ->> 'role', '');
+  IF v_jwt_role IS DISTINCT FROM 'service_role' THEN
+    RAISE EXCEPTION 'Forbidden: settle_print_job_points requires service_role';
+  END IF;
+
   IF p_points_used < 0 OR p_points_earned < 0 THEN
     RAISE EXCEPTION 'Invalid points';
   END IF;
 
-  IF auth.uid() IS DISTINCT FROM p_user_id THEN
-    RAISE EXCEPTION 'Forbidden: cannot settle points for another user';
+  SELECT user_id, cost, COALESCE(points_used, 0), COALESCE(points_earned, 0), status
+  INTO v_job_user, v_job_cost, v_job_points_used, v_job_points_earned, v_job_status
+  FROM public.print_jobs
+  WHERE id = p_job_id
+  FOR UPDATE;
+
+  IF NOT FOUND OR v_job_user IS DISTINCT FROM p_user_id THEN
+    RAISE EXCEPTION 'Forbidden: invalid print job for settle';
   END IF;
+
+  v_max_earn := FLOOR(COALESCE(v_job_cost, 0))::INTEGER;
+  v_used := LEAST(GREATEST(COALESCE(p_points_used, 0), 0), v_job_points_used);
+  v_earn := LEAST(
+    GREATEST(COALESCE(p_points_earned, 0), 0),
+    v_max_earn,
+    GREATEST(v_job_points_earned, 0)
+  );
+
+  v_redeem_desc := 'Redeemed on print job ' || p_job_id::text;
+  v_earn_desc := 'Earned from print job ' || p_job_id::text;
 
   SELECT reward_points INTO v_points
   FROM public.profiles
@@ -520,25 +562,40 @@ BEGIN
     RAISE EXCEPTION 'Profile not found';
   END IF;
 
-  IF p_points_used > 0 THEN
-    IF v_points < p_points_used THEN
+  IF v_used > 0 AND NOT EXISTS (
+    SELECT 1 FROM public.reward_points_history
+    WHERE user_id = p_user_id AND type = 'spend' AND description = v_redeem_desc
+  ) THEN
+    IF v_points < v_used THEN
       RAISE EXCEPTION 'Insufficient reward points';
     END IF;
     UPDATE public.profiles
-    SET reward_points = reward_points - p_points_used
+    SET reward_points = reward_points - v_used
     WHERE id = p_user_id;
 
     INSERT INTO public.reward_points_history (user_id, points, type, description)
-    VALUES (p_user_id, p_points_used, 'spend', 'Redeemed on print job ' || p_job_id::text);
+    VALUES (p_user_id, v_used, 'spend', v_redeem_desc);
   END IF;
 
-  IF p_points_earned > 0 THEN
-    UPDATE public.profiles
-    SET reward_points = reward_points + p_points_earned
-    WHERE id = p_user_id;
+  IF v_earn > 0 THEN
+    IF v_job_status NOT IN (
+      'paid', 'queued', 'rendering', 'printing', 'finishing',
+      'quality_check', 'packing', 'shipping', 'ready_for_pickup', 'completed'
+    ) THEN
+      RAISE EXCEPTION 'Forbidden: cannot earn points before print job is paid';
+    END IF;
 
-    INSERT INTO public.reward_points_history (user_id, points, type, description)
-    VALUES (p_user_id, p_points_earned, 'earn', 'Earned from print job ' || p_job_id::text);
+    IF NOT EXISTS (
+      SELECT 1 FROM public.reward_points_history
+      WHERE user_id = p_user_id AND type = 'earn' AND description = v_earn_desc
+    ) THEN
+      UPDATE public.profiles
+      SET reward_points = reward_points + v_earn
+      WHERE id = p_user_id;
+
+      INSERT INTO public.reward_points_history (user_id, points, type, description)
+      VALUES (p_user_id, v_earn, 'earn', v_earn_desc);
+    END IF;
   END IF;
 END;
 $$;
@@ -552,36 +609,94 @@ CREATE OR REPLACE FUNCTION public.rollback_print_job_points(
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
+DECLARE
+  v_jwt_role TEXT;
+  v_job_user UUID;
+  v_redeem_desc TEXT;
+  v_earn_desc TEXT;
+  v_rollback_redeem_desc TEXT;
+  v_rollback_earn_desc TEXT;
 BEGIN
-  IF auth.uid() IS DISTINCT FROM p_user_id THEN
-    RAISE EXCEPTION 'Forbidden: cannot rollback points for another user';
+  v_jwt_role := COALESCE(auth.jwt() ->> 'role', '');
+  IF v_jwt_role IS DISTINCT FROM 'service_role' THEN
+    RAISE EXCEPTION 'Forbidden: rollback_print_job_points requires service_role';
   END IF;
 
-  IF p_points_used > 0 THEN
+  SELECT user_id INTO v_job_user
+  FROM public.print_jobs
+  WHERE id = p_job_id
+  FOR UPDATE;
+
+  IF NOT FOUND OR v_job_user IS DISTINCT FROM p_user_id THEN
+    RAISE EXCEPTION 'Forbidden: invalid print job for rollback';
+  END IF;
+
+  v_redeem_desc := 'Redeemed on print job ' || p_job_id::text;
+  v_earn_desc := 'Earned from print job ' || p_job_id::text;
+  v_rollback_redeem_desc := 'Rollback redeem print job ' || p_job_id::text;
+  v_rollback_earn_desc := 'Rollback earn print job ' || p_job_id::text;
+
+  IF p_points_used > 0
+     AND EXISTS (
+       SELECT 1 FROM public.reward_points_history
+       WHERE user_id = p_user_id AND type = 'spend' AND description = v_redeem_desc
+     )
+     AND NOT EXISTS (
+       SELECT 1 FROM public.reward_points_history
+       WHERE user_id = p_user_id AND description = v_rollback_redeem_desc
+     )
+  THEN
     UPDATE public.profiles
     SET reward_points = reward_points + p_points_used
     WHERE id = p_user_id;
 
     INSERT INTO public.reward_points_history (user_id, points, type, description)
-    VALUES (p_user_id, p_points_used, 'earn', 'Rollback redeem print job ' || p_job_id::text);
+    VALUES (p_user_id, p_points_used, 'earn', v_rollback_redeem_desc);
   END IF;
 
-  IF p_points_earned > 0 THEN
+  IF p_points_earned > 0
+     AND EXISTS (
+       SELECT 1 FROM public.reward_points_history
+       WHERE user_id = p_user_id AND type = 'earn' AND description = v_earn_desc
+     )
+     AND NOT EXISTS (
+       SELECT 1 FROM public.reward_points_history
+       WHERE user_id = p_user_id AND description = v_rollback_earn_desc
+     )
+  THEN
     UPDATE public.profiles
     SET reward_points = GREATEST(0, reward_points - p_points_earned)
     WHERE id = p_user_id;
 
     INSERT INTO public.reward_points_history (user_id, points, type, description)
-    VALUES (p_user_id, p_points_earned, 'spend', 'Rollback earn print job ' || p_job_id::text);
+    VALUES (p_user_id, p_points_earned, 'spend', v_rollback_earn_desc);
   END IF;
 END;
 $$;
 
+-- v6 grants: money mutate RPCs are service_role-only
+REVOKE ALL ON FUNCTION public.settle_print_job_points(UUID, INTEGER, INTEGER, UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.rollback_print_job_points(UUID, INTEGER, INTEGER, UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.mark_order_as_paid(UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.rollback_failed_order(UUID) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.settle_print_job_points(UUID, INTEGER, INTEGER, UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.rollback_print_job_points(UUID, INTEGER, INTEGER, UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.mark_order_as_paid(UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.rollback_failed_order(UUID) TO service_role;
+REVOKE ALL ON FUNCTION public.create_order_with_stock_check(UUID, NUMERIC, NUMERIC, INTEGER, INTEGER, TEXT, TEXT, JSONB) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_order_with_stock_check(UUID, NUMERIC, NUMERIC, INTEGER, INTEGER, TEXT, TEXT, JSONB) TO authenticated, service_role;
+
 -- =========================================================================
 -- 6. STORAGE RLS POLICIES FOR BUCKET "print-files"
 -- =========================================================================
+
+-- v7: drop legacy over-permissive SELECT if present (upgrade / redo-safe)
+DROP POLICY IF EXISTS "Allow authenticated select from print-files" ON storage.objects;
+DROP POLICY IF EXISTS "Allow authenticated users to select from print-files" ON storage.objects;
+DROP POLICY IF EXISTS "Public read access for print-files" ON storage.objects;
+DROP POLICY IF EXISTS "Anyone can view print-files" ON storage.objects;
 
 -- Cho phép người dùng đã đăng nhập tải file lên (INSERT)
 CREATE POLICY "Allow authenticated insert to print-files"
@@ -589,8 +704,7 @@ ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (bucket_id = 'print-files' AND auth.uid() = owner);
 
--- Cho phép người dùng đã đăng nhập đọc file của chính mình (SELECT)
--- [VULNERABILITY PATCH v2.0]: Thắt chặt chính sách để ngăn ngừa lỗ hổng IDOR đọc tệp in ấn của người khác
+-- Owner-only SELECT (không cho authenticated đọc toàn bucket)
 CREATE POLICY "Allow owner select from print-files"
 ON storage.objects FOR SELECT
 TO authenticated

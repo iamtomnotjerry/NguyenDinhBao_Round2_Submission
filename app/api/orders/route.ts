@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { SafeDatabase } from '@/types/database.types';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
@@ -6,6 +7,16 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
   try {
     const supabase: SupabaseClient<SafeDatabase> = await createClient();
+    const admin = createAdminClient();
+    if (!admin) {
+      return NextResponse.json(
+        {
+          error:
+            'Thiếu SUPABASE_SERVICE_ROLE_KEY — không thể hoàn tất thanh toán đơn hàng (fail-closed).',
+        },
+        { status: 500 },
+      );
+    }
 
     const {
       data: { user },
@@ -69,7 +80,7 @@ export async function POST(request: Request) {
         const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
         if (createdAt < fifteenMinutesAgo) {
-          await supabase.rpc('rollback_failed_order', { p_order_id: existingOrder.id });
+          await admin.rpc('rollback_failed_order', { p_order_id: existingOrder.id });
         } else {
           return NextResponse.json(
             {
@@ -117,6 +128,7 @@ export async function POST(request: Request) {
       .single();
 
     if (fetchPendingErr || !pendingOrder) {
+      await admin.rpc('rollback_failed_order', { p_order_id: orderId });
       return NextResponse.json(
         { error: fetchPendingErr?.message || 'Không đọc được đơn hàng sau khi tạo' },
         { status: 400 },
@@ -138,7 +150,7 @@ export async function POST(request: Request) {
     const chargeResult = await chargeRes.json();
 
     if (!chargeRes.ok || chargeResult.error) {
-      await supabase.rpc('rollback_failed_order', {
+      await admin.rpc('rollback_failed_order', {
         p_order_id: orderId,
       });
 
@@ -152,12 +164,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const { error: updateError } = await supabase.rpc('mark_order_as_paid', {
+    const { error: updateError } = await admin.rpc('mark_order_as_paid', {
       p_order_id: orderId,
     });
 
     if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 400 });
+      // Charge succeeded but mark failed — rollback inventory/points; surface charged flag
+      await admin.rpc('rollback_failed_order', { p_order_id: orderId });
+      return NextResponse.json(
+        {
+          error:
+            'Thanh toán đã diễn ra nhưng không cập nhật được trạng thái đơn. Đã rollback kho/điểm. Liên hệ hỗ trợ kèm transaction_id.',
+          charged: true,
+          transaction_id: chargeResult.transaction_id,
+          order_id: orderId,
+          details: updateError.message,
+        },
+        { status: 500 },
+      );
     }
 
     const { data: updatedOrder, error: fetchError } = await supabase

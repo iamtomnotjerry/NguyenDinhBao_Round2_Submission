@@ -12,8 +12,10 @@ import Link from 'next/link';
 import { btnInteractive, cn } from '@/lib/utils';
 import ChatBox from './components/ChatBox';
 import { useLocale } from '@/lib/i18n/context';
+import { HUMAN_HANDOFF_TOKEN } from '@/lib/chat/constants';
 
 type ChatMessageRow = SafeDatabase['public']['Tables']['chat_messages']['Row'];
+type ChatSessionRow = SafeDatabase['public']['Tables']['chat_sessions']['Row'];
 
 export default function ChatPage() {
   const { t } = useLocale();
@@ -21,13 +23,10 @@ export default function ChatPage() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isForwarded, setIsForwarded] = useState(false);
+  const [handoffError, setHandoffError] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Memoize DefaultChatTransport to prevent recreating on every keystroke re-render.
-  // Dependency on [sessionId] means transport is recreated once when sessionId changes (null → value).
-  // This is safe: the old fetch callback continues executing for in-flight streams,
-  // and the new transport only takes effect on the next message send.
   const chatTransport = useMemo(() => {
     return new DefaultChatTransport({
       api: '/api/chat',
@@ -40,30 +39,72 @@ export default function ChatPage() {
         if (xSessionId && !sessionId) {
           setSessionId(xSessionId);
         }
+        if (response.headers.get('X-Chat-Handoff') === 'waiting_support') {
+          setIsForwarded(true);
+          setHandoffError(null);
+        }
         return response;
       },
     });
   }, [sessionId]);
 
-  // Initialize Vercel AI SDK useChat hook using DefaultChatTransport
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: chatTransport,
-    onFinish: ({ message }: { message: UIMessage }) => {
-      // Extract text content from parts to check for Human Forward signal
+    onFinish: async ({ message }: { message: UIMessage }) => {
       const text = (message.parts || [])
         .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
         .map((part) => part.text)
         .join('');
 
-      if (text.includes('[FORWARD_TO_HUMAN]')) {
-        setIsForwarded(true);
+      if (!text.includes(HUMAN_HANDOFF_TOKEN)) return;
+
+      const sid =
+        sessionId ||
+        // Fallback: newest open session for this user
+        (
+          await supabase
+            .from('chat_sessions')
+            .select('id, status')
+            .in('status', ['waiting_support', 'active'])
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        ).data?.id;
+
+      if (!sid) {
+        setHandoffError(
+          'Yêu cầu gặp nhân viên đã gửi nhưng chưa ghi nhận session. Vui lòng thử lại.',
+        );
+        return;
       }
+
+      // Allow server onFinish to persist, then verify durable DB state
+      for (const delay of [300, 700, 1200]) {
+        await new Promise((r) => setTimeout(r, delay));
+        const { data, error } = await supabase
+          .from('chat_sessions')
+          .select('status')
+          .eq('id', sid)
+          .maybeSingle();
+        if (error) {
+          setHandoffError(error.message);
+          return;
+        }
+        if (data?.status === 'waiting_support') {
+          setIsForwarded(true);
+          setHandoffError(null);
+          return;
+        }
+      }
+
+      setHandoffError(
+        'Yêu cầu gặp nhân viên đã gửi nhưng chưa ghi nhận trên hệ thống. Vui lòng thử lại hoặc liên hệ hỗ trợ.',
+      );
     },
   });
 
   const isLoading = status === 'submitted' || status === 'streaming';
 
-  // Check auth and fetch/create chat session
   useEffect(() => {
     const initChat = async () => {
       const {
@@ -73,18 +114,26 @@ export default function ChatPage() {
       setLoadingAuth(false);
 
       if (user) {
-        // Find existing active session or let API handle it
-        const { data: session } = await supabase
+        const { data: sessions } = await supabase
           .from('chat_sessions')
           .select('*')
           .eq('user_id', user.id)
-          .eq('status', 'active')
-          .maybeSingle();
+          .in('status', ['waiting_support', 'active'])
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        const list = (sessions || []) as ChatSessionRow[];
+        const session =
+          list.find((s) => s.status === 'waiting_support') ||
+          list.find((s) => s.status === 'active') ||
+          null;
 
         if (session) {
           setSessionId(session.id);
+          if (session.status === 'waiting_support') {
+            setIsForwarded(true);
+          }
 
-          // Load past messages
           const { data: pastMsgs } = await supabase
             .from('chat_messages')
             .select('*')
@@ -106,12 +155,10 @@ export default function ChatPage() {
     initChat();
   }, [setMessages]);
 
-  // Scroll messages list to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Handle Form Submission
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -126,7 +173,6 @@ export default function ChatPage() {
     }
   };
 
-  // Click default questions
   const handleQuickQuestion = async (questionText: string) => {
     if (isLoading) return;
     try {
@@ -145,10 +191,8 @@ export default function ChatPage() {
           <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
         </div>
       ) : (
-        /* Main Container */
         <main className="flex-1 max-w-4xl mx-auto px-6 py-4 w-full flex flex-col min-h-0 relative z-10">
           {!user ? (
-            /* Unauthorized display */
             <div className="flex-1 glass-bezel-outer flex flex-col min-h-0 h-full">
               <div className="glass-bezel-inner flex flex-col items-center justify-center p-12 text-center space-y-6 flex-1 min-h-0 h-full justify-center">
                 <div className="p-4 bg-emerald-500/10 rounded-full text-emerald-400 border border-emerald-500/20">
@@ -168,25 +212,33 @@ export default function ChatPage() {
               </div>
             </div>
           ) : (
-            <ChatBox
-              messages={messages}
-              input={input}
-              setInput={setInput}
-              isLoading={isLoading}
-              isForwarded={isForwarded}
-              handleQuickQuestion={handleQuickQuestion}
-              handleSubmitForm={handleSubmitForm}
-              messagesEndRef={messagesEndRef}
-            />
+            <>
+              {handoffError && (
+                <div
+                  role="alert"
+                  className="mb-3 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
+                >
+                  {handoffError}
+                </div>
+              )}
+              <ChatBox
+                messages={messages}
+                input={input}
+                setInput={setInput}
+                isLoading={isLoading}
+                isForwarded={isForwarded}
+                handleQuickQuestion={handleQuickQuestion}
+                handleSubmitForm={handleSubmitForm}
+                messagesEndRef={messagesEndRef}
+              />
+            </>
           )}
         </main>
       )}
 
-      {/* Decorative glows */}
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-      {/* Footer */}
       <footer className="border-t border-zinc-900 py-4 bg-zinc-950 text-center text-xs text-zinc-650 shrink-0">
         {t.common.footer}
       </footer>

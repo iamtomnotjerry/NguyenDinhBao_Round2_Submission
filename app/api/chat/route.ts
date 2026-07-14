@@ -4,12 +4,22 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText } from 'ai';
 import { NextResponse } from 'next/server';
+import { HUMAN_HANDOFF_TOKEN, markChatWaitingSupport } from '@/lib/chat/handoff';
+
+function handoffHeaders(sessionId: string, handoffOk?: boolean): HeadersInit {
+  const headers: Record<string, string> = {
+    'X-Session-Id': sessionId,
+  };
+  if (handoffOk) {
+    headers['X-Chat-Handoff'] = 'waiting_support';
+  }
+  return headers;
+}
 
 export async function POST(request: Request) {
   try {
     const supabase: SupabaseClient<SafeDatabase> = await createClient();
 
-    // 1. Auth check
     const {
       data: { user },
       error: authError,
@@ -22,7 +32,6 @@ export async function POST(request: Request) {
     let message = body.message;
     const { sessionId } = body;
 
-    // Fallback: If Vercel AI SDK sends 'messages' array, extract the last user message text
     if (!message && Array.isArray(body.messages)) {
       const lastMsg = body.messages[body.messages.length - 1];
       if (lastMsg) {
@@ -41,7 +50,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tin nhắn không được để trống' }, { status: 400 });
     }
 
-    // 2. Manage session
     let currentSessionId = sessionId;
     if (!currentSessionId) {
       const { data: session, error: sessionErr } = await supabase
@@ -55,7 +63,6 @@ export async function POST(request: Request) {
       }
       currentSessionId = session.id;
     } else {
-      // Ownership check before writing messages / updating status
       const { data: owned } = await supabase
         .from('chat_sessions')
         .select('id')
@@ -67,22 +74,16 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Save User message to Database
     await supabase.from('chat_messages').insert({
       session_id: currentSessionId,
       sender: 'user',
       message: message,
     });
 
-    // 4. Check Gemini API Key configuration
     const geminiKey = process.env.GEMINI_API_KEY;
     const isMockAI = !geminiKey || geminiKey === 'your-gemini-api-key' || geminiKey === '';
 
     if (isMockAI) {
-      // -------------------------------------------------------------
-      // MOCK STREAMING AI FALLBACK
-      // If Gemini Key is not set, simulate streaming and save to DB
-      // -------------------------------------------------------------
       let responseText = '';
       const lowercaseMsg = message.toLowerCase();
 
@@ -93,8 +94,7 @@ export async function POST(request: Request) {
         lowercaseMsg.includes('human') ||
         lowercaseMsg.includes('support')
       ) {
-        responseText =
-          '[FORWARD_TO_HUMAN] Yêu cầu của bạn đã được ghi nhận. Tôi sẽ chuyển cuộc hội thoại này sang nhân viên hỗ trợ (con người) ngay lập tức. Vui lòng đợi trong giây lát.';
+        responseText = `${HUMAN_HANDOFF_TOKEN} Yêu cầu của bạn đã được ghi nhận. Tôi sẽ chuyển cuộc hội thoại này sang nhân viên hỗ trợ (con người) ngay lập tức. Vui lòng đợi trong giây lát.`;
       } else if (lowercaseMsg.includes('in') || lowercaseMsg.includes('print')) {
         responseText =
           'Để sử dụng dịch vụ in ấn từ xa, bạn hãy chuyển sang tab "In ấn từ xa", tải tệp PDF lên, chọn cấu hình in (đen trắng/màu, khổ giấy A3/A4/A5, đóng gáy) và bấm bắt đầu in. Hệ thống sẽ tự động tính giá và mô phỏng in ấn thời gian thực.';
@@ -117,7 +117,7 @@ export async function POST(request: Request) {
         responseText = `Cảm ơn bạn đã nhắn tin. Đây là phản hồi giả lập từ trợ lý ảo PlatPrint (Gemini API Key hiện chưa được điền ở .env.local). Lời nhắn của bạn: "${message}". Tôi có thể hỗ trợ bạn về dịch vụ in ấn hoặc mua ấn phẩm.`;
       }
 
-      // Async DB write for the mock response
+      let handoffOk = false;
       const saveMockResponse = async () => {
         await supabase.from('chat_messages').insert({
           session_id: currentSessionId,
@@ -125,18 +125,16 @@ export async function POST(request: Request) {
           message: responseText,
         });
 
-        // Trigger human support fallback if token found
-        if (responseText.includes('[FORWARD_TO_HUMAN]')) {
-          await supabase
-            .from('chat_sessions')
-            .update({ status: 'waiting_support' })
-            .eq('id', currentSessionId)
-            .eq('user_id', user.id);
+        if (responseText.includes(HUMAN_HANDOFF_TOKEN)) {
+          const result = await markChatWaitingSupport(supabase, currentSessionId, user.id);
+          handoffOk = result.ok;
+          if (!result.ok) {
+            console.error('Chat handoff persist failed:', result.error);
+          }
         }
       };
-      saveMockResponse();
+      await saveMockResponse();
 
-      // Return a native JS ReadableStream simulating streaming output words in Data Stream Protocol
       const encoder = new TextEncoder();
       const stream = new ReadableStream({
         async start(controller) {
@@ -154,14 +152,11 @@ export async function POST(request: Request) {
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
           'Transfer-Encoding': 'chunked',
-          'X-Session-Id': currentSessionId,
+          ...handoffHeaders(currentSessionId, handoffOk),
         },
       });
     }
 
-    // -------------------------------------------------------------
-    // REAL GEMINI AI STREAMING
-    // -------------------------------------------------------------
     const google = createGoogleGenerativeAI({
       apiKey: geminiKey,
     });
@@ -171,37 +166,35 @@ Bạn là trợ lý ảo hỗ trợ khách hàng của dịch vụ in ấn từ 
 Hãy trả lời lịch sự, chuyên nghiệp.
 Tự động nhận diện ngôn ngữ của khách hàng để trả lời bằng ngôn ngữ tương ứng (Tiếng Việt, Tiếng Anh...).
 Phạm vi trả lời: Chỉ trả lời các thông tin liên quan đến dịch vụ in ấn, cấu hình in, mua ấn phẩm ở gian hàng, hỗ trợ thanh toán lỗi hoặc điểm thưởng tích lũy.
-QUY TẮC ĐẶC BIỆT: Nếu khách hàng yêu cầu gặp người thật hỗ trợ, hoặc hỏi về các vấn đề ngoài phạm vi chuyên môn in ấn mà bạn không thể tự giải quyết, bạn BẮT BUỘC phải phản hồi chính xác chuỗi ký tự sau ở ngay đầu câu trả lời: [FORWARD_TO_HUMAN].
+QUY TẮC ĐẶC BIỆT: Nếu khách hàng yêu cầu gặp người thật hỗ trợ, hoặc hỏi về các vấn đề ngoài phạm vi chuyên môn in ấn mà bạn không thể tự giải quyết, bạn BẮT BUỘC phải phản hồi chính xác chuỗi ký tự sau ở ngay đầu câu trả lời: ${HUMAN_HANDOFF_TOKEN}.
 `;
 
-    // Call Gemini API using Vercel AI SDK
+    // Capture handoff result for response header (stream starts before onFinish completes)
+    let handoffPersisted = false;
+
     const result = streamText({
       model: google('gemini-2.5-flash'),
       system: systemInstruction,
       prompt: message,
       onFinish: async ({ text }) => {
-        // Save AI reply to database
         await supabase.from('chat_messages').insert({
           session_id: currentSessionId,
           sender: 'ai',
           message: text,
         });
 
-        // Trigger human support fallback if token found
-        if (text.includes('[FORWARD_TO_HUMAN]')) {
-          await supabase
-            .from('chat_sessions')
-            .update({ status: 'waiting_support' })
-            .eq('id', currentSessionId)
-            .eq('user_id', user.id);
+        if (text.includes(HUMAN_HANDOFF_TOKEN)) {
+          const handoff = await markChatWaitingSupport(supabase, currentSessionId, user.id);
+          handoffPersisted = handoff.ok;
+          if (!handoff.ok) {
+            console.error('Chat handoff persist failed:', handoff.error);
+          }
         }
       },
     });
 
     return result.toUIMessageStreamResponse({
-      headers: {
-        'X-Session-Id': currentSessionId,
-      },
+      headers: handoffHeaders(currentSessionId, handoffPersisted),
     });
   } catch (error) {
     return NextResponse.json(
