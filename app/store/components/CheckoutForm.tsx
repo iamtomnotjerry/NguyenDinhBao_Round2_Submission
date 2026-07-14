@@ -30,6 +30,11 @@ interface CheckoutFormProps {
   total: number;
   pointsEarned: number;
   handleCheckoutSubmit: (e: React.FormEvent) => void;
+  savedCards?: { id: string; card_brand: string; last4: string; card_token: string }[];
+  selectedTokenId?: string | null;
+  setSelectedTokenId?: (id: string | null) => void;
+  saveCard?: boolean;
+  setSaveCard?: (v: boolean) => void;
 }
 
 export default function CheckoutForm({
@@ -57,6 +62,11 @@ export default function CheckoutForm({
   total,
   pointsEarned,
   handleCheckoutSubmit,
+  savedCards = [],
+  selectedTokenId = null,
+  setSelectedTokenId,
+  saveCard = true,
+  setSaveCard,
 }: CheckoutFormProps) {
   const { t } = useLocale();
 
@@ -154,54 +164,103 @@ export default function CheckoutForm({
       )}
 
       <div className="space-y-3.5">
-        <div className="space-y-1.5 flex flex-col items-start w-full">
-          <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider pl-1">
-            {t.store.cardNumber}
-          </label>
-          <div className="relative w-full">
-            <input
-              type="text"
-              required
-              placeholder="4111 2222 3333 4001"
-              value={cardNumber}
-              onChange={(e) => setCardNumber(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500/40 py-2.5 px-3 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all duration-300 text-white font-mono"
-            />
-            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[9px] text-zinc-650 bg-zinc-900 border border-zinc-850 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
-              Visa / Master
-            </div>
+        {savedCards.length > 0 && setSelectedTokenId && (
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => setSelectedTokenId(null)}
+              className={cn(
+                'px-2 py-1 rounded-lg border text-[10px] font-bold',
+                btnInteractive,
+                !selectedTokenId
+                  ? 'border-emerald-500/40 text-emerald-300'
+                  : 'border-zinc-800 text-zinc-500',
+              )}
+            >
+              New card
+            </button>
+            {savedCards.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setSelectedTokenId(c.id)}
+                className={cn(
+                  'px-2 py-1 rounded-lg border text-[10px] font-bold',
+                  btnInteractive,
+                  selectedTokenId === c.id
+                    ? 'border-emerald-500/40 text-emerald-300'
+                    : 'border-zinc-800 text-zinc-500',
+                )}
+              >
+                {c.card_brand} ••{c.last4}
+              </button>
+            ))}
           </div>
-        </div>
+        )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5 flex flex-col items-start w-full">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider pl-1">
-              {t.store.expiry}
-            </label>
-            <input
-              type="text"
-              required
-              placeholder="MM/YY"
-              value={expiry}
-              onChange={(e) => setExpiry(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500/40 py-2.5 px-3 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all duration-300 text-white text-center font-mono"
-            />
-          </div>
-          <div className="space-y-1.5 flex flex-col items-start w-full">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider pl-1">
-              {t.store.cvv}
-            </label>
-            <input
-              type="password"
-              required
-              maxLength={3}
-              placeholder="123"
-              value={cvv}
-              onChange={(e) => setCvv(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500/40 py-2.5 px-3 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all duration-300 text-white text-center font-mono"
-            />
-          </div>
-        </div>
+        {!selectedTokenId && (
+          <>
+            <div className="space-y-1.5 flex flex-col items-start w-full">
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider pl-1">
+                {t.store.cardNumber}
+              </label>
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  required={!selectedTokenId}
+                  placeholder="4111 1111 1111 1111"
+                  value={cardNumber}
+                  onChange={(e) => setCardNumber(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500/40 py-2.5 px-3 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all duration-300 text-white font-mono"
+                />
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[9px] text-zinc-650 bg-zinc-900 border border-zinc-850 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                  Visa / Master
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5 flex flex-col items-start w-full">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider pl-1">
+                  {t.store.expiry}
+                </label>
+                <input
+                  type="text"
+                  required={!selectedTokenId}
+                  placeholder="MM/YY"
+                  value={expiry}
+                  onChange={(e) => setExpiry(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500/40 py-2.5 px-3 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all duration-300 text-white text-center font-mono"
+                />
+              </div>
+              <div className="space-y-1.5 flex flex-col items-start w-full">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider pl-1">
+                  {t.store.cvv}
+                </label>
+                <input
+                  type="password"
+                  required={!selectedTokenId}
+                  maxLength={4}
+                  placeholder="123"
+                  value={cvv}
+                  onChange={(e) => setCvv(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500/40 py-2.5 px-3 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all duration-300 text-white text-center font-mono"
+                />
+              </div>
+            </div>
+            {setSaveCard && (
+              <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={saveCard}
+                  onChange={(e) => setSaveCard(e.target.checked)}
+                  className="accent-emerald-500"
+                />
+                Save card for one-tap pay
+              </label>
+            )}
+          </>
+        )}
       </div>
 
       <div className="p-3 bg-zinc-950/60 border border-zinc-900 rounded-xl space-y-2">

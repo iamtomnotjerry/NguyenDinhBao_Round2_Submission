@@ -5,6 +5,7 @@ import { HelpCircle, User, Sparkles, AlertCircle, Send, Clock } from 'lucide-rea
 import React, { RefObject } from 'react';
 import { btnInteractive, cn } from '@/lib/utils';
 import { useLocale } from '@/lib/i18n/context';
+import { sanitizeText } from '@/lib/sanitize';
 
 interface ChatBoxProps {
   messages: UIMessage[];
@@ -105,7 +106,7 @@ export default function ChatBox({
                 .map((part) => part.text)
                 .join('');
 
-              const displayContent = text.replace('[FORWARD_TO_HUMAN]', '').trim();
+              const displayContent = sanitizeText(text.replace('[FORWARD_TO_HUMAN]', '').trim());
 
               return (
                 <div

@@ -55,8 +55,9 @@ export default function DashboardPrintJobs({ printJobs }: DashboardPrintJobsProp
                   <div>
                     <span>{t.dashboard.pagesCopies}:</span>
                     <p className="text-zinc-300 mt-0.5">
-                      {job.total_pages} {t.dashboard.pagesUnit} • {job.config_copies || 1}{' '}
-                      {t.dashboard.copiesUnit}
+                      {job.selected_page_count ?? job.total_pages} / {job.total_pages}{' '}
+                      {t.dashboard.pagesUnit} • {job.config_copies || 1} {t.dashboard.copiesUnit}
+                      {job.duplex && job.duplex !== 'simplex' ? ` • ${job.duplex}` : ''}
                     </p>
                   </div>
                   <div>

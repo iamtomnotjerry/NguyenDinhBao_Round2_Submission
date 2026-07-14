@@ -119,45 +119,126 @@ export interface Database {
           user_id: string;
           file_name: string;
           file_path: string;
-          config_color: 'color' | 'bw';
+          config_color: 'color' | 'bw' | 'mixed';
           config_copies: number;
-          config_paper_size: 'a4' | 'a3' | 'a5';
-          config_binding: 'none' | 'stapled' | 'spiral';
+          config_paper_size: 'a4' | 'a3' | 'a5' | 'letter' | 'legal' | 'tabloid' | 'b5' | 'custom';
+          config_binding: 'none' | 'stapled' | 'spiral' | 'glue' | 'hardcover';
           total_pages: number;
-          status: 'pending' | 'rendering' | 'printing' | 'completed' | 'failed';
+          status:
+            | 'pending'
+            | 'awaiting_payment'
+            | 'paid'
+            | 'queued'
+            | 'rendering'
+            | 'printing'
+            | 'finishing'
+            | 'quality_check'
+            | 'packing'
+            | 'shipping'
+            | 'ready_for_pickup'
+            | 'completed'
+            | 'failed';
           cost: number;
           printer_location: string;
           created_at: string;
+          config_json: Json;
+          page_selection: string | null;
+          selected_page_count: number | null;
+          duplex: 'simplex' | 'long_edge' | 'short_edge';
+          delivery_type: 'pickup' | 'delivery';
+          delivery_address: string | null;
+          shipping_fee: number;
+          tax_amount: number;
+          discount_amount: number;
+          points_used: number;
+          points_earned: number;
+          idempotency_key: string | null;
+          card_last4: string | null;
+          estimated_ready: string | null;
         };
         Insert: {
           id?: string;
           user_id: string;
           file_name: string;
           file_path: string;
-          config_color: 'color' | 'bw';
+          config_color: 'color' | 'bw' | 'mixed';
           config_copies?: number;
-          config_paper_size: 'a4' | 'a3' | 'a5';
-          config_binding: 'none' | 'stapled' | 'spiral';
+          config_paper_size: 'a4' | 'a3' | 'a5' | 'letter' | 'legal' | 'tabloid' | 'b5' | 'custom';
+          config_binding: 'none' | 'stapled' | 'spiral' | 'glue' | 'hardcover';
           total_pages: number;
-          status?: 'pending' | 'rendering' | 'printing' | 'completed' | 'failed';
+          status?:
+            | 'pending'
+            | 'awaiting_payment'
+            | 'paid'
+            | 'queued'
+            | 'rendering'
+            | 'printing'
+            | 'finishing'
+            | 'quality_check'
+            | 'packing'
+            | 'shipping'
+            | 'ready_for_pickup'
+            | 'completed'
+            | 'failed';
           cost: number;
           printer_location: string;
           created_at?: string;
+          config_json?: Json;
+          page_selection?: string | null;
+          selected_page_count?: number | null;
+          duplex?: 'simplex' | 'long_edge' | 'short_edge';
+          delivery_type?: 'pickup' | 'delivery';
+          delivery_address?: string | null;
+          shipping_fee?: number;
+          tax_amount?: number;
+          discount_amount?: number;
+          points_used?: number;
+          points_earned?: number;
+          idempotency_key?: string | null;
+          card_last4?: string | null;
+          estimated_ready?: string | null;
         };
         Update: {
           id?: string;
           user_id?: string;
           file_name?: string;
           file_path?: string;
-          config_color?: 'color' | 'bw';
+          config_color?: 'color' | 'bw' | 'mixed';
           config_copies?: number;
-          config_paper_size?: 'a4' | 'a3' | 'a5';
-          config_binding?: 'none' | 'stapled' | 'spiral';
+          config_paper_size?: 'a4' | 'a3' | 'a5' | 'letter' | 'legal' | 'tabloid' | 'b5' | 'custom';
+          config_binding?: 'none' | 'stapled' | 'spiral' | 'glue' | 'hardcover';
           total_pages?: number;
-          status?: 'pending' | 'rendering' | 'printing' | 'completed' | 'failed';
+          status?:
+            | 'pending'
+            | 'awaiting_payment'
+            | 'paid'
+            | 'queued'
+            | 'rendering'
+            | 'printing'
+            | 'finishing'
+            | 'quality_check'
+            | 'packing'
+            | 'shipping'
+            | 'ready_for_pickup'
+            | 'completed'
+            | 'failed';
           cost?: number;
           printer_location?: string;
           created_at?: string;
+          config_json?: Json;
+          page_selection?: string | null;
+          selected_page_count?: number | null;
+          duplex?: 'simplex' | 'long_edge' | 'short_edge';
+          delivery_type?: 'pickup' | 'delivery';
+          delivery_address?: string | null;
+          shipping_fee?: number;
+          tax_amount?: number;
+          discount_amount?: number;
+          points_used?: number;
+          points_earned?: number;
+          idempotency_key?: string | null;
+          card_last4?: string | null;
+          estimated_ready?: string | null;
         };
       };
       payment_tokens: {
@@ -293,6 +374,24 @@ export interface Database {
           p_order_id: string;
         };
         Returns: unknown;
+      };
+      settle_print_job_points: {
+        Args: {
+          p_user_id: string;
+          p_points_used: number;
+          p_points_earned: number;
+          p_job_id: string;
+        };
+        Returns: undefined;
+      };
+      rollback_print_job_points: {
+        Args: {
+          p_user_id: string;
+          p_points_used: number;
+          p_points_earned: number;
+          p_job_id: string;
+        };
+        Returns: undefined;
       };
     };
     Enums: {

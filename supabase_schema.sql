@@ -62,14 +62,32 @@ CREATE TABLE public.print_jobs (
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT null,
   file_name TEXT NOT NULL,
   file_path TEXT NOT NULL,
-  config_color TEXT CHECK (config_color IN ('color', 'bw')) NOT null,
+  config_color TEXT CHECK (config_color IN ('color', 'bw', 'mixed')) NOT null,
   config_copies INTEGER DEFAULT 1 CHECK (config_copies > 0),
-  config_paper_size TEXT CHECK (config_paper_size IN ('a4', 'a3', 'a5')) NOT null,
-  config_binding TEXT CHECK (config_binding IN ('none', 'stapled', 'spiral')) NOT null,
+  config_paper_size TEXT CHECK (config_paper_size IN ('a4', 'a3', 'a5', 'letter', 'legal', 'tabloid', 'b5', 'custom')) NOT null,
+  config_binding TEXT CHECK (config_binding IN ('none', 'stapled', 'spiral', 'glue', 'hardcover')) NOT null,
   total_pages INTEGER NOT NULL CHECK (total_pages > 0),
-  status TEXT CHECK (status IN ('pending', 'rendering', 'printing', 'completed', 'failed')) DEFAULT 'pending',
+  status TEXT CHECK (status IN (
+    'pending','awaiting_payment','paid','queued','rendering','printing',
+    'finishing','quality_check','packing','shipping','ready_for_pickup',
+    'completed','failed'
+  )) DEFAULT 'pending',
   cost DECIMAL(10, 2) NOT NULL CHECK (cost >= 0),
   printer_location TEXT NOT NULL,
+  config_json JSONB DEFAULT '{}'::jsonb,
+  page_selection TEXT DEFAULT 'all',
+  selected_page_count INTEGER,
+  duplex TEXT DEFAULT 'simplex' CHECK (duplex IN ('simplex','long_edge','short_edge')),
+  delivery_type TEXT DEFAULT 'pickup' CHECK (delivery_type IN ('pickup','delivery')),
+  delivery_address TEXT,
+  shipping_fee DECIMAL(10,2) DEFAULT 0,
+  tax_amount DECIMAL(10,2) DEFAULT 0,
+  discount_amount DECIMAL(10,2) DEFAULT 0,
+  points_used INTEGER DEFAULT 0,
+  points_earned INTEGER DEFAULT 0,
+  idempotency_key TEXT,
+  card_last4 VARCHAR(4),
+  estimated_ready TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
@@ -119,6 +137,8 @@ CREATE TABLE public.chat_messages (
 CREATE INDEX idx_orders_user_id ON public.orders(user_id);
 CREATE INDEX idx_order_items_order_id ON public.order_items(order_id);
 CREATE INDEX idx_print_jobs_user_id ON public.print_jobs(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_print_jobs_idempotency
+  ON public.print_jobs(idempotency_key) WHERE idempotency_key IS NOT NULL;
 CREATE INDEX idx_payment_tokens_user_id ON public.payment_tokens(user_id);
 CREATE INDEX idx_points_history_user_id ON public.reward_points_history(user_id);
 CREATE INDEX idx_chat_sessions_user_id ON public.chat_sessions(user_id);
@@ -185,6 +205,10 @@ CREATE POLICY "Allow users to read their own chat sessions"
   ON public.chat_sessions FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Allow users to create their own chat sessions" 
   ON public.chat_sessions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Allow users to update their own chat sessions"
+  ON public.chat_sessions FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- Chat Messages Policies
 CREATE POLICY "Allow users to read messages in their own sessions" 
@@ -236,77 +260,136 @@ DECLARE
   v_order_id UUID;
   item RECORD;
   v_current_stock INTEGER;
+  v_unit_price DECIMAL(10, 2);
+  v_subtotal DECIMAL(10, 2) := 0;
+  v_available_points INTEGER;
+  v_points_used INTEGER := 0;
+  v_discount DECIMAL(10, 2) := 0;
+  v_total DECIMAL(10, 2) := 0;
+  v_points_earned INTEGER := 0;
+  v_max_redeem INTEGER;
 BEGIN
-  -- Kiểm tra trùng lặp giao dịch (Idempotency check)
+  -- Ownership: chặn gọi RPC thay mặt user khác
+  IF auth.uid() IS DISTINCT FROM p_user_id THEN
+    RAISE EXCEPTION 'Forbidden: cannot create order for another user';
+  END IF;
+
+  IF p_items IS NULL OR jsonb_typeof(p_items) <> 'array' OR jsonb_array_length(p_items) = 0 THEN
+    RAISE EXCEPTION 'Order items required';
+  END IF;
+
+  IF p_delivery_type IS NULL OR p_delivery_type NOT IN ('pickup', 'delivery') THEN
+    RAISE EXCEPTION 'Invalid delivery_type';
+  END IF;
+
+  -- Idempotency
   SELECT id INTO v_order_id FROM public.orders WHERE idempotency_key = p_idempotency_key;
   IF v_order_id IS NOT NULL THEN
     RETURN v_order_id;
   END IF;
 
-  -- 1. Khoá dòng Profiles của user (Pessimistic Locking) để đồng bộ giao dịch điểm thưởng
-  PERFORM 1 FROM public.profiles WHERE id = p_user_id FOR UPDATE;
+  -- Lock profile
+  SELECT reward_points INTO v_available_points
+  FROM public.profiles
+  WHERE id = p_user_id
+  FOR UPDATE;
 
-  -- 1b. Khoá tất cả dòng sản phẩm liên quan theo thứ tự ID tăng dần để tránh Deadlock chéo giữa các giao dịch đồng thời
-  PERFORM 1 
-  FROM public.products 
-  WHERE id IN (SELECT product_id FROM jsonb_to_recordset(p_items) AS x(product_id UUID))
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Profile not found';
+  END IF;
+
+  -- Lock products ASC to avoid deadlock
+  PERFORM 1
+  FROM public.products
+  WHERE id IN (SELECT product_id FROM jsonb_to_recordset(p_items) AS x(product_id UUID, quantity INTEGER))
   ORDER BY id ASC
   FOR UPDATE;
 
-  -- 2. Khởi tạo đơn hàng mới (với xử lý unique_violation cho idempotency race condition)
-  BEGIN
-    INSERT INTO public.orders (user_id, total_amount, discount_amount, points_used, points_earned, delivery_type, status, idempotency_key)
-    VALUES (p_user_id, p_total_amount, p_discount_amount, p_points_used, p_points_earned, p_delivery_type, 'pending', p_idempotency_key)
-    RETURNING id INTO v_order_id;
-  EXCEPTION WHEN unique_violation THEN
-    -- Giao dịch trùng lặp bị bắt bởi UNIQUE constraint (race condition giữa idempotency check và INSERT)
-    SELECT id INTO v_order_id FROM public.orders WHERE idempotency_key = p_idempotency_key;
-    RETURN v_order_id;
-  END;
+  -- Compute subtotal from DB prices + validate stock
+  FOR item IN
+    SELECT * FROM jsonb_to_recordset(p_items) AS x(product_id UUID, quantity INTEGER)
+  LOOP
+    IF item.quantity IS NULL OR item.quantity <= 0 THEN
+      RAISE EXCEPTION 'Invalid quantity for product %', item.product_id;
+    END IF;
 
-  -- 3. Kiểm tra và khấu trừ tồn kho từng mặt hàng
-  FOR item IN SELECT * FROM jsonb_to_recordset(p_items) AS x(product_id UUID, quantity INTEGER) LOOP
-    -- Lấy tồn kho sản phẩm (dòng này đã được khóa bằng FOR UPDATE ở trên)
-    SELECT stock INTO v_current_stock 
-    FROM public.products 
+    SELECT stock, price INTO v_current_stock, v_unit_price
+    FROM public.products
     WHERE id = item.product_id;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Product % not found', item.product_id;
+    END IF;
 
     IF v_current_stock < item.quantity THEN
       RAISE EXCEPTION 'Sản phẩm % đã hết hàng hoặc không đủ tồn kho.', item.product_id;
     END IF;
 
-    -- Trừ số lượng tồn kho
-    UPDATE public.products 
-    SET stock = stock - item.quantity 
+    v_subtotal := v_subtotal + (v_unit_price * item.quantity);
+  END LOOP;
+
+  -- Cap redeem: 1 pt = $0.1; cannot exceed balance or subtotal
+  v_max_redeem := FLOOR(v_subtotal * 10)::INTEGER;
+  v_points_used := LEAST(
+    GREATEST(COALESCE(p_points_used, 0), 0),
+    COALESCE(v_available_points, 0),
+    v_max_redeem
+  );
+  v_discount := ROUND((v_points_used * 0.1)::NUMERIC, 2);
+  v_total := GREATEST(0, ROUND((v_subtotal - v_discount)::NUMERIC, 2));
+  -- Ignore client p_points_earned / p_total_amount / p_discount_amount
+  v_points_earned := FLOOR(v_total)::INTEGER;
+
+  -- Create order with SERVER totals
+  BEGIN
+    INSERT INTO public.orders (
+      user_id, total_amount, discount_amount, points_used, points_earned,
+      delivery_type, status, idempotency_key
+    )
+    VALUES (
+      p_user_id, v_total, v_discount, v_points_used, v_points_earned,
+      p_delivery_type, 'pending', p_idempotency_key
+    )
+    RETURNING id INTO v_order_id;
+  EXCEPTION WHEN unique_violation THEN
+    SELECT id INTO v_order_id FROM public.orders WHERE idempotency_key = p_idempotency_key;
+    RETURN v_order_id;
+  END;
+
+  -- Deduct stock + line items at DB price
+  FOR item IN
+    SELECT * FROM jsonb_to_recordset(p_items) AS x(product_id UUID, quantity INTEGER)
+  LOOP
+    UPDATE public.products
+    SET stock = stock - item.quantity
     WHERE id = item.product_id;
 
-    -- Lưu chi tiết đơn hàng
     INSERT INTO public.order_items (order_id, product_id, quantity, price)
-    SELECT v_order_id, item.product_id, item.quantity, price 
+    SELECT v_order_id, item.product_id, item.quantity, price
     FROM public.products WHERE id = item.product_id;
   END LOOP;
 
-  -- 4. Cập nhật số điểm thưởng trong profile
-  UPDATE public.profiles 
-  SET reward_points = reward_points - p_points_used + p_points_earned
+  -- Apply points (earn credited now; rolled back if payment fails)
+  UPDATE public.profiles
+  SET reward_points = reward_points - v_points_used + v_points_earned
   WHERE id = p_user_id;
 
-  -- 5. Ghi nhận lịch sử giao dịch điểm thưởng
-  IF p_points_used > 0 THEN
+  IF v_points_used > 0 THEN
     INSERT INTO public.reward_points_history (user_id, points, type, description)
-    VALUES (p_user_id, -p_points_used, 'spend', 'Sử dụng điểm giảm giá cho đơn hàng ' || v_order_id);
+    VALUES (p_user_id, v_points_used, 'spend', 'Sử dụng điểm giảm giá cho đơn hàng ' || v_order_id);
   END IF;
-  IF p_points_earned > 0 THEN
+  IF v_points_earned > 0 THEN
     INSERT INTO public.reward_points_history (user_id, points, type, description)
-    VALUES (p_user_id, p_points_earned, 'earn', 'Tích luỹ điểm thưởng từ đơn hàng ' || v_order_id);
+    VALUES (p_user_id, v_points_earned, 'earn', 'Tích luỹ điểm thưởng từ đơn hàng ' || v_order_id);
   END IF;
 
   RETURN v_order_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
--- Stored Procedure to rollback failed orders and restore stock/points
--- [BEST PRACTICE]: Thiết lập search_path cố định để bảo vệ hàm.
+-- -------------------------------------------------------------------------
+-- C2: rollback_failed_order — chỉ owner (hoặc service_role)
+-- -------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.rollback_failed_order(p_order_id UUID)
 RETURNS VOID AS $$
 DECLARE
@@ -314,26 +397,32 @@ DECLARE
   v_user_id UUID;
   v_points_used INTEGER;
   v_points_earned INTEGER;
+  v_jwt_role TEXT;
 BEGIN
-  -- 1. Khoá đơn hàng và lấy thông tin chi tiết
-  SELECT user_id, points_used, points_earned INTO v_user_id, v_points_used, v_points_earned
+  v_jwt_role := COALESCE(auth.jwt() ->> 'role', '');
+
+  SELECT user_id, points_used, points_earned
+  INTO v_user_id, v_points_used, v_points_earned
   FROM public.orders
   WHERE id = p_order_id AND status = 'pending'
   FOR UPDATE;
-  
+
   IF v_user_id IS NULL THEN
-    RETURN; -- Đơn hàng đã được hoàn thành hoặc không ở trạng thái pending
+    RETURN;
   END IF;
 
-  -- Khoá dòng Profile của người dùng
+  -- Authenticated user may only rollback own order; service_role may rollback any
+  IF v_jwt_role IS DISTINCT FROM 'service_role'
+     AND auth.uid() IS DISTINCT FROM v_user_id THEN
+    RAISE EXCEPTION 'Forbidden: cannot rollback another user order';
+  END IF;
+
   PERFORM 1 FROM public.profiles WHERE id = v_user_id FOR UPDATE;
 
-  -- 2. Cập nhật trạng thái đơn hàng sang thất bại và giải phóng idempotency_key cho retry
   UPDATE public.orders
   SET status = 'failed', idempotency_key = NULL
   WHERE id = p_order_id;
 
-  -- 3. Khoá dòng sản phẩm liên quan theo thứ tự ID tăng dần trước khi hoàn trả tồn kho
   PERFORM 1
   FROM public.products
   WHERE id IN (
@@ -343,7 +432,6 @@ BEGIN
   ORDER BY id ASC
   FOR UPDATE;
 
-  -- 3b. Hoàn trả lại số lượng tồn kho sản phẩm
   FOR item IN SELECT product_id, quantity FROM public.order_items WHERE order_id = p_order_id LOOP
     IF item.product_id IS NOT NULL THEN
       UPDATE public.products
@@ -352,33 +440,144 @@ BEGIN
     END IF;
   END LOOP;
 
-  -- 4. Hoàn lại số điểm thưởng cho người dùng
   UPDATE public.profiles
   SET reward_points = reward_points + v_points_used - v_points_earned
   WHERE id = v_user_id;
 
-  -- 5. Ghi nhận giao dịch hoàn trả điểm
   IF v_points_used > 0 THEN
     INSERT INTO public.reward_points_history (user_id, points, type, description)
     VALUES (v_user_id, v_points_used, 'earn', 'Hoàn điểm do thanh toán đơn hàng thất bại ' || p_order_id);
   END IF;
   IF v_points_earned > 0 THEN
     INSERT INTO public.reward_points_history (user_id, points, type, description)
-    VALUES (v_user_id, -v_points_earned, 'spend', 'Thu hồi điểm tích luỹ do thanh toán thất bại đơn ' || p_order_id);
+    VALUES (v_user_id, v_points_earned, 'spend', 'Thu hồi điểm tích luỹ do thanh toán thất bại đơn ' || p_order_id);
   END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
--- Stored Procedure to safely mark order as paid bypassing RLS
--- [BEST PRACTICE]: Thiết lập search_path cố định để bảo vệ hàm.
+-- -------------------------------------------------------------------------
+-- C2: mark_order_as_paid — chỉ owner (hoặc service_role)
+-- -------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.mark_order_as_paid(p_order_id UUID)
 RETURNS VOID AS $$
+DECLARE
+  v_user_id UUID;
+  v_jwt_role TEXT;
 BEGIN
+  v_jwt_role := COALESCE(auth.jwt() ->> 'role', '');
+
+  SELECT user_id INTO v_user_id
+  FROM public.orders
+  WHERE id = p_order_id AND status = 'pending'
+  FOR UPDATE;
+
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Order not found or not pending';
+  END IF;
+
+  IF v_jwt_role IS DISTINCT FROM 'service_role'
+     AND auth.uid() IS DISTINCT FROM v_user_id THEN
+    RAISE EXCEPTION 'Forbidden: cannot mark another user order as paid';
+  END IF;
+
   UPDATE public.orders
   SET status = 'paid'
   WHERE id = p_order_id AND status = 'pending';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
+
+
+
+-- Settle / rollback reward points for paid print jobs
+CREATE OR REPLACE FUNCTION public.settle_print_job_points(
+  p_user_id UUID,
+  p_points_used INTEGER,
+  p_points_earned INTEGER,
+  p_job_id UUID
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_points INTEGER;
+BEGIN
+  IF p_points_used < 0 OR p_points_earned < 0 THEN
+    RAISE EXCEPTION 'Invalid points';
+  END IF;
+
+  IF auth.uid() IS DISTINCT FROM p_user_id THEN
+    RAISE EXCEPTION 'Forbidden: cannot settle points for another user';
+  END IF;
+
+  SELECT reward_points INTO v_points
+  FROM public.profiles
+  WHERE id = p_user_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Profile not found';
+  END IF;
+
+  IF p_points_used > 0 THEN
+    IF v_points < p_points_used THEN
+      RAISE EXCEPTION 'Insufficient reward points';
+    END IF;
+    UPDATE public.profiles
+    SET reward_points = reward_points - p_points_used
+    WHERE id = p_user_id;
+
+    INSERT INTO public.reward_points_history (user_id, points, type, description)
+    VALUES (p_user_id, p_points_used, 'spend', 'Redeemed on print job ' || p_job_id::text);
+  END IF;
+
+  IF p_points_earned > 0 THEN
+    UPDATE public.profiles
+    SET reward_points = reward_points + p_points_earned
+    WHERE id = p_user_id;
+
+    INSERT INTO public.reward_points_history (user_id, points, type, description)
+    VALUES (p_user_id, p_points_earned, 'earn', 'Earned from print job ' || p_job_id::text);
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.rollback_print_job_points(
+  p_user_id UUID,
+  p_points_used INTEGER,
+  p_points_earned INTEGER,
+  p_job_id UUID
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS DISTINCT FROM p_user_id THEN
+    RAISE EXCEPTION 'Forbidden: cannot rollback points for another user';
+  END IF;
+
+  IF p_points_used > 0 THEN
+    UPDATE public.profiles
+    SET reward_points = reward_points + p_points_used
+    WHERE id = p_user_id;
+
+    INSERT INTO public.reward_points_history (user_id, points, type, description)
+    VALUES (p_user_id, p_points_used, 'earn', 'Rollback redeem print job ' || p_job_id::text);
+  END IF;
+
+  IF p_points_earned > 0 THEN
+    UPDATE public.profiles
+    SET reward_points = GREATEST(0, reward_points - p_points_earned)
+    WHERE id = p_user_id;
+
+    INSERT INTO public.reward_points_history (user_id, points, type, description)
+    VALUES (p_user_id, p_points_earned, 'spend', 'Rollback earn print job ' || p_job_id::text);
+  END IF;
+END;
+$$;
 
 -- =========================================================================
 -- 6. STORAGE RLS POLICIES FOR BUCKET "print-files"

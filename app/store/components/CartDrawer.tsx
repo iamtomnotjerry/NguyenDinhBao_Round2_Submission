@@ -41,6 +41,11 @@ interface CartDrawerProps {
   total: number;
   pointsEarned: number;
   handleCheckoutSubmit: (e: React.FormEvent) => void;
+  savedCards?: { id: string; card_brand: string; last4: string; card_token: string }[];
+  selectedTokenId?: string | null;
+  setSelectedTokenId?: (id: string | null) => void;
+  saveCard?: boolean;
+  setSaveCard?: (v: boolean) => void;
 }
 
 export default function CartDrawer({
@@ -75,6 +80,11 @@ export default function CartDrawer({
   total,
   pointsEarned,
   handleCheckoutSubmit,
+  savedCards,
+  selectedTokenId,
+  setSelectedTokenId,
+  saveCard,
+  setSaveCard,
 }: CartDrawerProps) {
   const { t } = useLocale();
   if (!isOpen) return null;
@@ -151,6 +161,11 @@ export default function CartDrawer({
                     total={total}
                     pointsEarned={pointsEarned}
                     handleCheckoutSubmit={handleCheckoutSubmit}
+                    savedCards={savedCards}
+                    selectedTokenId={selectedTokenId}
+                    setSelectedTokenId={setSelectedTokenId}
+                    saveCard={saveCard}
+                    setSaveCard={setSaveCard}
                   />
                 )}
               </div>

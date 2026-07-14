@@ -29,12 +29,12 @@ function applyTheme(theme: ThemeMode) {
 }
 
 function readStoredTheme(): ThemeMode {
-  if (typeof window === 'undefined') return 'dark';
+  if (typeof window === 'undefined') return 'light';
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    return stored === 'light' || stored === 'dark' ? stored : 'dark';
+    return stored === 'light' || stored === 'dark' ? stored : 'light';
   } catch {
-    return 'dark';
+    return 'light';
   }
 }
 
@@ -48,7 +48,7 @@ function subscribe(onStoreChange: () => void) {
 }
 
 function getServerSnapshot(): ThemeMode {
-  return 'dark';
+  return 'light';
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

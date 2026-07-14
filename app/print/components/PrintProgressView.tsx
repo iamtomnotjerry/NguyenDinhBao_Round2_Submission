@@ -14,6 +14,19 @@ interface PrintProgressViewProps {
   onPrintNew: () => void;
 }
 
+const PIPELINE = [
+  'paid',
+  'queued',
+  'rendering',
+  'printing',
+  'finishing',
+  'quality_check',
+  'packing',
+  'shipping',
+  'ready_for_pickup',
+  'completed',
+] as const;
+
 export default function PrintProgressView({
   activeJob,
   printProgress,
@@ -21,16 +34,37 @@ export default function PrintProgressView({
 }: PrintProgressViewProps) {
   const { t } = useLocale();
 
-  const statusTitle =
-    activeJob.status === 'pending'
-      ? t.print.statusPending
-      : activeJob.status === 'rendering'
-        ? t.print.statusRendering
-        : activeJob.status === 'printing'
-          ? t.print.statusPrinting
-          : activeJob.status === 'completed'
-            ? t.print.statusCompleted
-            : t.print.statusFailed;
+  const statusTitle = (() => {
+    switch (activeJob.status) {
+      case 'paid':
+        return t.print.statusPaid;
+      case 'queued':
+      case 'pending':
+        return t.print.statusQueued;
+      case 'rendering':
+        return t.print.statusRendering;
+      case 'printing':
+        return t.print.statusPrinting;
+      case 'finishing':
+        return t.print.statusFinishing;
+      case 'quality_check':
+        return t.print.statusQuality;
+      case 'packing':
+        return t.print.statusPacking;
+      case 'shipping':
+        return t.print.statusShipping;
+      case 'ready_for_pickup':
+        return t.print.statusReady;
+      case 'completed':
+        return t.print.statusCompleted;
+      case 'failed':
+        return t.print.statusFailed;
+      default:
+        return t.print.statusPending;
+    }
+  })();
+
+  const done = activeJob.status === 'completed' || activeJob.status === 'ready_for_pickup';
 
   return (
     <div className="lg:col-span-12 glass-bezel-outer">
@@ -38,7 +72,7 @@ export default function PrintProgressView({
         <div className="relative">
           <div
             className={`w-24 h-24 rounded-full border-4 transition-all duration-700 ${
-              activeJob.status === 'completed'
+              done
                 ? 'border-emerald-500/20 border-t-emerald-500'
                 : activeJob.status === 'failed'
                   ? 'border-red-500/20 border-t-red-500'
@@ -46,29 +80,26 @@ export default function PrintProgressView({
             }`}
           />
           <Printer
-            className={`w-8 h-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-colors duration-700 ${
-              activeJob.status === 'completed'
-                ? 'text-emerald-400'
-                : activeJob.status === 'failed'
-                  ? 'text-red-400'
-                  : 'text-emerald-400'
+            className={`w-8 h-8 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ${
+              activeJob.status === 'failed' ? 'text-red-400' : 'text-emerald-400'
             }`}
           />
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent">
-            {statusTitle}
-          </h2>
+          <h2 className="text-2xl font-bold text-white">{statusTitle}</h2>
           <p className="text-zinc-500 text-sm">
             {t.print.jobId} <span className="font-mono text-zinc-300">{activeJob.id}</span>
           </p>
+          {activeJob.estimated_ready && (
+            <p className="text-xs text-emerald-400/90">{activeJob.estimated_ready}</p>
+          )}
         </div>
 
         <div className="w-full max-w-lg space-y-2">
           <div className="w-full bg-zinc-900 h-3 rounded-full overflow-hidden border border-zinc-800">
             <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500 rounded-full"
+              className="h-full bg-emerald-500 transition-all duration-500 rounded-full"
               style={{ width: `${printProgress}%` }}
             />
           </div>
@@ -78,6 +109,31 @@ export default function PrintProgressView({
               {t.print.statusLabel} {activeJob.status}
             </span>
           </div>
+        </div>
+
+        <div className="w-full max-w-md flex flex-wrap gap-1.5 justify-center">
+          {PIPELINE.map((step) => {
+            const idx = PIPELINE.indexOf(step);
+            const cur = PIPELINE.indexOf(
+              (activeJob.status === 'pending'
+                ? 'queued'
+                : activeJob.status) as (typeof PIPELINE)[number],
+            );
+            const active = cur >= idx || activeJob.status === 'completed';
+            return (
+              <span
+                key={step}
+                className={cn(
+                  'text-[9px] px-1.5 py-0.5 rounded border font-bold',
+                  active
+                    ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10'
+                    : 'border-zinc-800 text-zinc-600',
+                )}
+              >
+                {step.replace(/_/g, ' ')}
+              </span>
+            );
+          })}
         </div>
 
         <div className="w-full max-w-md p-4 bg-zinc-950/50 border border-zinc-900 rounded-2xl text-left space-y-3 text-sm text-zinc-400">
@@ -92,42 +148,49 @@ export default function PrintProgressView({
               <span className="text-emerald-400">[✓]</span>
               <span>
                 {t.print.logCreated} ($ {activeJob.cost})
+                {activeJob.card_last4 ? ` · ••${activeJob.card_last4}` : ''}
               </span>
             </div>
-            {printProgress >= 40 && (
+            {printProgress >= 35 && (
               <div className="flex items-start gap-2">
                 <span className="text-emerald-400">[✓]</span>
                 <span>
-                  {t.print.logRendered} (1 / {activeJob.total_pages} {t.print.pagesUnit})
+                  {t.print.logRendered} ({activeJob.selected_page_count || activeJob.total_pages}{' '}
+                  {t.print.pagesUnit})
                 </span>
               </div>
             )}
-            {printProgress >= 70 && (
+            {printProgress >= 55 && (
               <div className="flex items-start gap-2">
                 <span className="text-emerald-400">[⚙]</span>
                 <span>
-                  {t.print.logPrinting} (
-                  {activeJob.config_color === 'color' ? t.print.labelColor : t.print.labelBw})
+                  {t.print.logPrinting} ({activeJob.config_color} / {activeJob.duplex || 'simplex'})
                 </span>
               </div>
             )}
-            {printProgress === 100 && (
+            {printProgress >= 96 && (
               <div className="flex items-start gap-2 text-emerald-400 font-semibold">
-                <span className="text-emerald-400">[✓]</span>
+                <span>[✓]</span>
                 <span>
-                  {t.print.logDone} {activeJob.printer_location}.
+                  {t.print.logDone} {activeJob.printer_location}
+                  {activeJob.delivery_type === 'delivery' && activeJob.delivery_address
+                    ? ` → ${activeJob.delivery_address}`
+                    : ''}
+                  .
                 </span>
               </div>
             )}
           </div>
         </div>
 
-        {activeJob.status === 'completed' && (
+        {(activeJob.status === 'completed' ||
+          activeJob.status === 'ready_for_pickup' ||
+          activeJob.status === 'failed') && (
           <div className="flex flex-wrap gap-4 justify-center">
             <button
               onClick={onPrintNew}
               className={cn(
-                'px-6 py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 font-bold rounded-xl flex items-center gap-2 text-sm text-white',
+                'px-6 py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 font-bold rounded-xl flex items-center gap-2 text-sm text-white',
                 btnInteractive,
               )}
             >
@@ -136,7 +199,7 @@ export default function PrintProgressView({
             <Link
               href="/dashboard?tab=print"
               className={cn(
-                'px-6 py-3 bg-gradient-to-tr from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 font-bold rounded-xl flex items-center gap-2 text-sm text-black shadow-lg shadow-emerald-500/10',
+                'px-6 py-3 bg-emerald-500 hover:bg-emerald-600 font-bold rounded-xl flex items-center gap-2 text-sm text-black',
                 btnInteractive,
               )}
             >

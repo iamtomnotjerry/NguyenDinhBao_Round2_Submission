@@ -7,7 +7,6 @@ export async function POST(request: Request) {
   try {
     const supabase: SupabaseClient<SafeDatabase> = await createClient();
 
-    // 1. Auth check
     const {
       data: { user },
       error: authError,
@@ -17,23 +16,12 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const {
-      items,
-      total_amount,
-      discount_amount,
-      points_used,
-      points_earned,
-      delivery_type,
-      idempotency_key,
-      card_token,
-    } = body;
+    const { items, delivery_type, idempotency_key, card_token, use_points, points_used } = body;
 
-    // Validation
     if (
       !items ||
       !Array.isArray(items) ||
       items.length === 0 ||
-      !total_amount ||
       !delivery_type ||
       !idempotency_key ||
       !card_token
@@ -41,7 +29,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Thiếu thông tin đặt hàng' }, { status: 400 });
     }
 
-    // Check if order already exists (Idempotency check)
+    // Normalize items — RPC recomputes prices; strip forged price fields
+    const safeItems = items.map((item: { product_id?: string; quantity?: number }) => ({
+      product_id: item.product_id,
+      quantity: Math.max(1, Math.floor(Number(item.quantity) || 0)),
+    }));
+
+    if (
+      safeItems.some(
+        (i: { product_id?: string; quantity: number }) => !i.product_id || i.quantity < 1,
+      )
+    ) {
+      return NextResponse.json({ error: 'Giỏ hàng không hợp lệ' }, { status: 400 });
+    }
+
+    // Requested redeem intent only (server caps against balance + subtotal)
+    const requestedPoints =
+      use_points || Number(points_used) > 0 ? Math.max(0, Math.floor(Number(points_used) || 0)) : 0;
+
+    // Idempotency
     const { data: existingOrder } = await supabase
       .from('orders')
       .select('*')
@@ -59,15 +65,11 @@ export async function POST(request: Request) {
         );
       }
       if (existingOrder.status === 'pending') {
-        // [FIX v2.1]: Auto-expire stale pending orders older than 15 minutes.
-        // Prevents permanent blocking when server crashes or payment gateway times out.
         const createdAt = new Date(existingOrder.created_at);
         const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
 
         if (createdAt < fifteenMinutesAgo) {
-          // Auto-rollback stale pending order (also NULLs idempotency_key in DB)
           await supabase.rpc('rollback_failed_order', { p_order_id: existingOrder.id });
-          // Fall through to create a new order below
         } else {
           return NextResponse.json(
             {
@@ -76,11 +78,10 @@ export async function POST(request: Request) {
               status: 'pending',
               order_id: existingOrder.id,
             },
-            { status: 202 }, // HTTP 202 Accepted
+            { status: 202 },
           );
         }
       } else {
-        // status = 'paid' or 'completed' → genuine idempotent return
         return NextResponse.json({
           success: true,
           message: 'Đơn hàng đã tồn tại (Idempotency return)',
@@ -89,17 +90,16 @@ export async function POST(request: Request) {
       }
     }
 
-    // 2. Perform Stock Check & Order Insertion in Database via Stored Procedure
-    // This locks rows (Pessimistic Locking) and updates stock & points
+    // Server-side pricing happens inside RPC (ignores client totals / points_earned)
     const { data: orderId, error: rpcError } = await supabase.rpc('create_order_with_stock_check', {
       p_user_id: user.id,
-      p_total_amount: Number(total_amount),
-      p_discount_amount: Number(discount_amount || 0),
-      p_points_used: Number(points_used || 0),
-      p_points_earned: Number(points_earned || 0),
+      p_total_amount: 0, // ignored by secure RPC
+      p_discount_amount: 0, // ignored
+      p_points_used: requestedPoints,
+      p_points_earned: 0, // ignored — computed server-side
       p_delivery_type: delivery_type,
       p_idempotency_key: idempotency_key,
-      p_items: items, // JSON array matching [{product_id: string, quantity: number}]
+      p_items: safeItems,
     });
 
     if (rpcError || !orderId) {
@@ -109,24 +109,35 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Request Mock Payment Charge Gateway
+    // Charge the SERVER-computed total from the order row
+    const { data: pendingOrder, error: fetchPendingErr } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (fetchPendingErr || !pendingOrder) {
+      return NextResponse.json(
+        { error: fetchPendingErr?.message || 'Không đọc được đơn hàng sau khi tạo' },
+        { status: 400 },
+      );
+    }
+
+    const chargeAmount = Number(pendingOrder.total_amount);
+
     const origin = new URL(request.url).origin;
     const chargeRes = await fetch(`${origin}/api/sandbox/payment/charge`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         card_token,
-        amount: Number(total_amount),
+        amount: chargeAmount,
       }),
     });
 
     const chargeResult = await chargeRes.json();
 
     if (!chargeRes.ok || chargeResult.error) {
-      // -------------------------------------------------------------
-      // PAYMENT FAILED: Roll back DB state atomically (Stock & Points)
-      // Call Postgres stored procedure to prevent race conditions on stock restoral
-      // -------------------------------------------------------------
       await supabase.rpc('rollback_failed_order', {
         p_order_id: orderId,
       });
@@ -141,7 +152,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. PAYMENT SUCCEEDED: Update order status to paid via Postgres RPC (bypasses RLS safely)
     const { error: updateError } = await supabase.rpc('mark_order_as_paid', {
       p_order_id: orderId,
     });
@@ -150,7 +160,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: updateError.message }, { status: 400 });
     }
 
-    // Fetch updated order to return in response
     const { data: updatedOrder, error: fetchError } = await supabase
       .from('orders')
       .select('*')

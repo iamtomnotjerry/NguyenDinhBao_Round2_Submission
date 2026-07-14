@@ -11,8 +11,15 @@ import { btnInteractive, cn } from '@/lib/utils';
 import ProductCard from './components/ProductCard';
 import CartDrawer from './components/CartDrawer';
 import { useLocale } from '@/lib/i18n/context';
+import {
+  formatCardNumberDisplay,
+  validateCardForSandbox,
+  SANDBOX_TEST_CARDS,
+} from '@/lib/payment/validate-card';
+import type { SafeDatabase as DB } from '@/types/database.types';
 
 type Product = SafeDatabase['public']['Tables']['products']['Row'];
+type SavedCard = DB['public']['Tables']['payment_tokens']['Row'];
 
 interface CartItem {
   product: Product;
@@ -69,6 +76,9 @@ export default function StorePage() {
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
   const [usePoints, setUsePoints] = useState(false);
+  const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
+  const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
+  const [saveCard, setSaveCard] = useState(true);
 
   // Flow State
   const [submitting, setSubmitting] = useState(false);
@@ -104,6 +114,12 @@ export default function StorePage() {
           if (profile) {
             setRewardPoints(profile.reward_points);
           }
+          const { data: tokens } = await supabase
+            .from('payment_tokens')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('is_default', { ascending: false });
+          if (tokens) setSavedCards(tokens);
         }
       } catch (err) {
         console.error('Error fetching store data:', err);
@@ -156,14 +172,18 @@ export default function StorePage() {
 
   // Set card simulation numbers
   const handleSelectSimCard = (last4: string) => {
-    const cardMap: Record<string, { num: string; exp: string; cvv: string }> = {
-      '4001': { num: '4111222233334001', exp: '12/29', cvv: '123' },
-      '4002': { num: '4111222233334002', exp: '12/29', cvv: '234' },
-      '4003': { num: '4111222233334003', exp: '12/29', cvv: '345' },
-    };
-    const card = cardMap[last4] || { num: '4111222233339999', exp: '12/29', cvv: '000' };
-    setCardNumber(card.num);
-    setExpiry(card.exp);
+    setSelectedTokenId(null);
+    const key =
+      last4 === '4001'
+        ? 'expired'
+        : last4 === '4002'
+          ? 'decline'
+          : last4 === '4003'
+            ? 'timeout'
+            : 'success';
+    const card = SANDBOX_TEST_CARDS[key];
+    setCardNumber(formatCardNumberDisplay(card.number));
+    setExpiry(card.expiry);
     setCvv(card.cvv);
   };
 
@@ -176,16 +196,52 @@ export default function StorePage() {
 
     try {
       const idempotencyKey = crypto.randomUUID();
+      let cardToken = '';
 
-      // 1. Tokenize Card Details (PCI-DSS compliance mock)
-      const tokenRes = await fetch('/api/sandbox/payment/tokenize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ card_number: cardNumber, expiry, cvv }),
-      });
+      if (selectedTokenId) {
+        const saved = savedCards.find((c) => c.id === selectedTokenId);
+        if (!saved) throw new Error('Saved card not found');
+        cardToken = saved.card_token;
+      } else {
+        const validation = validateCardForSandbox({ cardNumber, expiry, cvv });
+        if (!validation.valid) {
+          throw new Error(
+            validation.errors.number ||
+              validation.errors.expiry ||
+              validation.errors.cvv ||
+              'Visa information is invalid.',
+          );
+        }
 
-      const tokenData = await tokenRes.json();
-      if (!tokenRes.ok) throw new Error(tokenData.error || 'Tokenize thẻ thất bại');
+        const tokenRes = await fetch('/api/sandbox/payment/tokenize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            card_number: validation.digits,
+            expiry,
+            cvv,
+          }),
+        });
+
+        const tokenData = await tokenRes.json();
+        if (!tokenRes.ok) throw new Error(tokenData.error || 'Tokenize thẻ thất bại');
+        cardToken = tokenData.card_token;
+
+        if (saveCard) {
+          await fetch('/api/payment-tokens', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              card_token: tokenData.card_token,
+              card_brand: tokenData.card_brand,
+              last4: tokenData.last4,
+              exp_month: tokenData.exp_month,
+              exp_year: tokenData.exp_year,
+              is_default: true,
+            }),
+          });
+        }
+      }
 
       // 2. Submit order to checkout API
       const checkoutRes = await fetch('/api/orders', {
@@ -196,13 +252,11 @@ export default function StorePage() {
             product_id: item.product.id,
             quantity: item.quantity,
           })),
-          total_amount: total,
-          discount_amount: discount,
+          use_points: usePoints,
           points_used: pointsUsed,
-          points_earned: pointsEarned,
           delivery_type: deliveryType,
           idempotency_key: idempotencyKey,
-          card_token: tokenData.card_token,
+          card_token: cardToken,
         }),
       });
 
@@ -225,12 +279,10 @@ export default function StorePage() {
         localStorage.removeItem('platprint_cart');
       }
 
-      // Redirect to dashboard orders list after 2.5 seconds
       setTimeout(() => {
         router.push('/dashboard?tab=orders');
       }, 2500);
 
-      // Re-fetch profiles reward points
       const { data: profile } = await supabase
         .from('profiles')
         .select('reward_points')
@@ -328,6 +380,11 @@ export default function StorePage() {
             total={total}
             pointsEarned={pointsEarned}
             handleCheckoutSubmit={handleCheckoutSubmit}
+            savedCards={savedCards}
+            selectedTokenId={selectedTokenId}
+            setSelectedTokenId={setSelectedTokenId}
+            saveCard={saveCard}
+            setSaveCard={setSaveCard}
           />
         </main>
       )}

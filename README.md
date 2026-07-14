@@ -122,10 +122,12 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 1. Truy cập Supabase Dashboard ➔ SQL Editor.
 2. Dán nội dung file [supabase_schema.sql](./supabase_schema.sql) và nhấn **Run**.
 
+**Đã có schema v3:** chạy lần lượt `v4` → `v4_1` → [`supabase_migration_v5.sql`](./supabase_migration_v5.sql) (v5: RPC đơn hàng tính giá server-side + ownership; RLS UPDATE `chat_sessions` cho handoff).
+
 **Đã có schema cũ (báo lỗi `relation "profiles" already exists`):**
 
 1. **Không** chạy lại `supabase_schema.sql`.
-2. Chỉ chạy file [supabase_migration_v3.sql](./supabase_migration_v3.sql) để:
+2. Chạy [supabase_migration_v3.sql](./supabase_migration_v3.sql) → v4 → v4_1 → **v5**.
    - Đổi cột `file_url` → `file_path`
    - Gỡ quyền UPDATE client trên `print_jobs`
    - Cập nhật `rollback_failed_order` + Storage RLS
@@ -175,9 +177,9 @@ Dự án được tối ưu hóa cấu trúc và giải quyết các lỗi phứ
 
 ### Giới hạn hiện tại
 
-- **Simulator lệnh in (Background Print Simulator):** Luồng in ấn từ xa **không kết nối máy in vật lý**. Sau khi API `POST /api/print-jobs` trả `201 Created`, Next.js `after()` chạy simulator nền chỉ dùng `setTimeout` để cập nhật trạng thái trong Supabase theo chuỗi giả lập:
-  - `pending` → (2s) → `rendering` → (3s) → `printing` → (4s) → `completed`
-  - Frontend theo dõi tiến độ qua Supabase Realtime nên trải nghiệm vẫn “đang in” thật, nhưng không có lệnh gửi tới printer/API cửa hàng.
+- **Simulator lệnh in (Background Print Simulator):** Luồng in ấn từ xa **không kết nối máy in vật lý**. Sau khi thanh toán thành công, trạng thái cập nhật qua Service Role theo chuỗi:
+  - `awaiting_payment` → `paid` → `queued` → `rendering` → `printing` → `finishing` → `quality_check` → `packing` → `shipping` / `ready_for_pickup` → `completed`
+  - Frontend theo dõi tiến độ qua Supabase Realtime.
   - Simulator bắt buộc có `SUPABASE_SERVICE_ROLE_KEY` (client không còn quyền UPDATE `print_jobs`).
 - **Cổng thanh toán Sandbox:** Tokenize/charge chỉ giả lập theo số đuôi thẻ (`4001` hết hạn, `4002` từ chối, `4003` timeout), chưa kết nối Webhook ngân hàng hay cổng PayOS/Momo thật.
 

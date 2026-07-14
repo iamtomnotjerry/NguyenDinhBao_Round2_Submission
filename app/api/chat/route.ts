@@ -44,7 +44,6 @@ export async function POST(request: Request) {
     // 2. Manage session
     let currentSessionId = sessionId;
     if (!currentSessionId) {
-      // Create new chat session
       const { data: session, error: sessionErr } = await supabase
         .from('chat_sessions')
         .insert({ user_id: user.id, status: 'active' })
@@ -55,6 +54,17 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: sessionErr.message }, { status: 400 });
       }
       currentSessionId = session.id;
+    } else {
+      // Ownership check before writing messages / updating status
+      const { data: owned } = await supabase
+        .from('chat_sessions')
+        .select('id')
+        .eq('id', currentSessionId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!owned) {
+        return NextResponse.json({ error: 'Forbidden chat session' }, { status: 403 });
+      }
     }
 
     // 3. Save User message to Database
@@ -120,7 +130,8 @@ export async function POST(request: Request) {
           await supabase
             .from('chat_sessions')
             .update({ status: 'waiting_support' })
-            .eq('id', currentSessionId);
+            .eq('id', currentSessionId)
+            .eq('user_id', user.id);
         }
       };
       saveMockResponse();
@@ -181,7 +192,8 @@ QUY TẮC ĐẶC BIỆT: Nếu khách hàng yêu cầu gặp người thật h�
           await supabase
             .from('chat_sessions')
             .update({ status: 'waiting_support' })
-            .eq('id', currentSessionId);
+            .eq('id', currentSessionId)
+            .eq('user_id', user.id);
         }
       },
     });

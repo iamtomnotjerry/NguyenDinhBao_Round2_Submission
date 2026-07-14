@@ -1,36 +1,95 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { SafeDatabase } from '@/types/database.types';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import Header from '@/components/Header';
 import { Printer, RefreshCw, ArrowRight, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
-import { calculatePrintCost, btnInteractive, cn } from '@/lib/utils';
+import { buildPrintQuote, btnInteractive, cn } from '@/lib/utils';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PrintPreview from './components/PrintPreview';
 import PrintProgressView from './components/PrintProgressView';
 import PrintConfigForm from './components/PrintConfigForm';
 import { useLocale } from '@/lib/i18n/context';
+import { DEFAULT_PRINT_CONFIG, type PrintConfig } from '@/lib/print/types';
+import { parseColorPages } from '@/lib/print/page-selection';
+import {
+  formatCardNumberDisplay,
+  validateCardForSandbox,
+  SANDBOX_TEST_CARDS,
+} from '@/lib/payment/validate-card';
 
 type PrintJob = SafeDatabase['public']['Tables']['print_jobs']['Row'];
 type PdfjsModule = typeof import('pdfjs-dist');
+type SavedCard = SafeDatabase['public']['Tables']['payment_tokens']['Row'];
+
+const OFFICE_EXT = /\.(docx?|pptx?|xlsx?)$/i;
+
+function progressForStatus(status: string): number {
+  const map: Record<string, number> = {
+    awaiting_payment: 5,
+    paid: 10,
+    pending: 10,
+    queued: 20,
+    rendering: 35,
+    printing: 55,
+    finishing: 70,
+    quality_check: 80,
+    packing: 88,
+    shipping: 94,
+    ready_for_pickup: 96,
+    completed: 100,
+    failed: 0,
+  };
+  return map[status] ?? 15;
+}
 
 export default function PrintPage() {
   const { t } = useLocale();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [rewardPoints, setRewardPoints] = useState(0);
 
-  // File states
   const [file, setFile] = useState<File | null>(null);
-  const [fileName, setFileName] = useState('');
   const [fileUrl, setFileUrl] = useState('');
   const [totalPages, setTotalPages] = useState(1);
+  const [manualPages, setManualPages] = useState(1);
   const [pdfjsLib, setPdfjsLib] = useState<PdfjsModule | null>(null);
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [detectedOrientation, setDetectedOrientation] = useState('—');
+  const [detectedSize, setDetectedSize] = useState('—');
 
-  // Load pdfjs-dist dynamically on client side only
+  const [config, setConfig] = useState<PrintConfig>(DEFAULT_PRINT_CONFIG);
+  const patchConfig = (patch: Partial<PrintConfig>) => setConfig((c) => ({ ...c, ...patch }));
+
+  const [isUploading, setIsUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [activeJob, setActiveJob] = useState<PrintJob | null>(null);
+  const [printProgress, setPrintProgress] = useState(0);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiry, setExpiry] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [saveCard, setSaveCard] = useState(true);
+  const [usePoints, setUsePoints] = useState(false);
+  const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
+  const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
+  const [cardErrors, setCardErrors] = useState<{
+    number?: string;
+    expiry?: string;
+    cvv?: string;
+  }>({});
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileUrlRef = useRef('');
+  const printChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const isOfficeDoc = !!file && OFFICE_EXT.test(file.name);
+  const effectivePages = isOfficeDoc ? manualPages : totalPages;
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       import('pdfjs-dist').then((pdfjs) => {
@@ -40,23 +99,6 @@ export default function PrintPage() {
     }
   }, []);
 
-  // Configurations
-  const [configColor, setConfigColor] = useState<'color' | 'bw'>('color');
-  const [configCopies, setConfigCopies] = useState<number>(1);
-  const [configPaperSize, setConfigPaperSize] = useState<'a4' | 'a3' | 'a5'>('a4');
-  const [configBinding, setConfigBinding] = useState<'none' | 'stapled' | 'spiral'>('none');
-  const [printerLocation, setPrinterLocation] = useState('Cửa hàng A - Quận 1, TPHCM');
-
-  // Flow control states
-  const [isUploading, setIsUploading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [activeJob, setActiveJob] = useState<PrintJob | null>(null);
-  const [printProgress, setPrintProgress] = useState(0);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Check auth state
   useEffect(() => {
     const checkUser = async () => {
       const {
@@ -64,64 +106,214 @@ export default function PrintPage() {
       } = await supabase.auth.getUser();
       setUser(user);
       setLoading(false);
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('reward_points')
+          .eq('id', user.id)
+          .single();
+        if (profile) setRewardPoints(profile.reward_points);
+
+        const { data: tokens } = await supabase
+          .from('payment_tokens')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('is_default', { ascending: false });
+        if (tokens) setSavedCards(tokens);
+      }
     };
     checkUser();
   }, []);
 
-  // Handle File Selection
+  const quote = useMemo(
+    () => buildPrintQuote(config, effectivePages, currentPage),
+    [config, effectivePages, currentPage],
+  );
+
+  const colorPages = useMemo(() => {
+    if (config.colorMode === 'color') {
+      return Array.from({ length: effectivePages }, (_, i) => i + 1);
+    }
+    if (config.colorMode === 'mixed') {
+      return parseColorPages(config.colorPagesInput, effectivePages).pages;
+    }
+    return [];
+  }, [config.colorMode, config.colorPagesInput, effectivePages]);
+
+  const fileMeta = file
+    ? {
+        name: file.name,
+        sizeLabel: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        pages: effectivePages,
+        orientation: detectedOrientation,
+        detectedSize: detectedSize,
+        colorEstimate:
+          config.colorMode === 'bw'
+            ? `${effectivePages} B&W`
+            : config.colorMode === 'color'
+              ? `${effectivePages} Color`
+              : `${colorPages.length} Color / ${Math.max(0, quote.bwPageCount)} B&W`,
+      }
+    : null;
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
+    await loadSelectedFile(selectedFile);
+  };
 
+  const loadSelectedFile = async (selectedFile: File, pdfLib = pdfjsLib) => {
     setFile(selectedFile);
-    setFileName(selectedFile.name);
     setPdfDoc(null);
     setTotalPages(1);
+    setManualPages(1);
+    setCurrentPage(1);
     setSubmitError(null);
+    setDetectedOrientation('—');
+    setDetectedSize('—');
 
-    // If PDF, count pages and load document for multi-page preview
-    if (selectedFile.type === 'application/pdf' && pdfjsLib) {
+    if (fileUrlRef.current) {
+      URL.revokeObjectURL(fileUrlRef.current);
+      fileUrlRef.current = '';
+      setFileUrl('');
+    }
+
+    if (selectedFile.type === 'application/pdf') {
+      if (!pdfLib) {
+        setIsUploading(true);
+        return; // wait for pdfjs — effect below retries
+      }
       setIsUploading(true);
       try {
-        const fileReader = new FileReader();
-        fileReader.onload = async function () {
-          try {
-            const typedarray = new Uint8Array(this.result as ArrayBuffer);
-            const loadingTask = pdfjsLib.getDocument({ data: typedarray });
-            const pdf = await loadingTask.promise;
-            setPdfDoc(pdf);
-            setTotalPages(pdf.numPages);
-          } catch (err) {
-            console.error('Error loading PDF:', err);
-          } finally {
-            setIsUploading(false);
-          }
-        };
-        fileReader.readAsArrayBuffer(selectedFile);
+        const buffer = await selectedFile.arrayBuffer();
+        const pdf = await pdfLib.getDocument({ data: new Uint8Array(buffer) }).promise;
+        setPdfDoc(pdf);
+        setTotalPages(pdf.numPages);
+        const page = await pdf.getPage(1);
+        const vp = page.getViewport({ scale: 1 });
+        setDetectedOrientation(vp.width > vp.height ? 'Landscape' : 'Portrait');
+        const area = vp.width * vp.height;
+        if (area > 500000) setDetectedSize('≈ A3 / Tabloid');
+        else if (area > 400000) setDetectedSize('≈ Letter / A4');
+        else if (area > 250000) setDetectedSize('≈ A5 / B5');
+        else setDetectedSize('Custom / Small');
       } catch (err) {
-        console.error('FileReader error:', err);
+        console.error(err);
+        setSubmitError('Không đọc được PDF. Thử file khác.');
+      } finally {
         setIsUploading(false);
       }
     } else if (selectedFile.type.startsWith('image/')) {
       const url = URL.createObjectURL(selectedFile);
+      fileUrlRef.current = url;
       setFileUrl(url);
+      setTotalPages(1);
+      setDetectedOrientation('Image');
+      setDetectedSize('Fit to paper');
+    } else if (OFFICE_EXT.test(selectedFile.name)) {
+      setManualPages(1);
+      setDetectedOrientation(t.print.officeDoc);
+      setDetectedSize('Set pages manually');
     }
   };
 
-  // Trigger File Input Click
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
+  // Retry PDF parse once pdfjs finishes lazy-loading
+  useEffect(() => {
+    if (file && file.type === 'application/pdf' && pdfjsLib && !pdfDoc && isUploading) {
+      void loadSelectedFile(file, pdfjsLib);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdfjsLib]);
+
+  // Cleanup Realtime channel + blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (printChannelRef.current) {
+        supabase.removeChannel(printChannelRef.current);
+        printChannelRef.current = null;
+      }
+      if (fileUrlRef.current) {
+        URL.revokeObjectURL(fileUrlRef.current);
+        fileUrlRef.current = '';
+      }
+    };
+  }, []);
+
+  const handleSelectSimCard = (key: string) => {
+    const card = SANDBOX_TEST_CARDS[key] || SANDBOX_TEST_CARDS.success;
+    setSelectedTokenId(null);
+    setCardNumber(formatCardNumberDisplay(card.number));
+    setExpiry(card.expiry);
+    setCvv(card.cvv);
+    setCardErrors({});
   };
 
-  // Submit print job and initiate simulation
   const handlePrintSubmit = async () => {
     if (!file || !user) return;
+    if (quote.error) {
+      setSubmitError(quote.error);
+      return;
+    }
+    if (config.deliveryType === 'delivery' && !config.deliveryAddress.trim()) {
+      setSubmitError(t.print.addressPlaceholder);
+      return;
+    }
+
+    let cardToken = '';
+    let brand = 'Visa';
+    let expMonth: number | null = null;
+    let expYear: number | null = null;
+
+    if (selectedTokenId) {
+      const saved = savedCards.find((c) => c.id === selectedTokenId);
+      if (!saved) {
+        setSubmitError(t.print.savedCardMissing);
+        return;
+      }
+      cardToken = saved.card_token;
+      brand = saved.card_brand;
+      expMonth = saved.exp_month;
+      expYear = saved.exp_year;
+    } else {
+      const validation = validateCardForSandbox({ cardNumber, expiry, cvv });
+      setCardErrors(validation.errors);
+      if (!validation.valid) {
+        setSubmitError(
+          validation.errors.number ||
+            validation.errors.expiry ||
+            validation.errors.cvv ||
+            t.print.cardInvalid,
+        );
+        return;
+      }
+
+      setSubmitting(true);
+      const tokenRes = await fetch('/api/sandbox/payment/tokenize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          card_number: validation.digits,
+          expiry,
+          cvv: validation.digits ? cvv : cvv,
+        }),
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenRes.ok) {
+        setSubmitting(false);
+        setSubmitError(tokenData.error || t.print.cardInvalid);
+        return;
+      }
+      cardToken = tokenData.card_token;
+      brand = tokenData.card_brand;
+      expMonth = tokenData.exp_month;
+      expYear = tokenData.exp_year;
+    }
+
     setSubmitting(true);
     setPrintProgress(0);
     setSubmitError(null);
 
     try {
-      // 1. Upload file to Supabase Storage — store storage path (not signed URL) in DB
       const fileExt = file.name.split('.').pop();
       const uniqueFileName = `${user.id}_${Date.now()}.${fileExt}`;
       const filePath = `print_jobs/${uniqueFileName}`;
@@ -132,66 +324,97 @@ export default function PrintPage() {
 
       if (uploadError) throw new Error(`Không thể upload file: ${uploadError.message}`);
 
-      // 2. Call local Print Job API — pass file_path; signed URLs are generated on-demand when reading
+      const idempotencyKey = crypto.randomUUID();
       const res = await fetch('/api/print-jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          file_name: fileName,
+          file_name: file.name,
           file_path: filePath,
-          config_color: configColor,
-          config_copies: configCopies,
-          config_paper_size: configPaperSize,
-          config_binding: configBinding,
-          total_pages: totalPages,
-          printer_location: printerLocation,
+          total_pages: effectivePages,
+          current_page: currentPage,
+          config_color: config.colorMode,
+          color_pages: config.colorPagesInput,
+          config_copies: config.copies,
+          config_paper_size: config.paperSize,
+          config_binding: config.binding,
+          finishes: config.finishes,
+          duplex: config.duplex,
+          orientation: config.orientation,
+          scale_mode: config.scaleMode,
+          scale_percent: config.scalePercent,
+          pages_per_sheet: config.pagesPerSheet,
+          reverse_order: config.reverseOrder,
+          collate: config.collate,
+          page_mode: config.pageMode,
+          custom_pages: config.customPages,
+          delivery_type: config.deliveryType,
+          printer_location: config.printerLocation,
+          delivery_address: config.deliveryAddress,
+          card_token: cardToken,
+          save_card: saveCard && !selectedTokenId,
+          card_brand: brand,
+          exp_month: expMonth,
+          exp_year: expYear,
+          use_points: usePoints,
+          idempotency_key: idempotencyKey,
         }),
       });
 
       const jobData = await res.json();
       if (!res.ok) throw new Error(jobData.error || 'Lỗi khi khởi tạo đơn in');
 
-      setActiveJob(jobData);
+      const job = (jobData.job || jobData) as PrintJob;
+      setActiveJob(job);
+      setPrintProgress(progressForStatus(job.status));
 
-      // 3. Listen to Realtime Database replication updates
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('reward_points')
+        .eq('id', user.id)
+        .single();
+      if (profile) setRewardPoints(profile.reward_points);
+
+      const { data: tokens } = await supabase
+        .from('payment_tokens')
+        .select('*')
+        .eq('user_id', user.id);
+      if (tokens) setSavedCards(tokens);
+
       const channel = supabase
-        .channel(`print-job-progress-${jobData.id}`)
+        .channel(`print-job-progress-${job.id}`)
         .on(
           'postgres_changes',
           {
             event: 'UPDATE',
             schema: 'public',
             table: 'print_jobs',
-            filter: `id=eq.${jobData.id}`,
+            filter: `id=eq.${job.id}`,
           },
           (payload) => {
             const updatedJob = payload.new as PrintJob;
             setActiveJob(updatedJob);
-
-            // Map status to progress bar percentage
-            if (updatedJob.status === 'pending') setPrintProgress(10);
-            else if (updatedJob.status === 'rendering') setPrintProgress(40);
-            else if (updatedJob.status === 'printing') setPrintProgress(70);
-            else if (updatedJob.status === 'completed') {
-              setPrintProgress(100);
-              // Clean up channel subscription
-              supabase.removeChannel(channel);
-            } else if (updatedJob.status === 'failed') {
-              setPrintProgress(0);
+            setPrintProgress(progressForStatus(updatedJob.status));
+            if (
+              updatedJob.status === 'completed' ||
+              updatedJob.status === 'failed' ||
+              updatedJob.status === 'ready_for_pickup'
+            ) {
               supabase.removeChannel(channel);
             }
           },
         )
         .subscribe();
+
+      if (printChannelRef.current) {
+        supabase.removeChannel(printChannelRef.current);
+      }
+      printChannelRef.current = channel;
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Đã xảy ra lỗi ngoài ý muốn.');
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const calculateCost = () => {
-    return calculatePrintCost(totalPages, configCopies, configColor, configBinding);
   };
 
   return (
@@ -203,9 +426,8 @@ export default function PrintPage() {
           <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
         </div>
       ) : (
-        <main className="flex-1 max-w-6xl mx-auto px-6 py-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
+        <main className="flex-1 max-w-6xl mx-auto px-4 md:px-6 py-10 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
           {!user ? (
-            /* Unauthorized Banner */
             <div className="lg:col-span-12 glass-bezel-outer">
               <div className="glass-bezel-inner flex flex-col items-center justify-center p-16 text-center space-y-6">
                 <div className="p-4 bg-emerald-500/10 rounded-full text-emerald-400 border border-emerald-500/20">
@@ -216,7 +438,7 @@ export default function PrintPage() {
                 <Link
                   href="/auth"
                   className={cn(
-                    'px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl font-bold hover:scale-[1.02] flex items-center gap-2 text-white',
+                    'px-8 py-4 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-bold flex items-center gap-2 text-white',
                     btnInteractive,
                   )}
                 >
@@ -231,7 +453,6 @@ export default function PrintPage() {
               onPrintNew={() => {
                 setActiveJob(null);
                 setFile(null);
-                setFileName('');
                 setSubmitError(null);
               }}
             />
@@ -247,10 +468,7 @@ export default function PrintPage() {
                   <button
                     type="button"
                     onClick={() => setSubmitError(null)}
-                    className={cn(
-                      'text-xs font-bold text-red-400 hover:text-red-300 underline',
-                      btnInteractive,
-                    )}
+                    className={cn('text-xs font-bold underline', btnInteractive)}
                   >
                     {t.common.close}
                   </button>
@@ -258,36 +476,53 @@ export default function PrintPage() {
               )}
               <PrintConfigForm
                 file={file}
-                fileName={fileName}
-                totalPages={totalPages}
+                fileMeta={fileMeta}
                 isUploading={isUploading}
-                configColor={configColor}
-                setConfigColor={setConfigColor}
-                configCopies={configCopies}
-                setConfigCopies={setConfigCopies}
-                configPaperSize={configPaperSize}
-                setConfigPaperSize={setConfigPaperSize}
-                configBinding={configBinding}
-                setConfigBinding={setConfigBinding}
-                printerLocation={printerLocation}
-                setPrinterLocation={setPrinterLocation}
+                config={config}
+                patchConfig={patchConfig}
+                currentPage={currentPage}
+                quote={quote}
+                rewardPoints={rewardPoints}
+                usePoints={usePoints}
+                setUsePoints={setUsePoints}
+                cardNumber={cardNumber}
+                setCardNumber={(v) => setCardNumber(formatCardNumberDisplay(v))}
+                expiry={expiry}
+                setExpiry={setExpiry}
+                cvv={cvv}
+                setCvv={setCvv}
+                cardErrors={cardErrors}
+                saveCard={saveCard}
+                setSaveCard={setSaveCard}
+                savedCards={savedCards}
+                selectedTokenId={selectedTokenId}
+                setSelectedTokenId={setSelectedTokenId}
+                onSelectSimCard={handleSelectSimCard}
                 submitting={submitting}
-                handleUploadClick={handleUploadClick}
+                handleUploadClick={() => fileInputRef.current?.click()}
                 handlePrintSubmit={handlePrintSubmit}
-                calculateCost={calculateCost}
                 fileInputRef={fileInputRef}
                 handleFileChange={handleFileChange}
+                manualPages={manualPages}
+                setManualPages={(n) => {
+                  setManualPages(n);
+                  setTotalPages(n);
+                }}
+                isOfficeDoc={isOfficeDoc}
               />
               <div className="lg:col-span-5 space-y-6">
                 <PrintPreview
-                  key={file ? `${file.name}-${file.size}-${file.lastModified}` : 'empty'}
+                  key={file ? `${file.name}-${file.size}` : 'empty'}
                   file={file}
                   fileUrl={fileUrl}
                   pdfDoc={pdfDoc}
-                  totalPages={totalPages}
-                  configColor={configColor}
-                  configBinding={configBinding}
-                  configPaperSize={configPaperSize}
+                  totalPages={effectivePages}
+                  currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
+                  configColor={config.colorMode}
+                  configBinding={config.binding}
+                  configPaperSize={config.paperSize}
+                  colorPages={colorPages}
                 />
               </div>
             </>
@@ -295,12 +530,7 @@ export default function PrintPage() {
         </main>
       )}
 
-      {/* Decorative glows */}
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-500/5 rounded-full blur-[120px] pointer-events-none" />
-
-      {/* Footer */}
-      <footer className="border-t border-zinc-900 py-8 bg-zinc-950 text-center text-xs text-zinc-500 mt-20">
+      <footer className="border-t border-zinc-900 py-8 bg-zinc-950 text-center text-xs text-zinc-500 mt-12">
         {t.common.footer}
       </footer>
     </div>
