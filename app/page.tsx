@@ -123,7 +123,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             {/* Bento Cell 1: Large Feature Simulator (Spans 8 cols) */}
-            <div className="md:col-span-8 glass-bezel-outer group">
+            <div className="md:col-span-8 glass-bezel-outer interactive group">
               <div className="glass-bezel-inner flex flex-col justify-between min-h-[320px] h-full">
                 <div className="space-y-3">
                   <div className="p-3 bg-emerald-500/10 rounded-xl w-fit text-emerald-400 border border-emerald-500/10">
@@ -154,7 +154,7 @@ export default function Home() {
             </div>
 
             {/* Bento Cell 2: Payment Token Card (Spans 4 cols) */}
-            <div className="md:col-span-4 glass-bezel-outer group">
+            <div className="md:col-span-4 glass-bezel-outer interactive group">
               <div className="glass-bezel-inner flex flex-col justify-between min-h-[320px] h-full">
                 <div className="space-y-3">
                   <div className="p-3 bg-teal-500/10 rounded-xl w-fit text-teal-400 border border-teal-500/10">
@@ -182,7 +182,7 @@ export default function Home() {
             </div>
 
             {/* Bento Cell 3: Full Width AI Assistant Feature (Spans 12 cols) */}
-            <div className="md:col-span-12 glass-bezel-outer group">
+            <div className="md:col-span-12 glass-bezel-outer interactive group">
               <div className="glass-bezel-inner flex flex-col md:flex-row justify-between items-center gap-8 min-h-[220px] h-full">
                 <div className="space-y-3 max-w-xl">
                   <div className="p-3 bg-emerald-500/10 rounded-xl w-fit text-emerald-400 border border-emerald-500/10">

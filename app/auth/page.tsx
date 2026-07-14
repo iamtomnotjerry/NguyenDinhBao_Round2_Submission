@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, UserPlus, LogIn, Printer } from 'lucide-react';
-import Link from 'next/link';
+import { Mail, Lock, UserPlus, LogIn } from 'lucide-react';
+import Header from '@/components/Header';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -76,19 +76,7 @@ export default function AuthPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-950 text-white font-sans selection:bg-emerald-500 selection:text-white">
-      {/* Header */}
-      <header className="sticky top-4 z-50 transition-all duration-300 w-full px-4">
-        <div className="max-w-5xl mx-auto bg-zinc-950/55 backdrop-blur-xl border border-zinc-900/80 rounded-full px-6 py-3 flex items-center justify-between shadow-2xl shadow-black/50">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="p-2 bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-full shadow-lg shadow-emerald-500/10 group-hover:scale-105 transition-transform duration-300">
-              <Printer className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-base font-bold tracking-tight bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
-              PlatPrint
-            </span>
-          </Link>
-        </div>
-      </header>
+      <Header />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col justify-center items-center px-6 py-12 relative overflow-hidden">

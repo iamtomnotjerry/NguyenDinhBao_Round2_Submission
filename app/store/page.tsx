@@ -413,7 +413,7 @@ export default function StorePage() {
               className={`grid grid-cols-1 md:grid-cols-2 ${isCartOpen ? 'xl:grid-cols-2' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-6`}
             >
               {products.map((product) => (
-                <div key={product.id} className="glass-bezel-outer group">
+                <div key={product.id} className="glass-bezel-outer interactive group">
                   <div className="glass-bezel-inner p-5 flex flex-col justify-between h-full min-h-[320px]">
                     <div className="space-y-4">
                       {/* Premium Product Visual Thumbnail representation */}

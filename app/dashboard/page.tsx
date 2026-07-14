@@ -174,7 +174,7 @@ export default function DashboardPage() {
                   onClick={() => setActiveTab('overview')}
                   className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-3 cursor-pointer active:scale-[0.98] ${
                     activeTab === 'overview'
-                      ? 'bg-emerald-600 text-white shadow shadow-emerald-900/20'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-lg shadow-emerald-500/10'
                       : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30'
                   }`}
                 >
@@ -184,7 +184,7 @@ export default function DashboardPage() {
                   onClick={() => setActiveTab('print')}
                   className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-3 cursor-pointer active:scale-[0.98] ${
                     activeTab === 'print'
-                      ? 'bg-emerald-600 text-white shadow shadow-emerald-900/20'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-lg shadow-emerald-500/10'
                       : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30'
                   }`}
                 >
@@ -194,7 +194,7 @@ export default function DashboardPage() {
                   onClick={() => setActiveTab('orders')}
                   className={`w-full py-3 px-4 rounded-xl text-xs font-bold transition-all flex items-center gap-3 cursor-pointer active:scale-[0.98] ${
                     activeTab === 'orders'
-                      ? 'bg-emerald-600 text-white shadow shadow-emerald-900/20'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-lg shadow-emerald-500/10'
                       : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30'
                   }`}
                 >
@@ -256,6 +256,35 @@ export default function DashboardPage() {
                           Thường xuyên
                         </span>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Points Analysis Breakdown */}
+                <div className="glass-bezel-outer">
+                  <div className="glass-bezel-inner p-6 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+                        Phân tích sử dụng điểm thưởng
+                      </h4>
+                      <span className="text-xs font-bold text-emerald-400">
+                        {earnPointsCount > 0
+                          ? Math.round((spendPointsCount / earnPointsCount) * 100)
+                          : 0}
+                        % đã dùng
+                      </span>
+                    </div>
+                    <div className="w-full bg-zinc-950 h-3 rounded-full overflow-hidden border border-zinc-900 p-0.5">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-1000"
+                        style={{
+                          width: `${earnPointsCount > 0 ? Math.min(100, (spendPointsCount / earnPointsCount) * 100) : 0}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                      <span>Đã tiêu dùng ({spendPointsCount} pts)</span>
+                      <span>Tổng tích luỹ ({earnPointsCount} pts)</span>
                     </div>
                   </div>
                 </div>

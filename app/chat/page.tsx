@@ -289,8 +289,8 @@ export default function ChatPage() {
                             <div
                               className={`p-4 rounded-2xl text-sm leading-relaxed ${
                                 m.role === 'user'
-                                  ? 'bg-emerald-600 text-white rounded-tr-none shadow shadow-emerald-950/20'
-                                  : 'bg-zinc-900/60 border border-zinc-900 text-zinc-200 rounded-tl-none'
+                                  ? 'bg-gradient-to-tr from-emerald-600 to-teal-600 text-white rounded-tr-none shadow-lg shadow-emerald-950/10'
+                                  : 'bg-zinc-900/40 border border-zinc-900/80 backdrop-blur-md text-zinc-100 rounded-tl-none shadow-inner'
                               }`}
                             >
                               {displayContent}

@@ -85,6 +85,18 @@
   transition: all 0.7s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+.glass-bezel-outer.interactive {
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-bezel-outer.interactive:hover {
+  border-color: rgba(16, 185, 129, 0.28);
+  box-shadow:
+    0 0 40px rgba(16, 185, 129, 0.08),
+    0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  transform: translateY(-3px);
+}
+
 .glass-bezel-inner {
   background-color: rgba(9, 9, 11, 0.85);
   padding: 1.5rem;
