@@ -322,7 +322,8 @@ export default function PrintPreview({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: easeOutExpo, delay: 0.08 }}
               >
-                <div className="relative mx-auto aspect-[3/2] max-h-[min(52vh,520px)] w-full">
+                {/* A-series paper is portrait 1:√2 — match the real sheet shape */}
+                <div className="relative mx-auto aspect-[210/297] h-[min(52vh,520px)] max-w-full">
                   <div className="absolute inset-[8%] rounded-sm border border-dashed border-paper-spine/35 bg-paper/[0.03]" />
                   <div className="absolute inset-[14%] rounded-sm bg-paper shadow-[0_24px_60px_-20px_rgba(0,0,0,0.75)] border border-paper-rule/90 flex flex-col items-center justify-center gap-4 px-8 text-center">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-paper-soft text-muted-fg">

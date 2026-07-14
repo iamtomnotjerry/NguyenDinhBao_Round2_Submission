@@ -5,13 +5,11 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { supabase } from '@/lib/supabase/client';
-import PageReveal from '@/components/PageReveal';
 import { easeOutExpo } from '@/lib/motion';
 import { SafeDatabase } from '@/types/database.types';
 import AppFooter from '@/components/AppFooter';
 import LoadingSkeleton from '@/components/LoadingSkeleton';
-import { Printer, ArrowRight, AlertTriangle } from 'lucide-react';
-import { TransitionLink } from '@/components/TransitionLink';
+import { AlertTriangle } from 'lucide-react';
 import { PageShell } from '@/components/ui/Surface';
 import { buildPrintQuote, btnInteractive, cn } from '@/lib/utils';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
@@ -459,26 +457,8 @@ export default function PrintClient() {
         <LoadingSkeleton variant="page" />
       ) : (
         <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 sm:px-5 lg:px-8 py-6 md:py-8 relative z-10">
-          {!user ? (
-            <PageReveal className="glass-bezel-outer max-w-xl mx-auto">
-              <div className="glass-bezel-inner flex flex-col items-center justify-center p-12 md:p-16 text-center space-y-6">
-                <div className="p-4 bg-emerald-500/10 rounded-full text-emerald-400 border border-emerald-500/20">
-                  <Printer className="w-12 h-12" />
-                </div>
-                <h2 className="text-2xl font-bold">{t.print.loginTitle}</h2>
-                <p className="text-secondary max-w-md">{t.print.loginDesc}</p>
-                <TransitionLink
-                  href="/auth?next=/print"
-                  className={cn(
-                    'px-8 py-4 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-bold flex items-center gap-2 text-on-brand',
-                    btnInteractive,
-                  )}
-                >
-                  {t.print.loginCta} <ArrowRight className="w-4 h-4" />
-                </TransitionLink>
-              </div>
-            </PageReveal>
-          ) : activeJob ? (
+          {/* Server component (page.tsx) already redirects anonymous users to /auth */}
+          {activeJob ? (
             <PrintProgressView
               activeJob={activeJob}
               printProgress={printProgress}

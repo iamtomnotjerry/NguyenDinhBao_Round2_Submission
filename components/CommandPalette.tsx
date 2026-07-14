@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/context';
+import { useAuthUser } from '@/lib/auth/user-context';
 import { cn } from '@/lib/utils';
 
 export default function CommandPalette() {
@@ -21,6 +22,7 @@ export default function CommandPalette() {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useLocale();
+  const { user } = useAuthUser();
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -56,7 +58,10 @@ export default function CommandPalette() {
     { href: '/store', label: t.nav.store, icon: ShoppingBag, hint: t.command.storeHint },
     { href: '/chat', label: t.nav.chat, icon: MessageSquare, hint: t.command.chatHint },
     { href: '/dashboard', label: t.nav.dashboard, icon: LayoutDashboard, hint: t.command.dashHint },
-    { href: authHref, label: t.nav.login, icon: LogIn, hint: t.command.authHint },
+    // Login only makes sense for anonymous visitors
+    ...(user
+      ? []
+      : [{ href: authHref, label: t.nav.login, icon: LogIn, hint: t.command.authHint }]),
     { href: '/', label: t.brand, icon: Sparkles, hint: t.command.homeHint },
   ];
 

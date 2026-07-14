@@ -137,17 +137,19 @@ export default function ChatBox({
                   initial={messageEnter(m.role)}
                   animate={{ opacity: 1, x: 0, y: 0 }}
                   transition={{ duration: 0.4, ease: easeOutExpo }}
-                  className={`flex gap-4 max-w-[85%] ${
-                    m.role === 'user' ? 'ml-auto flex-row-reverse' : ''
-                  }`}
+                  className={cn(
+                    'flex gap-4 max-w-[85%]',
+                    m.role === 'user' && 'ml-auto flex-row-reverse',
+                  )}
                 >
                   {/* Avatar */}
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 border ${
+                    className={cn(
+                      'w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 border',
                       m.role === 'user'
                         ? 'bg-muted border-edge text-emerald-400'
-                        : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                    }`}
+                        : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+                    )}
                   >
                     {m.role === 'user' ? (
                       <User className="w-4 h-4" />
@@ -159,11 +161,12 @@ export default function ChatBox({
                   {/* Content Bubble */}
                   <div className="space-y-1">
                     <div
-                      className={`p-4 rounded-2xl text-sm leading-relaxed ${
+                      className={cn(
+                        'p-4 rounded-2xl text-sm leading-relaxed',
                         m.role === 'user'
                           ? 'bg-gradient-to-tr from-emerald-600 to-teal-600 text-fg rounded-tr-none shadow-lg shadow-emerald-950/10'
-                          : 'bg-muted/40 border border-line/80 backdrop-blur-md text-fg rounded-tl-none shadow-inner'
-                      }`}
+                          : 'bg-muted/40 border border-line/80 backdrop-blur-md text-fg rounded-tl-none shadow-inner',
+                      )}
                     >
                       {m.role === 'user' ? (
                         displayContent
@@ -202,11 +205,12 @@ export default function ChatBox({
                                 return (
                                   <div
                                     key={idx}
-                                    className={`flex items-start gap-2 my-1.5 leading-relaxed ${
+                                    className={cn(
+                                      'flex items-start gap-2 my-1.5 leading-relaxed',
                                       isNested
                                         ? 'ml-6 pl-1.5 text-secondary'
-                                        : 'ml-2 text-secondary-strong'
-                                    }`}
+                                        : 'ml-2 text-secondary-strong',
+                                    )}
                                   >
                                     <span className="text-emerald-400 select-none font-bold shrink-0">
                                       •
@@ -221,11 +225,12 @@ export default function ChatBox({
                                 return (
                                   <div
                                     key={idx}
-                                    className={`flex items-start gap-2 my-2 leading-relaxed ${
+                                    className={cn(
+                                      'flex items-start gap-2 my-2 leading-relaxed',
                                       isNested
                                         ? 'ml-6 pl-1.5 text-secondary'
-                                        : 'ml-2 text-secondary-strong'
-                                    }`}
+                                        : 'ml-2 text-secondary-strong',
+                                    )}
                                   >
                                     <span className="text-emerald-400 select-none font-extrabold shrink-0">
                                       {numberedMatch[2]}.

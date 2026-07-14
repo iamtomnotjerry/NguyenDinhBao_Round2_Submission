@@ -13,6 +13,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored assets (pdf.worker.min.mjs) & test coverage output:
+    "public/**",
+    "coverage/**",
   ]),
   eslintConfigPrettier, // Tắt các rules xung đột với Prettier
 ]);

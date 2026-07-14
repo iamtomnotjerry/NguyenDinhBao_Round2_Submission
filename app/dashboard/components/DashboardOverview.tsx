@@ -5,6 +5,7 @@ import { Gift, TrendingUp, Clock, Calendar } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useLocale } from '@/lib/i18n/context';
 import { easeOutExpo, fadeUp, staggerFast } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 type RewardPoint = SafeDatabase['public']['Tables']['reward_points_history']['Row'];
 
@@ -133,9 +134,10 @@ export default function DashboardOverview({
                     </span>
                   </div>
                   <span
-                    className={`text-sm font-black ${
-                      history.type === 'earn' ? 'text-emerald-400' : 'text-secondary'
-                    }`}
+                    className={cn(
+                      'text-sm font-black',
+                      history.type === 'earn' ? 'text-emerald-400' : 'text-secondary',
+                    )}
                   >
                     {history.type === 'earn' ? '+' : '-'}
                     {Math.abs(history.points)} pts

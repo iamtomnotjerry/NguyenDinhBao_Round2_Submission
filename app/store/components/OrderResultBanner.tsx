@@ -17,11 +17,12 @@ export default function OrderResultBanner({ orderResult, onDismiss }: OrderResul
 
   return (
     <motion.div
-      className={`p-5 rounded-2xl border text-center space-y-3 ${
+      className={cn(
+        'p-5 rounded-2xl border text-center space-y-3',
         orderResult.success
           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-          : 'bg-red-500/10 border-red-500/20 text-red-400'
-      }`}
+          : 'bg-red-500/10 border-red-500/20 text-red-400',
+      )}
       initial={reduce ? false : { opacity: 0, scale: 0.94, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={springSoft}

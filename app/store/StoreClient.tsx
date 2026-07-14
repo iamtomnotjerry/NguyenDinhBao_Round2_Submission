@@ -26,6 +26,7 @@ import {
 } from '@/lib/payment/validate-card';
 import { firstLocalizedCardError, localizeTokenizeApiError } from '@/lib/payment/card-i18n';
 import { localizeApiError } from '@/lib/api/localize';
+import { cn } from '@/lib/utils';
 import type { SafeDatabase as DB } from '@/types/database.types';
 
 type Product = SafeDatabase['public']['Tables']['products']['Row'];
@@ -368,7 +369,10 @@ export default function StoreClient({ initialProducts }: StoreClientProps) {
       ) : (
         <main className="flex-1 max-w-6xl mx-auto px-6 py-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
           <div
-            className={`${isCartOpen ? 'lg:col-span-7' : 'lg:col-span-12'} transition-all duration-300 space-y-6`}
+            className={cn(
+              isCartOpen ? 'lg:col-span-7' : 'lg:col-span-12',
+              'transition-all duration-300 space-y-6',
+            )}
           >
             <PageReveal>
               <div className="flex flex-wrap justify-between items-center gap-3">
@@ -396,7 +400,10 @@ export default function StoreClient({ initialProducts }: StoreClientProps) {
               </Surface>
             ) : (
               <div
-                className={`grid grid-cols-1 md:grid-cols-2 ${isCartOpen ? 'xl:grid-cols-2' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-6`}
+                className={cn(
+                  'grid grid-cols-1 md:grid-cols-2 gap-6',
+                  isCartOpen ? 'xl:grid-cols-2' : 'lg:grid-cols-3 xl:grid-cols-4',
+                )}
               >
                 {products.map((product) => (
                   <ProductCard key={product.id} product={product} onAddToCart={addToCart} />
