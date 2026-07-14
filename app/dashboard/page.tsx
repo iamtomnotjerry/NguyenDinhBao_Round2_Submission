@@ -5,7 +5,9 @@ import { supabase } from '@/lib/supabase/client';
 import { SafeDatabase } from '@/types/database.types';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import Header from '@/components/Header';
-import { Printer, ShoppingBag, Gift, LogOut, RefreshCw } from 'lucide-react';
+import AppFooter from '@/components/AppFooter';
+import LoadingSkeleton from '@/components/LoadingSkeleton';
+import { Printer, ShoppingBag, Gift, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { btnInteractive, cn } from '@/lib/utils';
 import DashboardOverview from './components/DashboardOverview';
@@ -122,18 +124,19 @@ export default function DashboardPage() {
         <button
           onClick={handleSignOut}
           className={cn(
-            'p-2 text-zinc-500 hover:text-red-400 border border-transparent hover:border-red-500/10 hover:bg-red-500/5 rounded-xl flex items-center gap-1.5 text-xs font-bold mr-2',
+            'p-2 text-zinc-500 hover:text-red-400 border border-transparent hover:border-red-500/10 hover:bg-red-500/5 rounded-full flex items-center gap-1.5 text-xs font-bold',
             btnInteractive,
           )}
         >
-          <LogOut className="w-4 h-4" /> {t.dashboard.signOut}
+          <LogOut className="w-4 h-4" />{' '}
+          <span className="hidden sm:inline">{t.dashboard.signOut}</span>
         </button>
       </Header>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
-        </div>
+        <main className="flex-1 max-w-6xl mx-auto px-6 py-12 w-full">
+          <LoadingSkeleton variant="dashboard" />
+        </main>
       ) : (
         /* Main Container */
         <main className="flex-1 max-w-6xl mx-auto px-6 py-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
@@ -233,10 +236,7 @@ export default function DashboardPage() {
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-900 py-8 bg-zinc-950 text-center text-xs text-zinc-500 mt-20">
-        {t.common.footer}
-      </footer>
+      <AppFooter className="mt-20" />
     </div>
   );
 }

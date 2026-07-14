@@ -67,7 +67,7 @@ export default function PrintProgressView({
   const done = activeJob.status === 'completed' || activeJob.status === 'ready_for_pickup';
 
   return (
-    <div className="lg:col-span-12 glass-bezel-outer">
+    <div className="glass-bezel-outer w-full max-w-4xl mx-auto">
       <div className="glass-bezel-inner p-8 flex flex-col items-center justify-center min-h-[500px] text-center space-y-8">
         <div className="relative">
           <div
@@ -106,7 +106,9 @@ export default function PrintProgressView({
           <div className="flex justify-between text-xs text-zinc-500 font-semibold uppercase tracking-wider">
             <span>{printProgress}%</span>
             <span>
-              {t.print.statusLabel} {activeJob.status}
+              {t.print.statusLabel}{' '}
+              {(t.dashboard.status as Record<string, string>)[activeJob.status] ||
+                activeJob.status.replace(/_/g, ' ')}
             </span>
           </div>
         </div>
@@ -130,7 +132,7 @@ export default function PrintProgressView({
                     : 'border-zinc-800 text-zinc-600',
                 )}
               >
-                {step.replace(/_/g, ' ')}
+                {(t.dashboard.status as Record<string, string>)[step] || step.replace(/_/g, ' ')}
               </span>
             );
           })}

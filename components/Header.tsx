@@ -109,7 +109,7 @@ export default function Header({ children }: HeaderProps) {
             <Link
               href="/dashboard"
               className={cn(
-                'px-3 sm:px-4 py-2 bg-zinc-900/50 hover:bg-zinc-800 text-xs font-bold rounded-full border border-zinc-850 hover:border-zinc-700 flex items-center gap-1.5',
+                'px-3 sm:px-4 py-2 bg-zinc-900/50 hover:bg-zinc-800 text-xs font-bold rounded-full border border-zinc-800 hover:border-zinc-700 flex items-center gap-1.5',
                 btnInteractive,
                 pathname === '/dashboard' && 'border-emerald-500/30 text-emerald-400',
               )}

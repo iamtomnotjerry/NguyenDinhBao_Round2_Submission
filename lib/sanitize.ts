@@ -1,17 +1,23 @@
-import DOMPurify from 'isomorphic-dompurify';
+/**
+ * Sanitize helpers for React text rendering.
+ * Prefer tag-stripping over HTML entities — React already escapes when
+ * rendering as children (not dangerouslySetInnerHTML).
+ * Avoid isomorphic-dompurify/jsdom in the client bundle (breaks Next.js).
+ */
 
-/** Escape / sanitize untrusted text before rendering as HTML-like content */
+/** Strip HTML / script — safe for React text nodes */
 export function sanitizeText(input: string): string {
-  return DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: [],
-    ALLOWED_ATTR: [],
-  });
+  return String(input)
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\u0000/g, '');
 }
 
-/** Allow a minimal safe subset for AI markdown render helpers */
+/**
+ * Minimal rich subset: keep bold/italic markers as text after stripping tags.
+ * Callers that need real HTML should use a client-only DOMPurify path.
+ */
 export function sanitizeRichText(input: string): string {
-  return DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: ['b', 'strong', 'i', 'em', 'br', 'p', 'ul', 'ol', 'li'],
-    ALLOWED_ATTR: [],
-  });
+  return sanitizeText(input);
 }

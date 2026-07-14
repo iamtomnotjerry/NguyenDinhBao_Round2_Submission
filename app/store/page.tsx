@@ -5,7 +5,10 @@ import { supabase } from '@/lib/supabase/client';
 import { SafeDatabase } from '@/types/database.types';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import Header from '@/components/Header';
-import { ShoppingBag, ShoppingCart, Gift, RefreshCw } from 'lucide-react';
+import EmptyState from '@/components/EmptyState';
+import AppFooter from '@/components/AppFooter';
+import LoadingSkeleton from '@/components/LoadingSkeleton';
+import { ShoppingBag, ShoppingCart, Gift } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { btnInteractive, cn } from '@/lib/utils';
 import ProductCard from './components/ProductCard';
@@ -307,19 +310,21 @@ export default function StorePage() {
         <button
           onClick={() => setIsCartOpen(!isCartOpen)}
           className={cn(
-            'relative p-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-xl text-zinc-300 hover:text-white flex items-center gap-2',
+            'relative p-2 bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 rounded-full text-zinc-300 hover:text-white flex items-center gap-1.5',
             btnInteractive,
           )}
         >
           <ShoppingCart className="w-4 h-4 text-emerald-400" />
-          <span className="text-xs font-bold">{cart.reduce((sum, i) => sum + i.quantity, 0)}</span>
+          <span className="text-xs font-bold pr-0.5">
+            {cart.reduce((sum, i) => sum + i.quantity, 0)}
+          </span>
         </button>
       </Header>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
-        </div>
+        <main className="flex-1 max-w-6xl mx-auto px-6 py-12 w-full">
+          <LoadingSkeleton variant="cards" />
+        </main>
       ) : (
         /* Main Container */
         <main className="flex-1 max-w-6xl mx-auto px-6 py-12 w-full grid grid-cols-1 lg:grid-cols-12 gap-8 relative z-10">
@@ -327,24 +332,39 @@ export default function StorePage() {
           <div
             className={`${isCartOpen ? 'lg:col-span-7' : 'lg:col-span-12'} transition-all duration-300 space-y-6`}
           >
-            <div className="flex justify-between items-center">
+            <div className="flex flex-wrap justify-between items-center gap-3">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-300 bg-clip-text text-transparent flex items-center gap-2">
-                <ShoppingBag className="w-6 h-6 text-emerald-400" /> Gian hàng ấn phẩm in sẵn
+                <ShoppingBag className="w-6 h-6 text-emerald-400" /> {t.store.title}
               </h2>
               {user && (
-                <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 py-2 px-4 rounded-xl text-emerald-400 text-sm font-bold animate-pulse-slow">
-                  <Gift className="w-4 h-4" /> {rewardPoints} điểm thưởng khả dụng
+                <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 py-2 px-4 rounded-full text-emerald-400 text-sm font-bold">
+                  <Gift className="w-4 h-4" />{' '}
+                  {t.store.pointsAvailable.replace('{n}', String(rewardPoints))}
                 </div>
               )}
             </div>
 
-            <div
-              className={`grid grid-cols-1 md:grid-cols-2 ${isCartOpen ? 'xl:grid-cols-2' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-6`}
-            >
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} onAddToCart={addToCart} />
-              ))}
-            </div>
+            {products.length === 0 ? (
+              <div className="glass-bezel-outer">
+                <div className="glass-bezel-inner">
+                  <EmptyState
+                    icon={ShoppingBag}
+                    title={t.store.emptyProducts}
+                    description={t.store.emptyProductsHint}
+                    actionHref="/print"
+                    actionLabel={t.common.startPrint}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div
+                className={`grid grid-cols-1 md:grid-cols-2 ${isCartOpen ? 'xl:grid-cols-2' : 'lg:grid-cols-3 xl:grid-cols-4'} gap-6`}
+              >
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} onAddToCart={addToCart} />
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Checkout & Cart Pane (5 cols) */}
@@ -393,10 +413,7 @@ export default function StorePage() {
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-900 py-8 bg-zinc-950 text-center text-xs text-zinc-500 mt-20">
-        {t.common.footer}
-      </footer>
+      <AppFooter className="mt-20" />
     </div>
   );
 }

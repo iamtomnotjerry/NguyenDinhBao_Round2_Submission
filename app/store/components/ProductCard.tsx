@@ -24,9 +24,9 @@ const renderProductThumbnail = (name: string, stock: number) => {
         <div className="w-16 h-20 bg-zinc-950 border border-zinc-800 rounded-lg p-2 flex flex-col justify-between shadow-lg">
           <div className="space-y-1">
             <div className="w-full h-1 bg-zinc-800 rounded" />
-            <div className="w-4/5 h-1 bg-zinc-850 rounded" />
-            <div className="w-full h-1 bg-zinc-850 rounded" />
-            <div className="w-2/3 h-1 bg-zinc-850 rounded" />
+            <div className="w-4/5 h-1 bg-zinc-800 rounded" />
+            <div className="w-full h-1 bg-zinc-800 rounded" />
+            <div className="w-2/3 h-1 bg-zinc-800 rounded" />
           </div>
           <div className="flex justify-between items-center mt-2">
             <div className="w-4 h-4 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center">
@@ -49,7 +49,7 @@ const renderProductThumbnail = (name: string, stock: number) => {
             <div className="w-10 h-1 bg-emerald-400 rounded" />
             <div className="w-8 h-1 bg-emerald-400/70 rounded" />
           </div>
-          <div className="pl-1 mt-4 text-[6px] font-mono text-zinc-550">v2.1 Guide</div>
+          <div className="pl-1 mt-4 text-[6px] font-mono text-zinc-500">v2.1 Guide</div>
         </div>
       </div>
     );
@@ -59,7 +59,7 @@ const renderProductThumbnail = (name: string, stock: number) => {
       <div
         className={`w-full h-32 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center relative overflow-hidden group-hover:border-emerald-500/20 transition-all ${overlayClass}`}
       >
-        <div className="w-16 h-20 bg-zinc-950 border border-zinc-850 rounded-lg p-1.5 flex flex-col justify-between shadow-lg relative">
+        <div className="w-16 h-20 bg-zinc-950 border border-zinc-800 rounded-lg p-1.5 flex flex-col justify-between shadow-lg relative">
           <div className="w-full h-8 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded border border-emerald-500/10 flex items-center justify-center">
             <span className="text-[6px] font-black text-emerald-400 tracking-wider">MAG</span>
           </div>
@@ -93,9 +93,9 @@ const renderProductThumbnail = (name: string, stock: number) => {
   }
   return (
     <div
-      className={`w-full h-32 rounded-xl bg-zinc-950/60 border border-zinc-900 flex items-center justify-center text-zinc-650 relative overflow-hidden group-hover:border-emerald-500/20 transition-all ${overlayClass}`}
+      className={`w-full h-32 rounded-xl bg-zinc-950/60 border border-zinc-900 flex items-center justify-center text-zinc-500 relative overflow-hidden group-hover:border-emerald-500/20 transition-all ${overlayClass}`}
     >
-      <ShoppingBag className="w-12 h-12 text-zinc-850 group-hover:scale-105 transition-transform" />
+      <ShoppingBag className="w-12 h-12 text-zinc-700 group-hover:scale-105 transition-transform" />
     </div>
   );
 };

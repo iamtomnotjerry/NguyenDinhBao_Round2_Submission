@@ -56,7 +56,7 @@ export default function Home() {
               <Link
                 href="/store"
                 className={cn(
-                  'w-full sm:w-auto px-8 py-4 bg-zinc-900/80 hover:bg-zinc-800 rounded-xl font-bold border border-zinc-850 hover:border-zinc-700 flex items-center justify-center gap-2 text-sm',
+                  'w-full sm:w-auto px-8 py-4 bg-zinc-900/80 hover:bg-zinc-800 rounded-xl font-bold border border-zinc-800 hover:border-zinc-700 flex items-center justify-center gap-2 text-sm',
                   btnInteractive,
                 )}
               >
@@ -66,45 +66,49 @@ export default function Home() {
           </div>
 
           <div className="lg:col-span-5 relative">
-            <div className="glass-panel p-6 rounded-3xl border border-zinc-850/80 shadow-2xl relative overflow-hidden group">
-              <div className="relative bg-white text-zinc-950 rounded-xl p-8 aspect-[3/4] shadow-inner flex flex-col justify-between overflow-hidden">
-                <div className="absolute left-0 top-0 bottom-0 w-3 flex flex-col justify-around py-3 bg-gradient-to-r from-zinc-300 to-transparent border-r border-dashed border-zinc-300/40">
-                  {Array.from({ length: 10 }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className="w-3 h-1 bg-gradient-to-r from-zinc-400 to-zinc-600 rounded-full -ml-1.5 shadow-sm"
-                    />
-                  ))}
+            <div className="glass-bezel-outer">
+              <div className="glass-bezel-inner p-4 md:p-5 relative overflow-hidden group">
+                <div className="relative bg-white text-zinc-950 rounded-xl p-8 aspect-[3/4] shadow-inner flex flex-col justify-between overflow-hidden">
+                  <div className="absolute left-0 top-0 bottom-0 w-3 flex flex-col justify-around py-3 bg-gradient-to-r from-zinc-300 to-transparent border-r border-dashed border-zinc-300/40">
+                    {Array.from({ length: 10 }).map((_, idx) => (
+                      <div
+                        key={idx}
+                        className="w-3 h-1 bg-gradient-to-r from-zinc-400 to-zinc-600 rounded-full -ml-1.5 shadow-sm"
+                      />
+                    ))}
+                  </div>
+
+                  <div className="pl-4 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <span className="text-[10px] uppercase tracking-wider font-extrabold text-emerald-600 bg-emerald-50/70 px-2 py-0.5 rounded">
+                        {t.home.mockDocSpec}
+                      </span>
+                      <span className="text-[10px] text-zinc-400 font-mono">
+                        {t.home.mockPageOf}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-lg font-black leading-tight text-zinc-900">
+                        {t.home.mockDocTitle}
+                      </h4>
+                      <p className="text-xs text-zinc-500 leading-relaxed">{t.home.subtitle}</p>
+                    </div>
+                  </div>
+
+                  <div className="pl-4 flex items-center justify-between border-t border-zinc-100 pt-4 mt-8">
+                    <div className="flex gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                    </div>
+                    <span className="text-xs font-bold text-zinc-400">{t.home.mockEngine}</span>
+                  </div>
                 </div>
 
-                <div className="pl-4 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-emerald-600 bg-emerald-50/70 px-2 py-0.5 rounded">
-                      Document Spec
-                    </span>
-                    <span className="text-[10px] text-zinc-400 font-mono">Page 1 of 12</span>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="text-lg font-black leading-tight text-zinc-900">
-                      PlatPrint Design Spec
-                    </h4>
-                    <p className="text-xs text-zinc-500 leading-relaxed">{t.home.subtitle}</p>
-                  </div>
+                <div className="absolute bottom-4 right-4 bg-zinc-950/95 border border-zinc-800 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 animate-pulse-slow">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-xs font-bold text-zinc-200">{t.home.printerOnline}</span>
                 </div>
-
-                <div className="pl-4 flex items-center justify-between border-t border-zinc-100 pt-4 mt-8">
-                  <div className="flex gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                  </div>
-                  <span className="text-xs font-bold text-zinc-400">PlatPrint Engine v2.1</span>
-                </div>
-              </div>
-
-              <div className="absolute bottom-4 right-4 bg-zinc-950/95 border border-zinc-800 rounded-2xl p-3 shadow-xl flex items-center gap-2.5 animate-pulse-slow">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-xs font-bold text-zinc-200">{t.home.printerOnline}</span>
               </div>
             </div>
           </div>
@@ -183,7 +187,7 @@ export default function Home() {
                 <Link
                   href="/chat"
                   className={cn(
-                    'w-full md:w-auto px-6 py-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-750 hover:bg-zinc-850 rounded-xl font-bold text-xs flex items-center justify-center gap-2 whitespace-nowrap',
+                    'w-full md:w-auto px-6 py-3 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 rounded-xl font-bold text-xs flex items-center justify-center gap-2 whitespace-nowrap',
                     btnInteractive,
                   )}
                 >

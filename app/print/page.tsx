@@ -5,7 +5,9 @@ import { supabase } from '@/lib/supabase/client';
 import { SafeDatabase } from '@/types/database.types';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import Header from '@/components/Header';
-import { Printer, RefreshCw, ArrowRight, AlertTriangle } from 'lucide-react';
+import AppFooter from '@/components/AppFooter';
+import LoadingSkeleton from '@/components/LoadingSkeleton';
+import { Printer, ArrowRight, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { buildPrintQuote, btnInteractive, cn } from '@/lib/utils';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
@@ -422,14 +424,12 @@ export default function PrintPage() {
       <Header />
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
-        </div>
+        <LoadingSkeleton variant="page" />
       ) : (
-        <main className="flex-1 max-w-6xl mx-auto px-4 md:px-6 py-10 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
+        <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 sm:px-5 lg:px-8 py-6 md:py-8 relative z-10">
           {!user ? (
-            <div className="lg:col-span-12 glass-bezel-outer">
-              <div className="glass-bezel-inner flex flex-col items-center justify-center p-16 text-center space-y-6">
+            <div className="glass-bezel-outer max-w-xl mx-auto">
+              <div className="glass-bezel-inner flex flex-col items-center justify-center p-12 md:p-16 text-center space-y-6">
                 <div className="p-4 bg-emerald-500/10 rounded-full text-emerald-400 border border-emerald-500/20">
                   <Printer className="w-12 h-12" />
                 </div>
@@ -457,9 +457,9 @@ export default function PrintPage() {
               }}
             />
           ) : (
-            <>
+            <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(360px,440px)_minmax(0,1fr)] lg:gap-6 lg:items-start">
               {submitError && (
-                <div className="lg:col-span-12 p-4 rounded-2xl border bg-red-500/10 border-red-500/20 text-red-400 flex items-start gap-3">
+                <div className="lg:col-span-2 p-4 rounded-2xl border bg-red-500/10 border-red-500/20 text-red-400 flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
                   <div className="flex-1 space-y-1">
                     <h4 className="font-bold text-sm">{t.print.submitErrorTitle}</h4>
@@ -474,43 +474,45 @@ export default function PrintPage() {
                   </button>
                 </div>
               )}
-              <PrintConfigForm
-                file={file}
-                fileMeta={fileMeta}
-                isUploading={isUploading}
-                config={config}
-                patchConfig={patchConfig}
-                currentPage={currentPage}
-                quote={quote}
-                rewardPoints={rewardPoints}
-                usePoints={usePoints}
-                setUsePoints={setUsePoints}
-                cardNumber={cardNumber}
-                setCardNumber={(v) => setCardNumber(formatCardNumberDisplay(v))}
-                expiry={expiry}
-                setExpiry={setExpiry}
-                cvv={cvv}
-                setCvv={setCvv}
-                cardErrors={cardErrors}
-                saveCard={saveCard}
-                setSaveCard={setSaveCard}
-                savedCards={savedCards}
-                selectedTokenId={selectedTokenId}
-                setSelectedTokenId={setSelectedTokenId}
-                onSelectSimCard={handleSelectSimCard}
-                submitting={submitting}
-                handleUploadClick={() => fileInputRef.current?.click()}
-                handlePrintSubmit={handlePrintSubmit}
-                fileInputRef={fileInputRef}
-                handleFileChange={handleFileChange}
-                manualPages={manualPages}
-                setManualPages={(n) => {
-                  setManualPages(n);
-                  setTotalPages(n);
-                }}
-                isOfficeDoc={isOfficeDoc}
-              />
-              <div className="lg:col-span-5 space-y-6">
+              <div className="order-2 lg:order-1 min-w-0">
+                <PrintConfigForm
+                  file={file}
+                  fileMeta={fileMeta}
+                  isUploading={isUploading}
+                  config={config}
+                  patchConfig={patchConfig}
+                  currentPage={currentPage}
+                  quote={quote}
+                  rewardPoints={rewardPoints}
+                  usePoints={usePoints}
+                  setUsePoints={setUsePoints}
+                  cardNumber={cardNumber}
+                  setCardNumber={(v) => setCardNumber(formatCardNumberDisplay(v))}
+                  expiry={expiry}
+                  setExpiry={setExpiry}
+                  cvv={cvv}
+                  setCvv={setCvv}
+                  cardErrors={cardErrors}
+                  saveCard={saveCard}
+                  setSaveCard={setSaveCard}
+                  savedCards={savedCards}
+                  selectedTokenId={selectedTokenId}
+                  setSelectedTokenId={setSelectedTokenId}
+                  onSelectSimCard={handleSelectSimCard}
+                  submitting={submitting}
+                  handleUploadClick={() => fileInputRef.current?.click()}
+                  handlePrintSubmit={handlePrintSubmit}
+                  fileInputRef={fileInputRef}
+                  handleFileChange={handleFileChange}
+                  manualPages={manualPages}
+                  setManualPages={(n) => {
+                    setManualPages(n);
+                    setTotalPages(n);
+                  }}
+                  isOfficeDoc={isOfficeDoc}
+                />
+              </div>
+              <div className="order-1 lg:order-2 min-w-0 lg:sticky lg:top-20 lg:self-start">
                 <PrintPreview
                   key={file ? `${file.name}-${file.size}` : 'empty'}
                   file={file}
@@ -525,14 +527,12 @@ export default function PrintPage() {
                   colorPages={colorPages}
                 />
               </div>
-            </>
+            </div>
           )}
         </main>
       )}
 
-      <footer className="border-t border-zinc-900 py-8 bg-zinc-950 text-center text-xs text-zinc-500 mt-12">
-        {t.common.footer}
-      </footer>
+      <AppFooter className="mt-12" />
     </div>
   );
 }

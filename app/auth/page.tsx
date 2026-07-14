@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
+import AppFooter from '@/components/AppFooter';
 import AuthCard from './components/AuthCard';
 import { useLocale } from '@/lib/i18n/context';
 
@@ -95,9 +96,7 @@ export default function AuthPage() {
         />
       </main>
 
-      <footer className="border-t border-zinc-900 py-6 bg-zinc-950 text-center text-xs text-zinc-600">
-        {t.common.footer}
-      </footer>
+      <AppFooter />
     </div>
   );
 }

@@ -1,7 +1,9 @@
 'use client';
 
 import { SafeDatabase } from '@/types/database.types';
+import { ShoppingBag } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/context';
+import EmptyState from '@/components/EmptyState';
 
 type Order = SafeDatabase['public']['Tables']['orders']['Row'];
 
@@ -12,6 +14,11 @@ interface DashboardOrdersProps {
 export default function DashboardOrders({ orders }: DashboardOrdersProps) {
   const { t } = useLocale();
 
+  const statusLabel = (status: string) => {
+    const map = t.dashboard.orderStatus as Record<string, string>;
+    return map[status] || status;
+  };
+
   return (
     <div className="glass-bezel-outer animate-fade-in">
       <div className="glass-bezel-inner p-6 space-y-4">
@@ -19,7 +26,12 @@ export default function DashboardOrders({ orders }: DashboardOrdersProps) {
           {t.dashboard.storeOrdersTitle}
         </h3>
         {orders.length === 0 ? (
-          <p className="text-zinc-500 text-xs text-center py-6">{t.dashboard.noOrders}</p>
+          <EmptyState
+            icon={ShoppingBag}
+            title={t.dashboard.noOrders}
+            actionHref="/store"
+            actionLabel={t.dashboard.noOrdersCta}
+          />
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
@@ -34,7 +46,7 @@ export default function DashboardOrders({ orders }: DashboardOrdersProps) {
                     </span>
                   </div>
                   <span
-                    className={`font-semibold py-0.5 px-2 rounded-full scale-90 border font-mono ${
+                    className={`font-semibold py-0.5 px-2.5 rounded-full border text-[10px] uppercase tracking-wide ${
                       order.status === 'paid'
                         ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                         : order.status === 'failed'
@@ -42,7 +54,7 @@ export default function DashboardOrders({ orders }: DashboardOrdersProps) {
                           : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'
                     }`}
                   >
-                    {order.status}
+                    {statusLabel(order.status)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-semibold text-zinc-500">
@@ -53,7 +65,7 @@ export default function DashboardOrders({ orders }: DashboardOrdersProps) {
                   <div>
                     <span>{t.dashboard.pointsEarnUse}:</span>
                     <p className="text-zinc-300 mt-0.5">
-                      +{order.points_earned} earn / -{order.points_used} used
+                      +{order.points_earned} / -{order.points_used}
                     </p>
                   </div>
                   <div>

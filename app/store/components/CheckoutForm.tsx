@@ -177,7 +177,7 @@ export default function CheckoutForm({
                   : 'border-zinc-800 text-zinc-500',
               )}
             >
-              New card
+              {t.store.newCard}
             </button>
             {savedCards.map((c) => (
               <button
@@ -213,7 +213,7 @@ export default function CheckoutForm({
                   onChange={(e) => setCardNumber(e.target.value)}
                   className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500/40 py-2.5 px-3 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all duration-300 text-white font-mono"
                 />
-                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[9px] text-zinc-650 bg-zinc-900 border border-zinc-850 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[9px] text-zinc-500 bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
                   Visa / Master
                 </div>
               </div>
@@ -256,7 +256,7 @@ export default function CheckoutForm({
                   onChange={(e) => setSaveCard(e.target.checked)}
                   className="accent-emerald-500"
                 />
-                Save card for one-tap pay
+                {t.store.saveCard}
               </label>
             )}
           </>

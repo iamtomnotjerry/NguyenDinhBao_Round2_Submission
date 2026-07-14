@@ -7,7 +7,9 @@ import { supabase } from '@/lib/supabase/client';
 import { SafeDatabase } from '@/types/database.types';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import Header from '@/components/Header';
-import { MessageSquare, RefreshCw } from 'lucide-react';
+import AppFooter from '@/components/AppFooter';
+import LoadingSkeleton from '@/components/LoadingSkeleton';
+import { MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { btnInteractive, cn } from '@/lib/utils';
 import ChatBox from './components/ChatBox';
@@ -187,9 +189,7 @@ export default function ChatPage() {
       <Header />
 
       {loadingAuth ? (
-        <div className="flex-1 flex items-center justify-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-emerald-500" />
-        </div>
+        <LoadingSkeleton variant="chat" />
       ) : (
         <main className="flex-1 max-w-4xl mx-auto px-6 py-4 w-full flex flex-col min-h-0 relative z-10">
           {!user ? (
@@ -239,9 +239,7 @@ export default function ChatPage() {
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-      <footer className="border-t border-zinc-900 py-4 bg-zinc-950 text-center text-xs text-zinc-650 shrink-0">
-        {t.common.footer}
-      </footer>
+      <AppFooter className="py-3 shrink-0" />
     </div>
   );
 }

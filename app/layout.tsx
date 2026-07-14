@@ -47,7 +47,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className="min-h-full flex flex-col premium-bg bg-[#050505] text-white selection:bg-emerald-500 selection:text-black">
+      <body className="min-h-full flex flex-col premium-bg bg-[#050505] text-white selection:bg-emerald-500 selection:text-black pb-20 md:pb-0">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

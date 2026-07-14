@@ -1,6 +1,6 @@
 'use client';
 
-import { RefObject } from 'react';
+import { RefObject, useState, type ReactNode } from 'react';
 import {
   FileText,
   UploadCloud,
@@ -10,6 +10,7 @@ import {
   RefreshCw,
   CreditCard,
   Truck,
+  ChevronDown,
 } from 'lucide-react';
 import { btnInteractive, cn } from '@/lib/utils';
 import { useLocale } from '@/lib/i18n/context';
@@ -74,7 +75,54 @@ const FINISHES: FinishOption[] = [
   'corner_cut',
 ];
 
+const FINISH_LABEL_KEYS: Record<FinishOption, string> = {
+  lamination_gloss: 'finishGloss',
+  lamination_matte: 'finishMatte',
+  folding: 'finishFolding',
+  hole_punch: 'finishHolePunch',
+  corner_cut: 'finishCornerCut',
+};
+
 const PAPER_OPTIONS: PaperSize[] = ['a4', 'a3', 'a5', 'letter', 'legal', 'tabloid', 'b5', 'custom'];
+
+function AccordionSection({
+  title,
+  icon,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  icon?: ReactNode;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/30 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          'w-full flex items-center justify-between gap-2 px-3.5 py-3 text-left',
+          btnInteractive,
+        )}
+      >
+        <span className="text-sm font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2 min-w-0">
+          {icon}
+          <span className="truncate">{title}</span>
+        </span>
+        <ChevronDown
+          className={cn(
+            'w-4 h-4 shrink-0 text-zinc-500 transition-transform duration-200',
+            open && 'rotate-180',
+          )}
+        />
+      </button>
+      {open && <div className="px-3.5 pb-4 space-y-4 border-t border-zinc-900/80">{children}</div>}
+    </div>
+  );
+}
 
 export default function PrintConfigForm(props: PrintConfigFormProps) {
   const { t } = useLocale();
@@ -124,99 +172,108 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
     });
   };
 
+  const printDict = t.print as Record<string, string | undefined>;
+  const finishLabel = (f: FinishOption) => printDict[FINISH_LABEL_KEYS[f]] ?? f.replace(/_/g, ' ');
+
+  const hasFile = !!file;
+
   return (
-    <div className="lg:col-span-7 space-y-6">
+    <div className="space-y-5">
       <div className="glass-bezel-outer">
-        <div className="glass-bezel-inner p-6 md:p-8 space-y-6">
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Printer className="w-6 h-6 text-emerald-400" /> {t.print.title}
+        <div className="glass-bezel-inner p-5 md:p-6 space-y-4">
+          <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+            <Printer className="w-5 h-5 md:w-6 md:h-6 text-emerald-400" /> {t.print.title}
           </h2>
 
           {/* Upload */}
-          <div
-            onClick={handleUploadClick}
-            className={cn(
-              'border-2 border-dashed border-zinc-800 rounded-2xl p-6 text-center hover:border-emerald-500/50 hover:bg-emerald-500/5 relative overflow-hidden group',
-              btnInteractive,
-              file && 'bg-zinc-900/20',
-            )}
+          <AccordionSection
+            title={t.print.sectionUpload}
+            icon={<UploadCloud className="w-4 h-4 text-emerald-400 shrink-0" />}
+            defaultOpen
           >
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-              accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.doc,.docx,.ppt,.pptx,.xls,.xlsx,application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            />
-            {isUploading ? (
-              <div className="flex flex-col items-center space-y-2">
-                <RefreshCw className="w-10 h-10 text-emerald-400 animate-spin" />
-                <p className="text-zinc-400 text-sm font-semibold">{t.print.scanning}</p>
-              </div>
-            ) : file ? (
-              <div className="flex flex-col items-center space-y-2">
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
-                  <FileText className="w-8 h-8" />
+            <div
+              onClick={handleUploadClick}
+              className={cn(
+                'border-2 border-dashed border-zinc-800 rounded-2xl p-6 text-center hover:border-emerald-500/50 hover:bg-emerald-500/5 relative overflow-hidden group',
+                btnInteractive,
+                file && 'bg-zinc-900/20',
+              )}
+            >
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,.doc,.docx,.ppt,.pptx,.xls,.xlsx,application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              />
+              {isUploading ? (
+                <div className="flex flex-col items-center space-y-2">
+                  <RefreshCw className="w-10 h-10 text-emerald-400 animate-spin" />
+                  <p className="text-zinc-400 text-sm font-semibold">{t.print.scanning}</p>
                 </div>
-                <p className="text-white text-sm font-bold truncate max-w-xs">{file.name}</p>
-                <button
-                  type="button"
-                  className={cn('text-emerald-400 text-xs font-bold underline', btnInteractive)}
-                >
-                  {t.print.chooseOther}
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center space-y-2">
-                <UploadCloud className="w-10 h-10 text-zinc-500 group-hover:text-emerald-400 transition-colors" />
-                <p className="text-zinc-300 text-sm font-bold">{t.print.uploadHint}</p>
-                <p className="text-zinc-500 text-xs font-semibold">{t.print.uploadSupport}</p>
+              ) : file ? (
+                <div className="flex flex-col items-center space-y-2">
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
+                    <FileText className="w-8 h-8" />
+                  </div>
+                  <p className="text-white text-sm font-bold truncate max-w-xs">{file.name}</p>
+                  <button
+                    type="button"
+                    className={cn('text-emerald-400 text-xs font-bold underline', btnInteractive)}
+                  >
+                    {t.print.chooseOther}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center space-y-2">
+                  <UploadCloud className="w-10 h-10 text-zinc-500 group-hover:text-emerald-400 transition-colors" />
+                  <p className="text-zinc-300 text-sm font-bold">{t.print.uploadHint}</p>
+                  <p className="text-zinc-500 text-xs font-semibold">{t.print.uploadSupport}</p>
+                </div>
+              )}
+            </div>
+
+            {fileMeta && (
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <Info label={t.print.metaName} value={fileMeta.name} />
+                <Info label={t.print.metaSize} value={fileMeta.sizeLabel} />
+                <Info label={t.print.metaPages} value={String(fileMeta.pages)} />
+                <Info label={t.print.metaOrient} value={fileMeta.orientation} />
+                <Info label={t.print.metaPaper} value={fileMeta.detectedSize} />
+                <Info label={t.print.metaColor} value={fileMeta.colorEstimate} />
+                <Info label={t.print.metaEstimate} value={`$${quote.total.toFixed(2)}`} />
+                <Info
+                  label={t.print.metaSheets}
+                  value={`${quote.billableSheets} (${quote.selectedPageCount} ${t.print.pagesUnit})`}
+                />
               </div>
             )}
-          </div>
 
-          {/* File info */}
-          {fileMeta && (
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-              <Info label={t.print.metaName} value={fileMeta.name} />
-              <Info label={t.print.metaSize} value={fileMeta.sizeLabel} />
-              <Info label={t.print.metaPages} value={String(fileMeta.pages)} />
-              <Info label={t.print.metaOrient} value={fileMeta.orientation} />
-              <Info label={t.print.metaPaper} value={fileMeta.detectedSize} />
-              <Info label={t.print.metaColor} value={fileMeta.colorEstimate} />
-              <Info label={t.print.metaEstimate} value={`$${quote.total.toFixed(2)}`} />
-              <Info
-                label={t.print.metaSheets}
-                value={`${quote.billableSheets} (${quote.selectedPageCount} ${t.print.pagesUnit})`}
-              />
-            </div>
-          )}
-
-          {isOfficeDoc && (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-300 space-y-2">
-              <p>{t.print.officeHint}</p>
-              <label className="flex items-center gap-2">
-                <span className="font-bold uppercase tracking-wider text-[10px] text-amber-400/80">
-                  {t.print.manualPages}
-                </span>
-                <input
-                  type="number"
-                  min={1}
-                  value={manualPages}
-                  onChange={(e) => setManualPages(Math.max(1, Number(e.target.value) || 1))}
-                  className="w-20 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-white font-mono"
-                />
-              </label>
-            </div>
-          )}
+            {isOfficeDoc && (
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-300 space-y-2">
+                <p>{t.print.officeHint}</p>
+                <label className="flex items-center gap-2">
+                  <span className="font-bold uppercase tracking-wider text-[10px] text-amber-400/80">
+                    {t.print.manualPages}
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={manualPages}
+                    onChange={(e) => setManualPages(Math.max(1, Number(e.target.value) || 1))}
+                    className="w-20 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-white font-mono"
+                  />
+                </label>
+              </div>
+            )}
+          </AccordionSection>
 
           {/* Config */}
-          <div className="space-y-5 pt-2 border-t border-zinc-900">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
-              <Settings className="w-4 h-4 text-zinc-500" /> {t.print.configTitle}
-            </h3>
-
-            {/* Color mode */}
+          <AccordionSection
+            title={t.print.sectionConfig}
+            icon={<Settings className="w-4 h-4 text-zinc-500 shrink-0" />}
+            defaultOpen={hasFile}
+          >
             <div className="grid grid-cols-3 gap-2">
               {(['color', 'bw', 'mixed'] as const).map((mode) => (
                 <button
@@ -244,7 +301,6 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
               />
             )}
 
-            {/* Page selection */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
                 {t.print.pageSelection}
@@ -309,7 +365,6 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
               </Field>
             </div>
 
-            {/* Duplex */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
                 {t.print.duplex}
@@ -416,7 +471,6 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
               </label>
             </div>
 
-            {/* Binding */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
                 {t.print.binding}
@@ -449,7 +503,6 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
               </div>
             </div>
 
-            {/* Finishes */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
                 {t.print.finishing}
@@ -468,250 +521,266 @@ export default function PrintConfigForm(props: PrintConfigFormProps) {
                         : 'border-zinc-800 text-zinc-500',
                     )}
                   >
-                    {f.replace(/_/g, ' ')}
+                    {finishLabel(f)}
                   </button>
                 ))}
               </div>
             </div>
+          </AccordionSection>
 
-            {/* Fulfillment */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                {t.print.fulfillment}
-              </label>
-              <div className="flex gap-2 bg-zinc-950/80 p-1 rounded-lg border border-zinc-900">
-                <button
-                  type="button"
-                  onClick={() => patchConfig({ deliveryType: 'pickup' })}
-                  className={cn(
-                    'flex-1 py-2 rounded-md text-xs font-bold flex items-center justify-center gap-1.5',
-                    btnInteractive,
-                    config.deliveryType === 'pickup'
-                      ? 'bg-emerald-600 text-white'
-                      : 'text-zinc-500',
-                  )}
-                >
-                  <Printer className="w-3.5 h-3.5" /> {t.print.pickup}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => patchConfig({ deliveryType: 'delivery' })}
-                  className={cn(
-                    'flex-1 py-2 rounded-md text-xs font-bold flex items-center justify-center gap-1.5',
-                    btnInteractive,
-                    config.deliveryType === 'delivery'
-                      ? 'bg-emerald-600 text-white'
-                      : 'text-zinc-500',
-                  )}
-                >
-                  <Truck className="w-3.5 h-3.5" /> {t.print.delivery}
-                </button>
-              </div>
-              {config.deliveryType === 'pickup' ? (
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
-                  <select
-                    value={config.printerLocation}
-                    onChange={(e) => patchConfig({ printerLocation: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl text-sm text-white font-bold focus:outline-none"
-                  >
-                    <option value="Cửa hàng A - Quận 1, TPHCM">
-                      Cửa hàng A - Quận 1, TPHCM (24/7)
-                    </option>
-                    <option value="Bưu cục Plat - Quận Cầu Giấy, HN">
-                      Bưu cục Plat - Quận Cầu Giấy, HN
-                    </option>
-                    <option value="Bưu điện Trung tâm - Quận Hải Châu, ĐN">
-                      Bưu điện Trung tâm - Đà Nẵng
-                    </option>
-                  </select>
-                </div>
-              ) : (
-                <input
-                  value={config.deliveryAddress}
-                  onChange={(e) => patchConfig({ deliveryAddress: e.target.value })}
-                  placeholder={t.print.addressPlaceholder}
-                  className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-sm text-white font-bold focus:outline-none"
-                />
-              )}
+          {/* Fulfillment */}
+          <AccordionSection
+            title={t.print.sectionFulfillment}
+            icon={<MapPin className="w-4 h-4 text-zinc-500 shrink-0" />}
+            defaultOpen={hasFile}
+          >
+            <div className="flex gap-2 bg-zinc-950/80 p-1 rounded-lg border border-zinc-900">
+              <button
+                type="button"
+                onClick={() => patchConfig({ deliveryType: 'pickup' })}
+                className={cn(
+                  'flex-1 py-2 rounded-md text-xs font-bold flex items-center justify-center gap-1.5',
+                  btnInteractive,
+                  config.deliveryType === 'pickup' ? 'bg-emerald-600 text-white' : 'text-zinc-500',
+                )}
+              >
+                <Printer className="w-3.5 h-3.5" /> {t.print.pickup}
+              </button>
+              <button
+                type="button"
+                onClick={() => patchConfig({ deliveryType: 'delivery' })}
+                className={cn(
+                  'flex-1 py-2 rounded-md text-xs font-bold flex items-center justify-center gap-1.5',
+                  btnInteractive,
+                  config.deliveryType === 'delivery'
+                    ? 'bg-emerald-600 text-white'
+                    : 'text-zinc-500',
+                )}
+              >
+                <Truck className="w-3.5 h-3.5" /> {t.print.delivery}
+              </button>
             </div>
-          </div>
-
-          {/* Quote breakdown */}
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 space-y-2 text-xs">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-              {t.print.priceBreakdown}
-            </p>
-            {quote.lines.map((line) => (
-              <div key={line.label} className="flex justify-between text-zinc-400">
-                <span>{line.label}</span>
-                <span className="text-white font-mono">${line.amount.toFixed(2)}</span>
+            {config.deliveryType === 'pickup' ? (
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
+                <select
+                  value={config.printerLocation}
+                  onChange={(e) => patchConfig({ printerLocation: e.target.value })}
+                  className="w-full pl-10 pr-4 py-2.5 bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl text-sm text-white font-bold focus:outline-none"
+                >
+                  <option value="Cửa hàng A - Quận 1, TPHCM">
+                    Cửa hàng A - Quận 1, TPHCM (24/7)
+                  </option>
+                  <option value="Bưu cục Plat - Quận Cầu Giấy, HN">
+                    Bưu cục Plat - Quận Cầu Giấy, HN
+                  </option>
+                  <option value="Bưu điện Trung tâm - Quận Hải Châu, ĐN">
+                    Bưu điện Trung tâm - Đà Nẵng
+                  </option>
+                </select>
               </div>
-            ))}
-            {usePoints && discount > 0 && (
-              <div className="flex justify-between text-emerald-400">
-                <span>
-                  {t.print.pointsDiscount} ({pointsUsed} pts)
-                </span>
-                <span>-${discount.toFixed(2)}</span>
-              </div>
+            ) : (
+              <input
+                value={config.deliveryAddress}
+                onChange={(e) => patchConfig({ deliveryAddress: e.target.value })}
+                placeholder={t.print.addressPlaceholder}
+                className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-sm text-white font-bold focus:outline-none"
+              />
             )}
-            <div className="flex justify-between border-t border-zinc-800 pt-2 font-bold text-sm">
-              <span className="text-zinc-300">{t.print.estimate}</span>
-              <span className="text-white">${payTotal.toFixed(2)}</span>
-            </div>
-          </div>
+          </AccordionSection>
 
           {/* Payment */}
-          <div className="space-y-3 pt-2 border-t border-zinc-900">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-emerald-400" /> {t.print.paymentTitle}
-            </h3>
+          <AccordionSection
+            title={t.print.sectionPayment}
+            icon={<CreditCard className="w-4 h-4 text-emerald-400 shrink-0" />}
+            defaultOpen
+          >
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4 space-y-2 text-xs">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                {t.print.priceBreakdown}
+              </p>
+              {quote.lines.map((line) => (
+                <div key={line.label} className="flex justify-between text-zinc-400">
+                  <span>{line.label}</span>
+                  <span className="text-white font-mono">${line.amount.toFixed(2)}</span>
+                </div>
+              ))}
+              {usePoints && discount > 0 && (
+                <div className="flex justify-between text-emerald-400">
+                  <span>
+                    {t.print.pointsDiscount} ({pointsUsed} pts)
+                  </span>
+                  <span>-${discount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-zinc-800 pt-2 font-bold text-sm">
+                <span className="text-zinc-300">{t.print.estimate}</span>
+                <span className="text-white">${payTotal.toFixed(2)}</span>
+              </div>
+            </div>
 
-            {rewardPoints > 0 && (
-              <label className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/15 bg-emerald-500/5 text-xs cursor-pointer">
-                <span className="flex items-center gap-2 text-zinc-300">
-                  <input
-                    type="checkbox"
-                    checked={usePoints}
-                    onChange={(e) => setUsePoints(e.target.checked)}
-                    className="accent-emerald-500"
-                  />
-                  {t.print.usePoints} ({rewardPoints} pts)
-                </span>
-              </label>
-            )}
+            <div className="space-y-3">
+              {rewardPoints > 0 && (
+                <label className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/15 bg-emerald-500/5 text-xs cursor-pointer">
+                  <span className="flex items-center gap-2 text-zinc-300">
+                    <input
+                      type="checkbox"
+                      checked={usePoints}
+                      onChange={(e) => setUsePoints(e.target.checked)}
+                      className="accent-emerald-500"
+                    />
+                    {t.print.usePoints} ({rewardPoints} pts)
+                  </span>
+                </label>
+              )}
 
-            {savedCards.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-[10px] font-bold uppercase text-zinc-500 tracking-wider">
-                  {t.print.savedCards}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTokenId(null)}
-                    className={cn(
-                      'px-2 py-1 rounded-lg border text-[10px] font-bold',
-                      btnInteractive,
-                      !selectedTokenId
-                        ? 'border-emerald-500/40 text-emerald-300'
-                        : 'border-zinc-800 text-zinc-500',
-                    )}
-                  >
-                    {t.print.newCard}
-                  </button>
-                  {savedCards.map((c) => (
+              {savedCards.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold uppercase text-zinc-500 tracking-wider">
+                    {t.print.savedCards}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
                     <button
-                      key={c.id}
                       type="button"
-                      onClick={() => setSelectedTokenId(c.id)}
+                      onClick={() => setSelectedTokenId(null)}
                       className={cn(
                         'px-2 py-1 rounded-lg border text-[10px] font-bold',
                         btnInteractive,
-                        selectedTokenId === c.id
+                        !selectedTokenId
                           ? 'border-emerald-500/40 text-emerald-300'
                           : 'border-zinc-800 text-zinc-500',
                       )}
                     >
-                      {c.card_brand} ••{c.last4}
+                      {t.print.newCard}
                     </button>
-                  ))}
+                    {savedCards.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setSelectedTokenId(c.id)}
+                        className={cn(
+                          'px-2 py-1 rounded-lg border text-[10px] font-bold',
+                          btnInteractive,
+                          selectedTokenId === c.id
+                            ? 'border-emerald-500/40 text-emerald-300'
+                            : 'border-zinc-800 text-zinc-500',
+                        )}
+                      >
+                        {c.card_brand} ••{c.last4}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {!selectedTokenId && (
-              <div className="space-y-3">
-                <div>
-                  <input
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    placeholder="4111 1111 1111 1111"
-                    className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-sm text-white font-mono focus:outline-none"
-                  />
-                  {cardErrors.number && (
-                    <p className="text-[10px] text-red-400 mt-1">{cardErrors.number}</p>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-3">
+              {!selectedTokenId && (
+                <div className="space-y-3">
                   <div>
                     <input
-                      value={expiry}
-                      onChange={(e) => setExpiry(e.target.value)}
-                      placeholder="MM/YY"
-                      className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-sm text-white font-mono text-center focus:outline-none"
+                      value={cardNumber}
+                      onChange={(e) => setCardNumber(e.target.value)}
+                      placeholder="4111 1111 1111 1111"
+                      className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-sm text-white font-mono focus:outline-none"
                     />
-                    {cardErrors.expiry && (
-                      <p className="text-[10px] text-red-400 mt-1">{cardErrors.expiry}</p>
+                    {cardErrors.number && (
+                      <p className="text-[10px] text-red-400 mt-1">{cardErrors.number}</p>
                     )}
                   </div>
-                  <div>
-                    <input
-                      value={cvv}
-                      onChange={(e) => setCvv(e.target.value)}
-                      placeholder="CVV"
-                      maxLength={4}
-                      className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-sm text-white font-mono text-center focus:outline-none"
-                    />
-                    {cardErrors.cvv && (
-                      <p className="text-[10px] text-red-400 mt-1">{cardErrors.cvv}</p>
-                    )}
-                  </div>
-                </div>
-                <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={saveCard}
-                    onChange={(e) => setSaveCard(e.target.checked)}
-                    className="accent-emerald-500"
-                  />
-                  {t.print.saveCard}
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {(['success', 'expired', 'decline', 'timeout'] as const).map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => onSelectSimCard(key)}
-                      className={cn(
-                        'px-2 py-1 bg-zinc-900 border border-zinc-800 text-[9px] rounded text-zinc-400 font-bold',
-                        btnInteractive,
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <input
+                        value={expiry}
+                        onChange={(e) => setExpiry(e.target.value)}
+                        placeholder="MM/YY"
+                        className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-sm text-white font-mono text-center focus:outline-none"
+                      />
+                      {cardErrors.expiry && (
+                        <p className="text-[10px] text-red-400 mt-1">{cardErrors.expiry}</p>
                       )}
-                    >
-                      {key}
-                    </button>
-                  ))}
+                    </div>
+                    <div>
+                      <input
+                        value={cvv}
+                        onChange={(e) => setCvv(e.target.value)}
+                        placeholder="CVV"
+                        maxLength={4}
+                        className="w-full bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-sm text-white font-mono text-center focus:outline-none"
+                      />
+                      {cardErrors.cvv && (
+                        <p className="text-[10px] text-red-400 mt-1">{cardErrors.cvv}</p>
+                      )}
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={saveCard}
+                      onChange={(e) => setSaveCard(e.target.checked)}
+                      className="accent-emerald-500"
+                    />
+                    {t.print.saveCard}
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(['success', 'expired', 'decline', 'timeout'] as const).map((key) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => onSelectSimCard(key)}
+                        className={cn(
+                          'px-2 py-1 bg-zinc-900 border border-zinc-800 text-[9px] rounded text-zinc-400 font-bold',
+                          btnInteractive,
+                        )}
+                      >
+                        {key}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </AccordionSection>
 
-          <button
-            onClick={handlePrintSubmit}
-            disabled={!file || submitting || isUploading || !!quote.error}
-            className={cn(
-              'w-full py-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:pointer-events-none rounded-xl font-bold text-sm flex items-center justify-center gap-2 text-white',
-              btnInteractive,
-            )}
-          >
-            {submitting ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" /> {t.print.processing}
-              </>
-            ) : (
-              <>
-                <Printer className="w-4 h-4" /> {t.print.startPrint} (${payTotal.toFixed(2)})
-              </>
-            )}
-          </button>
+          {/* Sticky pay bar */}
+          <div className="sticky bottom-20 md:bottom-4 z-20 pt-1">
+            <div className="glass-bezel-outer shadow-lg shadow-black/40">
+              <div className="glass-bezel-inner !p-3 flex items-center gap-3">
+                <div className="min-w-0 shrink-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                    {t.print.estimate}
+                  </p>
+                  <p className="text-lg font-bold text-white font-mono leading-tight">
+                    ${payTotal.toFixed(2)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handlePrintSubmit}
+                  disabled={!file || submitting || isUploading || !!quote.error}
+                  className={cn(
+                    'flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:pointer-events-none rounded-xl font-bold text-sm flex items-center justify-center gap-2 text-white',
+                    btnInteractive,
+                  )}
+                >
+                  {submitting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" /> {t.print.processing}
+                    </>
+                  ) : (
+                    <>
+                      <Printer className="w-4 h-4" /> {t.print.startPrint}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="space-y-1.5">
       <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">{label}</label>

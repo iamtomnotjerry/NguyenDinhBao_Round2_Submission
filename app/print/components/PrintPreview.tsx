@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   FileText,
-  Sparkles,
   ChevronLeft,
   ChevronRight,
   ZoomIn,
   ZoomOut,
   Maximize2,
   Rows3,
+  ScanLine,
 } from 'lucide-react';
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
 import { btnInteractive, cn } from '@/lib/utils';
@@ -48,6 +48,7 @@ export default function PrintPreview({
   const [isRendering, setIsRendering] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [fitMode, setFitMode] = useState<FitMode>('page');
+  const [stageTick, setStageTick] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const renderTaskRef = useRef<RenderTask | null>(null);
@@ -60,12 +61,12 @@ export default function PrintPreview({
 
   const computeScale = useCallback(
     async (pageNum: number) => {
-      if (!pdfDoc || !stageRef.current) return 1.2;
+      if (!pdfDoc || !stageRef.current) return 1.4;
       const pdfPage = await pdfDoc.getPage(pageNum);
       const base = pdfPage.getViewport({ scale: 1 });
-      const pad = 48;
-      const availW = Math.max(200, stageRef.current.clientWidth - pad);
-      const availH = Math.max(240, stageRef.current.clientHeight - pad);
+      const pad = 56;
+      const availW = Math.max(280, stageRef.current.clientWidth - pad);
+      const availH = Math.max(320, stageRef.current.clientHeight - pad);
 
       if (fitMode === 'width') return availW / base.width;
       if (fitMode === 'page') return Math.min(availW / base.width, availH / base.height);
@@ -116,7 +117,21 @@ export default function PrintPreview({
       cancelled = true;
       renderTaskRef.current?.cancel();
     };
-  }, [file, pdfDoc, activePage, computeScale, configPaperSize]);
+  }, [file, pdfDoc, activePage, computeScale, configPaperSize, stageTick]);
+
+  useEffect(() => {
+    if (!stageRef.current || typeof ResizeObserver === 'undefined') return;
+    let raf = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setStageTick((n) => n + 1));
+    });
+    ro.observe(stageRef.current);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, []);
 
   const goPrev = () => setCurrentPage(Math.max(1, activePage - 1));
   const goNext = () => setCurrentPage(Math.min(totalPages, activePage + 1));
@@ -130,102 +145,98 @@ export default function PrintPreview({
     setZoom((z) => Math.max(0.4, Math.round((z - 0.15) * 100) / 100));
   };
 
+  const toolBtn = (active?: boolean) =>
+    cn(
+      'inline-flex items-center justify-center gap-1.5 h-9 px-3 rounded-lg text-[11px] font-semibold border transition-colors',
+      btnInteractive,
+      active
+        ? 'border-emerald-500/45 bg-emerald-500/15 text-emerald-300'
+        : 'border-white/8 bg-zinc-950/60 text-zinc-400 hover:text-zinc-200 hover:border-white/15',
+    );
+
   return (
-    <div className="glass-bezel-outer h-full">
-      <div className="glass-bezel-inner p-4 md:p-5 flex flex-col h-full min-h-[560px]">
-        <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-emerald-400" /> {t.print.preview}
-          </h3>
-          {file && (
-            <div className="flex items-center gap-1.5 flex-wrap justify-end">
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400">
-                {PAPER_SIZE_LABELS[configPaperSize]}
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400">
-                {pageIsColor ? t.print.labelColor : t.print.labelBw}
-              </span>
-              {configBinding !== 'none' && (
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                  {configBinding}
-                </span>
-              )}
+    <div className="glass-bezel-outer overflow-hidden">
+      <div className="glass-bezel-inner flex flex-col min-h-[420px] lg:min-h-[calc(100vh-6.5rem)] lg:max-h-[calc(100vh-5.5rem)]">
+        {/* Chrome bar */}
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 px-4 md:px-5 py-3 border-b border-white/6 bg-zinc-950/40">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/12 border border-emerald-500/25 text-emerald-400 shrink-0">
+              <ScanLine className="w-4 h-4" />
             </div>
-          )}
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500">
+                {t.print.preview}
+              </p>
+              <p className="text-sm font-semibold text-zinc-100 truncate">
+                {file ? file.name : t.print.previewEmpty.split('.')[0]}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-zinc-900/80 border border-white/8 text-zinc-400">
+              {PAPER_SIZE_LABELS[configPaperSize]}
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-zinc-900/80 border border-white/8 text-zinc-400">
+              {pageIsColor ? t.print.labelColor : t.print.labelBw}
+            </span>
+            {configBinding !== 'none' && (
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-emerald-400">
+                {configBinding}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Toolbar */}
         {file && isPdf && (
-          <div className="flex items-center gap-1 mb-3 flex-wrap">
-            <button
-              type="button"
-              onClick={zoomOut}
-              className={cn(
-                'p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white',
-                btnInteractive,
-              )}
-              aria-label="Zoom out"
-            >
+          <div className="shrink-0 flex items-center gap-1.5 px-4 md:px-5 py-2.5 border-b border-white/5 bg-zinc-950/25 overflow-x-auto">
+            <button type="button" onClick={zoomOut} className={toolBtn()} aria-label="Zoom out">
               <ZoomOut className="w-4 h-4" />
             </button>
-            <button
-              type="button"
-              onClick={zoomIn}
-              className={cn(
-                'p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white',
-                btnInteractive,
-              )}
-              aria-label="Zoom in"
-            >
+            <button type="button" onClick={zoomIn} className={toolBtn()} aria-label="Zoom in">
               <ZoomIn className="w-4 h-4" />
             </button>
+            <div className="w-px h-5 bg-white/10 mx-0.5" />
             <button
               type="button"
               onClick={() => setFitMode('width')}
-              className={cn(
-                'px-2 py-1.5 rounded-lg text-[10px] font-bold border',
-                btnInteractive,
-                fitMode === 'width'
-                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
-                  : 'border-zinc-800 bg-zinc-900 text-zinc-400',
-              )}
+              className={toolBtn(fitMode === 'width')}
             >
               {t.print.fitWidth}
             </button>
             <button
               type="button"
               onClick={() => setFitMode('page')}
-              className={cn(
-                'px-2 py-1.5 rounded-lg text-[10px] font-bold border',
-                btnInteractive,
-                fitMode === 'page'
-                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
-                  : 'border-zinc-800 bg-zinc-900 text-zinc-400',
-              )}
+              className={toolBtn(fitMode === 'page')}
             >
               {t.print.fitPage}
             </button>
-            <span className="text-[10px] font-mono text-zinc-500 ml-1 flex items-center gap-1">
-              <Maximize2 className="w-3 h-3" />
+            <span className="ml-auto text-[11px] font-mono text-zinc-500 flex items-center gap-1.5 tabular-nums">
+              <Maximize2 className="w-3.5 h-3.5" />
               {fitMode === 'custom' ? `${Math.round(zoom * 100)}%` : fitMode}
             </span>
           </div>
         )}
 
+        {/* Light table / desk */}
         <div
           ref={stageRef}
-          className="flex-1 relative rounded-2xl border border-zinc-900 overflow-auto min-h-[360px] bg-zinc-950/80"
+          className="print-light-table relative flex-1 min-h-[340px] md:min-h-[480px] overflow-auto"
         >
-          <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-
-          <div className="relative z-10 flex justify-center p-6 min-h-full">
+          <div className="relative z-[1] flex min-h-full w-full items-center justify-center p-6 md:p-10 lg:p-12">
             {file ? (
               <div className="relative my-auto">
+                {/* Soft drop under sheet */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -inset-x-6 -bottom-8 top-[40%] rounded-[40%] bg-black/45 blur-2xl opacity-70"
+                />
                 <div
                   className={cn(
-                    'relative shadow-xl border border-zinc-800/40 bg-white rounded-sm overflow-hidden',
+                    'print-sheet relative bg-white overflow-hidden',
                     !pageIsColor && 'grayscale',
-                    isRendering && 'opacity-80',
+                    isRendering && 'opacity-90',
                   )}
                 >
                   {isPdf && <canvas ref={canvasRef} className="block max-w-none" />}
@@ -234,7 +245,7 @@ export default function PrintPreview({
                     <img
                       src={fileUrl}
                       alt="preview"
-                      className="block max-w-full max-h-[480px] object-contain"
+                      className="block max-w-[min(100%,720px)] max-h-[min(70vh,720px)] object-contain"
                       style={{
                         transform: `scale(${fitMode === 'custom' ? zoom : 1})`,
                         transformOrigin: 'top center',
@@ -242,51 +253,74 @@ export default function PrintPreview({
                     />
                   )}
                   {!isPdf && !isImage && (
-                    <div className="p-10 text-center text-zinc-600 text-xs max-w-xs">
-                      <Rows3 className="w-8 h-8 mx-auto mb-2" />
-                      {t.print.officePreviewHint}
+                    <div className="flex flex-col items-center justify-center gap-3 px-14 py-20 text-center text-zinc-500">
+                      <Rows3 className="w-10 h-10 text-zinc-400" />
+                      <p className="text-sm font-medium max-w-sm text-zinc-600">
+                        {t.print.officePreviewHint}
+                      </p>
                     </div>
                   )}
 
                   {configBinding === 'spiral' && (
-                    <div className="absolute left-0 top-0 bottom-0 w-4 flex flex-col justify-around py-2 pl-0.5 pointer-events-none z-10">
-                      {Array.from({ length: 14 }).map((_, idx) => (
+                    <div className="absolute left-0 top-0 bottom-0 w-5 flex flex-col justify-around py-3 pl-0.5 pointer-events-none z-10">
+                      {Array.from({ length: 18 }).map((_, idx) => (
                         <div
                           key={idx}
-                          className="w-3.5 h-1.5 bg-zinc-400 rounded-full -ml-1.5 border border-zinc-600/40"
+                          className="w-4 h-1.5 bg-zinc-400/90 rounded-full -ml-2 border border-zinc-600/30 shadow-sm"
                         />
                       ))}
                     </div>
                   )}
                   {(configBinding === 'stapled' || configBinding === 'glue') && (
-                    <div className="absolute top-2.5 left-2.5 flex flex-col gap-2 pointer-events-none z-10">
-                      <div className="w-4 h-0.5 bg-zinc-300 rounded border border-zinc-500 rotate-[40deg]" />
-                      <div className="w-4 h-0.5 bg-zinc-300 rounded border border-zinc-500 rotate-[40deg]" />
+                    <div className="absolute top-3 left-3 flex flex-col gap-2.5 pointer-events-none z-10">
+                      <div className="w-5 h-0.5 bg-zinc-400 rounded border border-zinc-500/50 rotate-[38deg] shadow-sm" />
+                      <div className="w-5 h-0.5 bg-zinc-400 rounded border border-zinc-500/50 rotate-[38deg] shadow-sm" />
                     </div>
                   )}
                 </div>
+
                 {isRendering && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-6 h-6 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+                    <div className="w-8 h-8 border-2 border-emerald-400/25 border-t-emerald-400 rounded-full animate-spin" />
                   </div>
                 )}
               </div>
             ) : (
-              <div className="m-auto text-center p-8 max-w-xs">
-                <FileText className="w-10 h-10 text-zinc-600 mx-auto mb-3" />
-                <p className="text-zinc-400 text-xs font-semibold leading-relaxed">
-                  {t.print.previewEmpty}
-                </p>
+              <div className="w-full max-w-3xl mx-auto">
+                <div className="relative mx-auto aspect-[3/2] max-h-[min(52vh,520px)] w-full">
+                  <div className="absolute inset-[8%] rounded-sm border border-dashed border-zinc-500/35 bg-white/[0.03]" />
+                  <div className="absolute inset-[14%] rounded-sm bg-white shadow-[0_24px_60px_-20px_rgba(0,0,0,0.75)] border border-zinc-200/90 flex flex-col items-center justify-center gap-4 px-8 text-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-500">
+                      <FileText className="w-7 h-7" />
+                    </div>
+                    <div className="space-y-1.5 max-w-md">
+                      <p className="text-base font-semibold text-zinc-800">{t.print.preview}</p>
+                      <p className="text-sm text-zinc-500 leading-relaxed">
+                        {t.print.previewEmpty}
+                      </p>
+                    </div>
+                  </div>
+                  {/* Aspect guides */}
+                  <div
+                    aria-hidden
+                    className="absolute left-[8%] right-[8%] top-1/2 h-px bg-emerald-500/20"
+                  />
+                  <div
+                    aria-hidden
+                    className="absolute top-[8%] bottom-[8%] left-1/2 w-px bg-emerald-500/20"
+                  />
+                </div>
               </div>
             )}
           </div>
         </div>
 
+        {/* Filmstrip / pager */}
         {file && (
-          <div className="mt-3 space-y-2">
-            <div className="flex items-center justify-between gap-2">
+          <div className="shrink-0 border-t border-white/6 bg-zinc-950/55 px-4 md:px-5 py-3 space-y-2.5">
+            <div className="flex items-center justify-between gap-3">
               <p className="text-[11px] text-zinc-500 font-medium truncate">{file.name}</p>
-              <p className="text-[11px] font-mono font-bold text-zinc-400 shrink-0">
+              <p className="text-[12px] font-mono font-bold text-zinc-400 shrink-0 tabular-nums">
                 {isPdf ? (
                   <>
                     {t.print.pageOf} <span className="text-emerald-400">{activePage}</span>
@@ -305,11 +339,11 @@ export default function PrintPreview({
                   onClick={goPrev}
                   disabled={activePage <= 1 || isRendering}
                   className={cn(
-                    'p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 disabled:opacity-40',
+                    'h-9 w-9 rounded-lg bg-zinc-900 border border-white/8 text-zinc-300 disabled:opacity-35',
                     btnInteractive,
                   )}
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-4 h-4 mx-auto" />
                 </button>
                 <input
                   type="number"
@@ -319,38 +353,40 @@ export default function PrintPreview({
                   onChange={(e) =>
                     setCurrentPage(Math.min(totalPages, Math.max(1, Number(e.target.value) || 1)))
                   }
-                  className="w-16 text-center bg-zinc-950 border border-zinc-800 rounded-lg text-xs py-2 text-white font-mono"
+                  className="w-14 text-center bg-zinc-950 border border-white/8 rounded-lg text-xs py-2 text-white font-mono"
                 />
                 <button
                   type="button"
                   onClick={goNext}
                   disabled={activePage >= totalPages || isRendering}
                   className={cn(
-                    'p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 disabled:opacity-40',
+                    'h-9 w-9 rounded-lg bg-zinc-900 border border-white/8 text-zinc-300 disabled:opacity-35',
                     btnInteractive,
                   )}
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-4 h-4 mx-auto" />
                 </button>
-                <div className="flex-1 overflow-x-auto flex gap-1">
-                  {Array.from({ length: Math.min(totalPages, 12) }, (_, i) => i + 1).map((page) => (
+                <div className="flex-1 overflow-x-auto flex gap-1.5 py-0.5">
+                  {Array.from({ length: Math.min(totalPages, 16) }, (_, i) => i + 1).map((page) => (
                     <button
                       key={page}
                       type="button"
                       onClick={() => setCurrentPage(page)}
                       className={cn(
-                        'min-w-7 h-7 px-1 rounded-md text-[10px] font-bold',
+                        'min-w-8 h-9 px-1.5 rounded-md text-[11px] font-bold border',
                         btnInteractive,
                         page === activePage
-                          ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
-                          : 'bg-zinc-950 border border-zinc-800 text-zinc-500',
+                          ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300'
+                          : 'bg-zinc-950 border-white/8 text-zinc-500 hover:text-zinc-300',
                       )}
                     >
                       {page}
                     </button>
                   ))}
-                  {totalPages > 12 && (
-                    <span className="text-[10px] text-zinc-600 self-center">…{totalPages}</span>
+                  {totalPages > 16 && (
+                    <span className="text-[11px] text-zinc-600 self-center px-1">
+                      …{totalPages}
+                    </span>
                   )}
                 </div>
               </div>
